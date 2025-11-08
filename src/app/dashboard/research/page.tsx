@@ -8,14 +8,13 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { researchBookTopic } from '@/ai/flows/research-book-topic';
 import type { ResearchBookTopicOutput } from '@/ai/flows/research-book-topic';
@@ -75,7 +74,7 @@ export default function ResearchPage() {
       <header>
         <h1 className="text-3xl font-bold font-headline tracking-tighter">AI Topic Research Assistant</h1>
         <p className="text-muted-foreground">
-          Conduct deep research and market analysis on any topic to build a foundation for your project.
+          Generate a comprehensive topic library and market analysis to build a foundation for your book.
         </p>
       </header>
 
@@ -90,7 +89,7 @@ export default function ResearchPage() {
                   <FormItem>
                     <FormLabel>Topic Idea</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 'Smart Study Techniques'" {...field} />
+                      <Input placeholder="e.g., 'The Future of Renewable Energy'" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -126,7 +125,7 @@ export default function ResearchPage() {
                     <FormItem>
                       <FormLabel>Target Market (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., 'Bangladesh'" {...field} />
+                        <Input placeholder="e.g., 'USA', 'Global Tech Industry'" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -159,31 +158,33 @@ export default function ResearchPage() {
       )}
 
       {result && (
-        <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="font-headline">Target Audience</CardTitle>
-            </CardHeader>
-            <CardContent className="prose prose-sm max-w-none dark:prose-invert">
-                {result.targetAudienceSuggestion}
-            </CardContent>
-          </Card>
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="font-headline">Pain Point Analysis</CardTitle>
-            </CardHeader>
-            <CardContent className="prose prose-sm max-w-none dark:prose-invert">
-                {result.painPointAnalysis}
-            </CardContent>
-          </Card>
-          <Card className="lg:col-span-3">
-            <CardHeader>
-              <CardTitle className="font-headline">Deep Topic Research</CardTitle>
-            </CardHeader>
-            <CardContent className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
-                {result.deepTopicResearch}
-            </CardContent>
-          </Card>
+        <div className="space-y-6">
+            <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="lg:col-span-1">
+                    <CardHeader>
+                    <CardTitle className="font-headline">Target Audience</CardTitle>
+                    </CardHeader>
+                    <CardContent className="prose prose-sm max-w-none dark:prose-invert">
+                        {result.targetAudienceSuggestion}
+                    </CardContent>
+                </Card>
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                    <CardTitle className="font-headline">Pain Point Analysis</CardTitle>
+                    </CardHeader>
+                    <CardContent className="prose prose-sm max-w-none dark:prose-invert">
+                        {result.painPointAnalysis}
+                    </CardContent>
+                </Card>
+            </div>
+            <Card>
+                <CardHeader>
+                <CardTitle className="font-headline">Deep Topic Research</CardTitle>
+                </CardHeader>
+                <CardContent className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
+                    {result.deepTopicResearch}
+                </CardContent>
+            </Card>
         </div>
       )}
     </div>

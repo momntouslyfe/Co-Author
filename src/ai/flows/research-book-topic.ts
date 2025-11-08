@@ -5,7 +5,7 @@
  *
  * - researchBookTopic - A function that handles the book topic research process.
  * - ResearchBookTopicInput - The input type for the researchBookTopic function.
- * - ResearchBookTopicOutput - The return type for the researchBookTopic function.
+ * - ResearchBookTopicOutput - The return type for the researchBooktopic function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -19,9 +19,9 @@ const ResearchBookTopicInputSchema = z.object({
 export type ResearchBookTopicInput = z.infer<typeof ResearchBookTopicInputSchema>;
 
 const ResearchBookTopicOutputSchema = z.object({
-  deepTopicResearch: z.string().describe('In-depth research on the topic.'),
-  painPointAnalysis: z.string().describe('Analysis of the pain points related to the topic.'),
-  targetAudienceSuggestion: z.string().describe('Suggestions for the target audience.'),
+  deepTopicResearch: z.string().describe('Comprehensive research on the topic, including data, information, and insights. This will be used as a knowledge base for writing.'),
+  painPointAnalysis: z.string().describe('Analysis of the pain points, challenges, and problems readers face related to the topic.'),
+  targetAudienceSuggestion: z.string().describe('Suggestions for the ideal target audience, considering demographics, interests, and needs.'),
 });
 export type ResearchBookTopicOutput = z.infer<typeof ResearchBookTopicOutputSchema>;
 
@@ -33,7 +33,7 @@ const prompt = ai.definePrompt({
   name: 'researchBookTopicPrompt',
   input: {schema: ResearchBookTopicInputSchema},
   output: {schema: ResearchBookTopicOutputSchema},
-  prompt: `You are an expert book research assistant. Your goal is to provide deep topic research, pain point analysis, and target audience suggestions for a given topic, tailored for a specific language and market.
+  prompt: `You are an expert book research assistant. Your goal is to provide a "Comprehensive Topic Library" and a "Topic Market Analysis" for a given topic, tailored for a specific language and market.
 
   Topic: {{{topic}}}
   Language: {{{language}}}
@@ -41,9 +41,14 @@ const prompt = ai.definePrompt({
 
   Provide the following information in {{{language}}}:
 
-  - Deep Topic Research: Conduct thorough research on the topic, covering various aspects and providing relevant insights.
-  - Pain Point Analysis: Identify and analyze the pain points related to the topic for the specified target market, understanding the challenges and problems they face.
-  - Target Audience Suggestion: Suggest the ideal target audience for a book on this topic within the given market, considering demographics, interests, and needs.
+  1.  **Deep Topic Research (for the "Comprehensive Topic Library"):**
+      *   Conduct thorough research on the topic.
+      *   Gather comprehensive data, key facts, relevant information, and cite potential research sources or papers.
+      *   This information should be detailed enough to serve as a knowledge base for writing an entire book.
+
+  2.  **Pain Point & Audience Analysis (for the "Topic Market Analysis"):**
+      *   **Pain Point Analysis:** Identify and analyze the main pain points, challenges, and problems that readers in the target market face related to this topic. What are they trying to solve?
+      *   **Target Audience Suggestion:** Based on the pain points, suggest the ideal target audience. Be specific (e.g., "University students struggling with time management," not just "students").
 
   Format the output as a JSON object with the specified keys.
   `,
