@@ -42,6 +42,7 @@ import {
 import {
     Accordion,
     AccordionContent,
+    AccordionHeader,
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
