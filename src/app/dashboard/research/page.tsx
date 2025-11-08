@@ -19,13 +19,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { researchBookTopic } from '@/ai/flows/research-book-topic';
 import type { ResearchBookTopicOutput } from '@/ai/flows/research-book-topic';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   topic: z.string().min(3, 'Topic must be at least 3 characters.'),
+  language: z.string({ required_error: 'Please select a language.' }),
+  targetMarket: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const languages = [
+    { value: 'English', label: 'English' },
+    { value: 'Spanish', label: 'Spanish' },
+    { value: 'French', label: 'French' },
+    { value: 'German', label: 'German' },
+    { value: 'Bangla', label: 'Bangla' },
+    { value: 'Hindi', label: 'Hindi' },
+];
 
 export default function ResearchPage() {
   const { toast } = useToast();
@@ -36,6 +48,7 @@ export default function ResearchPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       topic: '',
+      targetMarket: '',
     },
   });
 
@@ -62,36 +75,76 @@ export default function ResearchPage() {
       <header>
         <h1 className="text-3xl font-bold font-headline tracking-tighter">AI Topic Research Assistant</h1>
         <p className="text-muted-foreground">
-          Uncover insights, pain points, and target audiences for your next book idea.
+          Conduct deep research and market analysis on any topic to build a foundation for your project.
         </p>
       </header>
 
       <Card>
         <CardContent className="pt-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="topic"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Book Topic</FormLabel>
+                    <FormLabel>Topic Idea</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 'The fundamentals of quantum computing'" {...field} />
+                      <Input placeholder="e.g., 'Smart Study Techniques'" {...field} />
                     </FormControl>
-                    <FormDescription>Enter a topic you want to research.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={loading}>
+              <div className="grid md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="language"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Research Language</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a language" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {languages.map(lang => (
+                            <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="targetMarket"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target Market (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., 'Bangladesh'" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Button type="submit" disabled={loading} size="lg">
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Researching...
                   </>
                 ) : (
-                  'Start Research'
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    Run AI Research
+                  </>
                 )}
               </Button>
             </form>
