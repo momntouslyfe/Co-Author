@@ -25,28 +25,12 @@ export type SetAdminOutput = z.infer<typeof SetAdminOutputSchema>;
 
 function initializeFirebaseAdmin() {
   if (admin.apps.length > 0) {
-    return admin.app();
+    return;
   }
   
-  // This relies on GOOGLE_APPLICATION_CREDENTIALS and GCLOUD_PROJECT env vars being set
-  // in the development environment, which Genkit/Firebase CLI handles.
-  // We explicitly pass the credentials to initializeApp to avoid issues where
-  // the environment variables are not picked up automatically.
-  const serviceAccount = process.env.GOOGLE_APPLICATION_CREDENTIALS
-    ? JSON.parse(
-        Buffer.from(
-          process.env.GOOGLE_APPLICATION_CREDENTIALS,
-          'base64'
-        ).toString()
-      )
-    : undefined;
-
-  return admin.initializeApp({
-    credential: serviceAccount
-      ? admin.credential.cert(serviceAccount)
-      : undefined,
-    projectId: process.env.GCLOUD_PROJECT,
-  });
+  // This initialization is robust for both local dev and deployed environments.
+  // It relies on Application Default Credentials.
+  admin.initializeApp();
 }
 
 export async function setAdmin(input: SetAdminInput): Promise<SetAdminOutput> {
