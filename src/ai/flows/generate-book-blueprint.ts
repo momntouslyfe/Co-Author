@@ -39,7 +39,7 @@ const prompt = ai.definePrompt({
   name: 'generateBookBlueprintPrompt',
   input: {schema: GenerateBookBlueprintInputSchema},
   output: {schema: GenerateBookBlueprintOutputSchema},
-  prompt: `You are an expert book outline generator. Your task is to create a detailed and distinct book outline in the format of a proper book outline, based on the user's core idea, chosen language, storytelling framework, and any provided contextual profiles.
+  prompt: `You are an expert book outline generator. Your task is to create a concise, structural book outline based on the user's inputs.
 
 **Contextual Information:**
 Core Idea: {{{topic}}}
@@ -48,44 +48,37 @@ Storytelling Framework: {{{storytellingFramework}}}
 
 {{#if researchProfile}}
 **AI Research Profile Context:**
-This research provides market analysis, audience pain points, and deep topic insights. Use it to ensure the outline is relevant and valuable.
+Use this research to ensure the outline's topics are relevant and valuable.
 {{{researchProfile}}}
 {{/if}}
 
 {{#if styleProfile}}
 **AI Writing Style Profile Context:**
-This style profile defines the tone, voice, and stylistic elements the final book should have. The outline's chapter titles and descriptions should reflect this style.
+Use this style profile to influence the tone of the chapter titles and descriptions.
 {{{styleProfile}}}
 {{/if}}
 
-
-Based on all the provided information, generate a comprehensive book outline.
-
 **CRITICAL INSTRUCTIONS:**
-1.  **Adhere to the Storytelling Framework:** The outline's structure MUST strictly follow the principles of the selected "{{{storytellingFramework}}}".
-2.  **Integrate All Context:** You must synthesize the Core Idea with the Research Profile and the Style Profile to create a cohesive and targeted outline.
-3.  **Formatting Rules:**
-    *   The outline must be well-structured and logical.
-    *   Use indentation and bullet points (like hyphens or asterisks) to create a clear hierarchy for Parts, Chapters, and sub-points.
-    *   **Do NOT number the subtopics.** For example, use "Part 1: The Beginning" and then indented bullet points, not "1.1, 1.2, etc."
-    *   Ensure the output is only the generated outline.
+1.  **Be an Outliner, Not a Writer:** Your job is to create the skeleton of the book, not to write the content. The output should be a structural outline only.
+2.  **Concise Descriptions:** Each chapter should have a title and a very brief, one-sentence description. Do not elaborate or provide detailed summaries.
+3.  **Strict Formatting:**
+    *   Use indentation and bullet points (hyphens or asterisks) to create a clear hierarchy (e.g., Parts, Chapters).
+    *   Do NOT number the sub-points (e.g., 1.1, 1.2).
+    *   The final output should be ONLY the formatted outline and nothing else.
 
-**Example Structure (for The Hero's Journey):**
+**Example Structure:**
 
 Part 1: The Call to Adventure
   - Chapter 1: The Ordinary World
-    - Introduction to the hero and their daily life.
-    - Foreshadowing of the conflict, reflecting the tone from the style guide.
+    - Introduction to the hero and their normal life.
   - Chapter 2: The Inciting Incident
-    - The event that disrupts the hero's life, framed by the pain points from the research.
+    - The single event that disrupts the hero's world.
 
 Part 2: The Road of Trials
   - Chapter 3: Crossing the Threshold
-    - The hero commits to the journey.
-  - Chapter 4: Tests, Allies, and Enemies
-    - The hero faces initial challenges and meets key characters.
+    - The hero commits to the journey ahead.
 
-Return only the formatted outline.`, 
+Return only the formatted, concise outline.`,
 });
 
 const generateBookBlueprintFlow = ai.defineFlow(
