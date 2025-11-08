@@ -36,15 +36,16 @@ const prompt = ai.definePrompt({
 
   File: {{media url=fileDataUri}}
 
-  After extracting the text, analyze the following aspects of the writing style and provide a detailed, structured breakdown:
-  1.  **Tone & Mood:** (e.g., Formal, Informal, Humorous, Serious, Optimistic, Pessimistic, etc.)
-  2.  **Voice:** (e.g., First-person, Third-person limited, Third-person omniscient; Is the narrator reliable? What is their personality?)
-  3.  **Sentence Structure & Rhythm:** (e.g., Simple, Complex, Compound; Short and punchy, Long and flowing; Varied or consistent?)
-  4.  **Vocabulary & Diction:** (e.g., Simple, Advanced, Technical, Colloquial; Use of figurative language like metaphors or similes.)
-  5.  **Pacing:** (e.g., Fast, Slow, Deliberate; How does the author control the flow of information?)
-  6.  **Overall Summary:** A brief summary of the author's unique stylistic signature.
+  After extracting the text, analyze the writing style and provide a detailed analysis in a listicle format. For each point, provide a clear heading and explanation.
 
-  Return only the detailed analysis.`,
+  1.  **Tone & Mood:** Analyze the overall feeling (e.g., Formal, Informal, Humorous, Serious, Optimistic).
+  2.  **Voice:** Describe the narrator's personality and perspective (e.g., First-person, Third-person omniscient).
+  3.  **Sentence Structure & Rhythm:** Examine the sentence complexity and flow (e.g., Short and punchy, Long and flowing).
+  4.  **Vocabulary & Diction:** Assess the word choice (e.g., Simple, Advanced, Technical, Figurative).
+  5.  **Pacing:** Describe the flow of information (e.g., Fast, Slow, Deliberate).
+  6.  **Overall Summary:** Conclude with a brief summary of the author's unique stylistic signature.
+
+  Return only the detailed analysis as a listicle.`,
 });
 
 const analyzeWritingStyleFlow = ai.defineFlow(
