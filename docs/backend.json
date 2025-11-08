@@ -146,6 +146,35 @@
         "targetAudienceSuggestion",
         "createdAt"
       ]
+    },
+    "StyleProfile": {
+      "title": "Style Profile",
+      "type": "object",
+      "description": "Stores a user's saved AI-analyzed writing style profiles.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "styleAnalysis": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "styleAnalysis",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -224,6 +253,26 @@
             {
               "name": "researchProfileId",
               "description": "Unique identifier for the research profile."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/styleProfiles/{styleProfileId}",
+        "definition": {
+          "entityName": "StyleProfile",
+          "schema": {
+            "$ref": "#/backend/entities/StyleProfile"
+          },
+          "description": "Stores user-specific writing style profiles.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The user's ID."
+            },
+            {
+              "name": "styleProfileId",
+              "description": "Unique identifier for the style profile."
             }
           ]
         }

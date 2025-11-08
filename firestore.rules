@@ -27,6 +27,15 @@ service cloud.firestore {
       match /researchProfiles/{researchProfileId} {
         allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
       }
+
+      /**
+       * @description A user can manage their own style profiles.
+       * @path /users/{userId}/styleProfiles/{styleProfileId}
+       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
+       */
+      match /styleProfiles/{styleProfileId} {
+        allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     /**

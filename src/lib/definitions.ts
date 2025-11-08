@@ -12,7 +12,7 @@ export type Chapter = {
 
 export type Project = {
   id: string;
-  title: string;
+  title:string;
   description: string;
   imageUrl: string;
   imageHint: string;
@@ -31,4 +31,12 @@ export type ResearchProfile = {
   painPointAnalysis: string;
   targetAudienceSuggestion: string;
   createdAt: string;
+};
+
+export type StyleProfile = {
+    id: string;
+    userId: string;
+    name: string;
+    styleAnalysis: string;
+    createdAt: string;
 };
