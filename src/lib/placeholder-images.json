@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "project-cover-1",
+      "description": "Abstract swirls of color.",
+      "imageUrl": "https://images.unsplash.com/photo-1531489956451-20957fab52f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxhYnN0cmFjdCUyMHBhaW50aW5nfGVufDB8fHx8MTc2MjU5NTg4MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract painting"
+    },
+    {
+      "id": "project-cover-2",
+      "description": "A misty forest scene.",
+      "imageUrl": "https://images.unsplash.com/photo-1524959725226-f4deb958e979?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxtaXN0eSUyMGZvcmVzdHxlbnwwfHx8fDE3NjI1MzUwODN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "misty forest"
+    },
+    {
+      "id": "project-cover-3",
+      "description": "A futuristic cityscape.",
+      "imageUrl": "https://images.unsplash.com/photo-1535021131637-96f0c931f5d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxmdXR1cmlzdGljJTIwY2l0eXxlbnwwfHx8fDE3NjI1MzUwOTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "futuristic city"
+    },
+    {
+      "id": "project-cover-4",
+      "description": "A vintage library with books.",
+      "imageUrl": "https://images.unsplash.com/photo-1625053376622-e462848c453f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx2aW50YWdlJTIwbGlicmFyeXxlbnwwfHx8fDE3NjI1OTc3MjN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vintage library"
+    },
+    {
+      "id": "project-cover-5",
+      "description": "An astronaut in space.",
+      "imageUrl": "https://images.unsplash.com/photo-1712512161827-76596122c52c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxhc3Ryb25hdXQlMjBzcGFjZXxlbnwwfHx8fDE3NjI1MDYwMDl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "astronaut space"
+    },
+    {
+      "id": "project-cover-6",
+      "description": "A detective looking at clues.",
+      "imageUrl": "https://images.unsplash.com/photo-1495576596703-e0063a132b6e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxkZXRlY3RpdmUlMjBub2lyfGVufDB8fHx8MTc2MjU0Mzg1OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "detective noir"
+    }
+  ]
 }
