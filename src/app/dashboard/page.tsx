@@ -69,7 +69,7 @@ export default function Dashboard() {
           </Link>
         </Card>
         <Card asChild>
-          <Link href="/dashboard/blueprint">
+          <Link href="/dashboard/co-author">
             <CardHeader>
               <CardDescription>New Outline</CardDescription>
               <CardTitle className="text-lg flex items-center gap-2 font-headline">
