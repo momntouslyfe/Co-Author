@@ -1,12 +1,12 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for analyzing a user's writing style.
+ * @fileOverview This file defines a Genkit flow for analyzing a user's writing style from a text file or PDF.
  *
- * The flow takes a writing sample, analyzes its stylistic elements (tone, voice, vocabulary, etc.),
+ * The flow takes a file, extracts the text, analyzes its stylistic elements (tone, voice, vocabulary, etc.),
  * and returns a detailed analysis.
  *
- * @exported analyzeWritingStyle - A function that analyzes a given writing sample.
+ * @exported analyzeWritingStyle - A function that analyzes a given writing sample file.
  * @exported AnalyzeWritingStyleInput - The input type for the analyzeWritingStyle function.
  * @exported AnalyzeWritingStyleOutput - The return type for the analyzeWritingStyle function.
  */
@@ -15,7 +15,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzeWritingStyleInputSchema = z.object({
-  writingSample: z.string().min(100, "Writing sample must be at least 100 characters.").describe('A sample of text to analyze for writing style.'),
+    fileDataUri: z.string().describe("A writing sample as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'. Supported file types are .txt and .pdf."),
 });
 export type AnalyzeWritingStyleInput = z.infer<typeof AnalyzeWritingStyleInputSchema>;
 
@@ -32,14 +32,11 @@ const prompt = ai.definePrompt({
   name: 'analyzeWritingStylePrompt',
   input: {schema: AnalyzeWritingStyleInputSchema},
   output: {schema: AnalyzeWritingStyleOutputSchema},
-  prompt: `You are an expert writing analyst. Your task is to perform a deep analysis of the provided writing sample.
+  prompt: `You are an expert writing analyst. Your task is to first extract the text from the following file, and then perform a deep analysis of the extracted writing sample.
 
-  Writing Sample:
-  """
-  {{{writingSample}}}
-  """
+  File: {{media url=fileDataUri}}
 
-  Analyze the following aspects of the writing style and provide a detailed, structured breakdown:
+  After extracting the text, analyze the following aspects of the writing style and provide a detailed, structured breakdown:
   1.  **Tone & Mood:** (e.g., Formal, Informal, Humorous, Serious, Optimistic, Pessimistic, etc.)
   2.  **Voice:** (e.g., First-person, Third-person limited, Third-person omniscient; Is the narrator reliable? What is their personality?)
   3.  **Sentence Structure & Rhythm:** (e.g., Simple, Complex, Compound; Short and punchy, Long and flowing; Varied or consistent?)

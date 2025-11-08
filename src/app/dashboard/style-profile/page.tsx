@@ -50,7 +50,7 @@ import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   profileName: z.string().min(3, 'Profile name must be at least 3 characters.'),
-  writingSample: z.string().min(100, 'Writing sample must be at least 100 characters long.'),
+  fileDataUri: z.string().min(1, 'Please upload a file.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -72,7 +72,7 @@ export default function StyleProfilePage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       profileName: '',
-      writingSample: '',
+      fileDataUri: '',
     },
   });
 
@@ -86,10 +86,10 @@ export default function StyleProfilePage() {
   const handleFile = (file: File | null) => {
     if (!file) return;
 
-    if (file.type !== 'text/plain') {
+    if (file.type !== 'text/plain' && file.type !== 'application/pdf') {
         toast({
             title: "Invalid File Type",
-            description: "Please upload a .txt file.",
+            description: "Please upload a .txt or .pdf file.",
             variant: "destructive",
         });
         return;
@@ -97,11 +97,11 @@ export default function StyleProfilePage() {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-        const text = e.target?.result as string;
-        form.setValue('writingSample', text);
+        const dataUri = e.target?.result as string;
+        form.setValue('fileDataUri', dataUri);
         setFileName(file.name);
     };
-    reader.readAsText(file);
+    reader.readAsDataURL(file);
   }
 
   const handleDrag = (e: React.DragEvent) => {
@@ -129,7 +129,7 @@ export default function StyleProfilePage() {
     setCurrentProfileName(values.profileName);
 
     try {
-      const result = await analyzeWritingStyle({ writingSample: values.writingSample });
+      const result = await analyzeWritingStyle({ fileDataUri: values.fileDataUri });
       setAnalysisResult(result.styleAnalysis);
       toast({
         title: 'Analysis Complete',
@@ -220,8 +220,8 @@ export default function StyleProfilePage() {
                 <Accordion type="single" collapsible className="w-full space-y-2">
                     {savedProfiles.map(profile => (
                         <AccordionItem value={profile.id} key={profile.id} asChild>
-                            <Card>
-                                <div className="flex items-center justify-between p-2">
+                             <Card>
+                                <AccordionHeader className="flex flex-row items-center justify-between p-2">
                                     <AccordionTrigger className="w-full text-left font-medium p-2 hover:no-underline">
                                         {profile.name}
                                     </AccordionTrigger>
@@ -246,7 +246,7 @@ export default function StyleProfilePage() {
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
-                                </div>
+                                </AccordionHeader>
                                 <AccordionContent className="p-4 pt-0">
                                     <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap border-t pt-4">
                                         {profile.styleAnalysis}
@@ -266,7 +266,7 @@ export default function StyleProfilePage() {
         <CardHeader>
           <CardTitle>Create a New Style Profile</CardTitle>
           <CardDescription>
-            Provide a sample of your writing by uploading a .txt file.
+            Provide a sample of your writing by uploading a .txt or .pdf file.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -287,10 +287,10 @@ export default function StyleProfilePage() {
               />
               <FormField
                 control={form.control}
-                name="writingSample"
+                name="fileDataUri"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Upload Writing Sample (.txt)</FormLabel>
+                    <FormLabel>Upload Writing Sample</FormLabel>
                     <FormControl>
                       <div 
                         onDragEnter={handleDrag}
@@ -303,7 +303,7 @@ export default function StyleProfilePage() {
                         )}>
                           <input 
                             type="file" 
-                            accept=".txt"
+                            accept=".txt,.pdf"
                             className="absolute w-full h-full opacity-0 cursor-pointer"
                             onChange={(e) => handleFile(e.target.files?.[0] || null)}
                           />
@@ -312,7 +312,7 @@ export default function StyleProfilePage() {
                             <p className="mb-2 text-sm text-muted-foreground">
                               <span className="font-semibold">Click to upload</span> or drag and drop
                             </p>
-                            <p className="text-xs text-muted-foreground">Plain text (.txt only)</p>
+                            <p className="text-xs text-muted-foreground">TXT or PDF</p>
                           </div>
                           {fileName && <p className="text-xs text-primary absolute bottom-4">{fileName}</p>}
                       </div>
