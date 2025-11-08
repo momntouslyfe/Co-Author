@@ -71,10 +71,10 @@ export default function Dashboard() {
         <Card asChild>
           <Link href="/dashboard/blueprint">
             <CardHeader>
-              <CardDescription>New Blueprint</CardDescription>
+              <CardDescription>New Outline</CardDescription>
               <CardTitle className="text-lg flex items-center gap-2 font-headline">
                 <FileText className="w-5 h-5 text-primary" />
-                Generate Outline
+                Use CO-Author
               </CardTitle>
             </CardHeader>
             <CardContent>

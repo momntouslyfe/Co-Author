@@ -26,7 +26,7 @@ const navItems = [
   { href: '/dashboard/projects', icon: <BookCopy />, label: 'My Projects' },
   { href: '/dashboard/research', icon: <Search />, label: 'Topic Research' },
   { href: '/dashboard/research/saved', icon: <Archive />, label: 'Saved Research' },
-  { href: '/dashboard/blueprint', icon: <FileText />, label: 'Blueprint AI' },
+  { href: '/dashboard/blueprint', icon: <FileText />, label: 'CO-Author' },
   { href: '/dashboard/style-profile', icon: <Palette />, label: 'Style Profile' },
   { href: '/dashboard/affiliate', icon: <Share2 />, label: 'Affiliate' },
   { href: '/dashboard/blog', icon: <Rss />, label: 'Blog' },
