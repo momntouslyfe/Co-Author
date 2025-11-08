@@ -102,7 +102,7 @@ export default function CoAuthorPage() {
   }
 
   return (
-    <div className="grid md:grid-cols-2 gap-8">
+    <div className="space-y-8">
       <div className="space-y-6">
         <header>
             <h1 className="text-3xl font-bold font-headline tracking-tighter">Create a New Project (Step 1 & 2)</h1>
@@ -212,7 +212,7 @@ export default function CoAuthorPage() {
         </Form>
       </div>
       <div>
-        <Card className="sticky top-20">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Bot className="w-5 h-5" />
