@@ -21,9 +21,9 @@ export default function SavedResearchPage() {
         return collection(firestore, 'users', user.uid, 'researchProfiles');
     }, [user, firestore]);
 
-    const { data: researchProfiles, isLoading: areProfilesLoading } = useCollection<ResearchProfile>(researchProfilesQuery);
+    const { data: researchProfiles, isLoading: profilesLoading } = useCollection<ResearchProfile>(researchProfilesQuery);
 
-    const isLoading = isUserLoading || areProfilesLoading;
+    const isLoading = isUserLoading || profilesLoading;
 
     return (
         <div className="space-y-6">
