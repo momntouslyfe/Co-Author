@@ -24,21 +24,24 @@ const SetAdminOutputSchema = z.object({
 export type SetAdminOutput = z.infer<typeof SetAdminOutputSchema>;
 
 function initializeFirebaseAdmin() {
+  // If the app is already initialized, do nothing.
+  // This is the key to preventing re-initialization errors.
   if (admin.apps.length > 0) {
     return;
   }
   
-  // This initialization is robust for both local dev and deployed environments.
-  // It relies on Application Default Credentials.
+  // This initialization method is robust for both local development (where it uses
+  // GOOGLE_APPLICATION_CREDENTIALS) and deployed Google Cloud environments.
+  // It relies on Application Default Credentials (ADC).
   admin.initializeApp();
 }
 
 export async function setAdmin(input: SetAdminInput): Promise<SetAdminOutput> {
-  // IMPORTANT: This is a security-sensitive operation.
-  // In a production environment, you would add authentication checks here
-  // to ensure that only authorized users can call this flow.
+  // IMPORTANT: In a real-world application, you MUST add robust authentication and
+  // authorization checks here to ensure that only authorized users (e.g., existing admins)
+  // can call this flow. For this project, we are scoping it to the development environment.
   if (process.env.NODE_ENV !== 'development') {
-    return { message: 'This operation is only allowed in development.' };
+    return { message: 'This operation is only allowed in the development environment.' };
   }
   
   return setAdminFlow(input);
@@ -52,6 +55,7 @@ const setAdminFlow = ai.defineFlow(
   },
   async ({ email }) => {
     try {
+      // Ensure the admin SDK is initialized before using it.
       initializeFirebaseAdmin();
       const auth = admin.auth();
       const user = await auth.getUserByEmail(email);
@@ -60,15 +64,17 @@ const setAdminFlow = ai.defineFlow(
         return { message: `${email} is already an admin.` };
       }
 
+      // Set the custom claim. This marks the user as an admin.
       await auth.setCustomUserClaims(user.uid, { ...user.customClaims, isAdmin: true });
       
       return { message: `Successfully made ${email} an admin.` };
     } catch (error: any) {
-      console.error('Error setting admin claim:', error);
+      console.error('Error in setAdminFlow:', error);
+      // Provide more specific error messages back to the client.
       if (error.code === 'auth/user-not-found') {
-        return { message: `User with email ${email} not found.` };
+        return { message: `User with email ${email} not found. Please ensure they have signed up first.` };
       }
-      return { message: `An error occurred: ${error.message}` };
+      return { message: `An unexpected error occurred: ${error.message}` };
     }
   }
 );
