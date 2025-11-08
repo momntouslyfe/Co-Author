@@ -15,7 +15,9 @@ import {
   Share2,
   Rss,
   Settings,
+  Shield,
 } from 'lucide-react';
+import { useAuthUser } from '@/firebase/auth/use-user';
 
 const navItems = [
   { href: '/dashboard', icon: <LayoutDashboard />, label: 'Dashboard' },
@@ -24,11 +26,16 @@ const navItems = [
   { href: '/dashboard/blueprint', icon: <FileText />, label: 'Blueprint AI' },
   { href: '/dashboard/affiliate', icon: <Share2 />, label: 'Affiliate' },
   { href: '/dashboard/blog', icon: <Rss />, label: 'Blog' },
-  { href: '/dashboard/settings', icon: <Settings />, label: 'Settings' },
 ];
+
+const secondaryNavItems = [
+    { href: '/dashboard/settings', icon: <Settings />, label: 'Settings' },
+    { href: '/dashboard/admin', icon: <Shield />, label: 'Admin', admin: true },
+]
 
 export function MainNav() {
   const pathname = usePathname();
+  const { isAdmin } = useAuthUser();
 
   return (
     <SidebarMenu>
@@ -45,6 +52,23 @@ export function MainNav() {
           </Link>
         </SidebarMenuItem>
       ))}
+      <div className="flex-grow" />
+      {secondaryNavItems.map((item) => {
+        if (item.admin && !isAdmin) return null;
+        return (
+            <SidebarMenuItem key={item.href}>
+            <Link href={item.href} legacyBehavior passHref>
+                <SidebarMenuButton
+                isActive={pathname === item.href}
+                tooltip={item.label}
+                >
+                {item.icon}
+                <span>{item.label}</span>
+                </SidebarMenuButton>
+            </Link>
+            </SidebarMenuItem>
+        );
+      })}
     </SidebarMenu>
   );
 }

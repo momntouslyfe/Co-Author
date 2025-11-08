@@ -107,7 +107,12 @@
   "auth": {
     "providers": [
       "google.com"
-    ]
+    ],
+    "customClaims": {
+      "isAdmin": {
+        "type": "boolean"
+      }
+    }
   },
   "firestore": {
     "structure": [
