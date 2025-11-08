@@ -26,6 +26,7 @@ export default function AdminPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -35,10 +36,11 @@ export default function AdminPage() {
     });
 
     useEffect(() => {
-        if (!isUserLoading && !isAdmin) {
+        // In production, only admins can access this page.
+        if (!isUserLoading && !isAdmin && !isDevelopment) {
             router.replace('/dashboard');
         }
-    }, [user, isAdmin, isUserLoading, router]);
+    }, [user, isAdmin, isUserLoading, router, isDevelopment]);
 
     const onSubmit = async (values: FormValues) => {
         setIsSubmitting(true);
@@ -61,13 +63,28 @@ export default function AdminPage() {
         }
     }
 
-    if (isUserLoading || !isAdmin) {
+    if (isUserLoading) {
         return (
             <div className="flex h-screen items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
     }
+    
+    // In production, render a restricted view if not an admin.
+    if (!isAdmin && !isDevelopment) {
+        return (
+             <div className="flex h-screen items-center justify-center">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Access Denied</CardTitle>
+                        <CardDescription>You do not have permission to view this page.</CardDescription>
+                    </CardHeader>
+                </Card>
+            </div>
+        )
+    }
+
 
     return (
         <div className="space-y-8">

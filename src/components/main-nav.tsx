@@ -36,6 +36,7 @@ const secondaryNavItems = [
 export function MainNav() {
   const pathname = usePathname();
   const { isAdmin } = useAuthUser();
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   return (
     <SidebarMenu>
@@ -54,7 +55,7 @@ export function MainNav() {
       ))}
       <div className="flex-grow" />
       {secondaryNavItems.map((item) => {
-        if (item.admin && !isAdmin) return null;
+        if (item.admin && !isAdmin && !isDevelopment) return null;
         return (
             <SidebarMenuItem key={item.href}>
             <Link href={item.href} legacyBehavior passHref>
