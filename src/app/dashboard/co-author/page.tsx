@@ -21,7 +21,7 @@ import { generateBookBlueprint } from '@/ai/flows/generate-book-blueprint';
 import type { GenerateBookBlueprintOutput } from '@/ai/flows/generate-book-blueprint';
 import { Bot, Loader2 } from 'lucide-react';
 import { useAuthUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import type { ResearchProfile } from '@/lib/definitions';
+import type { ResearchProfile, StyleProfile } from '@/lib/definitions';
 import { collection } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -30,6 +30,7 @@ const formSchema = z.object({
   language: z.string({ required_error: 'Please select a language.' }),
   storytellingFramework: z.string({ required_error: 'Please select a framework.' }),
   researchProfileId: z.string().optional(),
+  styleProfileId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -63,7 +64,13 @@ export default function CoAuthorPage() {
     return collection(firestore, 'users', user.uid, 'researchProfiles');
   }, [user, firestore]);
 
+  const styleProfilesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'users', user.uid, 'styleProfiles');
+  }, [user, firestore]);
+
   const { data: researchProfiles } = useCollection<ResearchProfile>(researchProfilesQuery);
+  const { data: styleProfiles } = useCollection<StyleProfile>(styleProfilesQuery);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -76,10 +83,13 @@ export default function CoAuthorPage() {
     setLoading(true);
     setResult(null);
 
-    const selectedProfile = researchProfiles?.find(p => p.id === values.researchProfileId);
-    const researchProfileContent = selectedProfile 
-      ? `PAIN POINTS:\n${selectedProfile.painPointAnalysis}\n\nDEEP RESEARCH:\n${selectedProfile.deepTopicResearch}`
+    const selectedResearchProfile = researchProfiles?.find(p => p.id === values.researchProfileId);
+    const researchProfileContent = selectedResearchProfile 
+      ? `PAIN POINTS:\n${selectedResearchProfile.painPointAnalysis}\n\nDEEP RESEARCH:\n${selectedResearchProfile.deepTopicResearch}`
       : undefined;
+
+    const selectedStyleProfile = styleProfiles?.find(p => p.id === values.styleProfileId);
+    const styleProfileContent = selectedStyleProfile?.styleAnalysis;
 
     try {
       const blueprint = await generateBookBlueprint({
@@ -87,6 +97,7 @@ export default function CoAuthorPage() {
         language: values.language,
         storytellingFramework: values.storytellingFramework,
         researchProfile: researchProfileContent,
+        styleProfile: styleProfileContent,
       });
       setResult(blueprint);
     } catch (error) {
@@ -172,32 +183,60 @@ export default function CoAuthorPage() {
                 )}
                 />
             </div>
-            <FormField
-              control={form.control}
-              name="researchProfileId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>AI Research Profile (Optional)</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="None" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {researchProfiles?.map(profile => (
-                        <SelectItem key={profile.id} value={profile.id}>{profile.topic}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Select a research profile to give the AI more context for generating the blueprint.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid md:grid-cols-2 gap-6">
+                <FormField
+                control={form.control}
+                name="researchProfileId"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>AI Research Profile (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="None" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {researchProfiles?.map(profile => (
+                            <SelectItem key={profile.id} value={profile.id}>{profile.topic}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    <FormDescription>
+                        Select a research profile to give the AI more context for generating the blueprint.
+                    </FormDescription>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="styleProfileId"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>AI Style Profile (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="None" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {styleProfiles?.map(profile => (
+                            <SelectItem key={profile.id} value={profile.id}>{profile.name}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    <FormDescription>
+                        Select a style profile to guide the AI's writing voice.
+                    </FormDescription>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
             <Button type="submit" disabled={loading}>
               {loading ? (
                 <>

@@ -16,6 +16,7 @@ const GenerateBookBlueprintInputSchema = z.object({
   language: z.string().describe('The language the book will be written in.'),
   storytellingFramework: z.string().describe('The storytelling framework to structure the book (e.g., The Hero\'s Journey).'),
   researchProfile: z.string().optional().describe('An optional, pre-existing AI research profile providing context.'),
+  styleProfile: z.string().optional().describe('An optional, pre-existing writing style profile providing context on the desired writing style.'),
 });
 export type GenerateBookBlueprintInput = z.infer<
   typeof GenerateBookBlueprintInputSchema
@@ -38,33 +39,45 @@ const prompt = ai.definePrompt({
   name: 'generateBookBlueprintPrompt',
   input: {schema: GenerateBookBlueprintInputSchema},
   output: {schema: GenerateBookBlueprintOutputSchema},
-  prompt: `You are an expert book outline generator. Your task is to create a detailed and distinct book outline in the format of a proper book outline, based on the user's core idea, chosen language, and storytelling framework.
+  prompt: `You are an expert book outline generator. Your task is to create a detailed and distinct book outline in the format of a proper book outline, based on the user's core idea, chosen language, storytelling framework, and any provided contextual profiles.
 
+**Contextual Information:**
 Core Idea: {{{topic}}}
 Language: {{{language}}}
 Storytelling Framework: {{{storytellingFramework}}}
 
 {{#if researchProfile}}
-AI Research Profile Context:
+**AI Research Profile Context:**
+This research provides market analysis, audience pain points, and deep topic insights. Use it to ensure the outline is relevant and valuable.
 {{{researchProfile}}}
 {{/if}}
 
+{{#if styleProfile}}
+**AI Writing Style Profile Context:**
+This style profile defines the tone, voice, and stylistic elements the final book should have. The outline's chapter titles and descriptions should reflect this style.
+{{{styleProfile}}}
+{{/if}}
+
+
 Based on all the provided information, generate a comprehensive book outline.
 
-**IMPORTANT FORMATTING RULES:**
-- The outline must be well-structured and logical, following the principles of the selected storytelling framework.
-- Use indentation and bullet points (like hyphens or asterisks) to create a clear hierarchy.
-- **Do NOT number the subtopics.** For example, use "Part 1: The Beginning" and then indented bullet points for chapters or sections within that part, not "1.1, 1.2, etc."
-- Ensure the output is only the generated outline.
+**CRITICAL INSTRUCTIONS:**
+1.  **Adhere to the Storytelling Framework:** The outline's structure MUST strictly follow the principles of the selected "{{{storytellingFramework}}}".
+2.  **Integrate All Context:** You must synthesize the Core Idea with the Research Profile and the Style Profile to create a cohesive and targeted outline.
+3.  **Formatting Rules:**
+    *   The outline must be well-structured and logical.
+    *   Use indentation and bullet points (like hyphens or asterisks) to create a clear hierarchy for Parts, Chapters, and sub-points.
+    *   **Do NOT number the subtopics.** For example, use "Part 1: The Beginning" and then indented bullet points, not "1.1, 1.2, etc."
+    *   Ensure the output is only the generated outline.
 
-**Example Structure:**
+**Example Structure (for The Hero's Journey):**
 
 Part 1: The Call to Adventure
   - Chapter 1: The Ordinary World
     - Introduction to the hero and their daily life.
-    - Foreshadowing of the conflict.
+    - Foreshadowing of the conflict, reflecting the tone from the style guide.
   - Chapter 2: The Inciting Incident
-    - The event that disrupts the hero's life.
+    - The event that disrupts the hero's life, framed by the pain points from the research.
 
 Part 2: The Road of Trials
   - Chapter 3: Crossing the Threshold
