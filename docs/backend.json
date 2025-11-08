@@ -1,0 +1,166 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Co-Author Pro application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "googleId": {
+          "type": "string",
+          "description": "The Google ID of the user obtained via OAuth."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "affiliateId": {
+          "type": "string",
+          "description": "The unique affiliate ID assigned to the user."
+        },
+        "name": {
+          "type": "string",
+          "description": "The display name of the user."
+        }
+      },
+      "required": [
+        "id",
+        "googleId",
+        "email",
+        "affiliateId",
+        "name"
+      ]
+    },
+    "Coupon": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Coupon",
+      "type": "object",
+      "description": "Represents a coupon code for discounts.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Coupon entity."
+        },
+        "code": {
+          "type": "string",
+          "description": "The coupon code itself."
+        },
+        "discount": {
+          "type": "number",
+          "description": "The discount percentage or amount."
+        },
+        "expiryDate": {
+          "type": "string",
+          "description": "The expiry date of the coupon.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "code",
+        "discount",
+        "expiryDate"
+      ]
+    },
+    "Blog": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Blog",
+      "type": "object",
+      "description": "Represents a blog post.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Blog entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the blog post."
+        },
+        "content": {
+          "type": "string",
+          "description": "The content of the blog post."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Blog)"
+        },
+        "publicationDate": {
+          "type": "string",
+          "description": "The date and time the blog post was published.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "content",
+        "authorId",
+        "publicationDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user data.  No authentication so public access.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/coupons/{couponId}",
+        "definition": {
+          "entityName": "Coupon",
+          "schema": {
+            "$ref": "#/backend/entities/Coupon"
+          },
+          "description": "Stores coupon data. No authentication so public access.",
+          "params": [
+            {
+              "name": "couponId",
+              "description": "Unique identifier for the coupon."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/blogs/{blogId}",
+        "definition": {
+          "entityName": "Blog",
+          "schema": {
+            "$ref": "#/backend/entities/Blog"
+          },
+          "description": "Stores blog post data. No authentication so public access.",
+          "params": [
+            {
+              "name": "blogId",
+              "description": "Unique identifier for the blog post."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "Given that authentication is not being used, data will be publicly accessible. Therefore, the design focuses on a simple structure for the entities. Since there is no authentication, there's no need for authorization independence, membership maps, or denormalization.  Each entity will reside in its own top-level collection. The Blog entity includes an authorId for referencing User, but without authentication, this is purely for data organization and cannot be used for security.  Coupons are also stored in a dedicated collection.  QAPs are irrelevant as there is no access control."
+  }
+}

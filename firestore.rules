@@ -1,0 +1,48 @@
+/**
+ * @file Firebase Security Rules for Co-Author Pro.
+ *
+ * @corePhilosophy This ruleset allows public read and write access to all data, as the application is not using authentication. This is ONLY suitable for prototyping or scenarios where data privacy is not a concern.  **In a production application, this is highly insecure.**
+ * @dataStructure Data is stored in three top-level collections: `/users/{userId}`, `/coupons/{couponId}`, and `/blogs/{blogId}`.
+ * @keySecurityDecisions Authentication is disabled, so no security is implemented.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows public read and write access to user data. **THIS IS INSECURE FOR PRODUCTION.**
+     * @path /users/{userId}
+     * @allow (get, list, create, update, delete) Any unauthenticated user can read and write any user document.
+     * @deny (none) Since the application has no auth, there are no scenarios to deny.
+     * @principle No security is enforced due to lack of authentication.
+     */
+    match /users/{userId} {
+      allow get, list: if true;
+      allow create, update, delete: if true;
+    }
+
+    /**
+     * @description Allows public read and write access to coupon data. **THIS IS INSECURE FOR PRODUCTION.**
+     * @path /coupons/{couponId}
+     * @allow (get, list, create, update, delete) Any unauthenticated user can read and write any coupon document.
+     * @deny (none) Since the application has no auth, there are no scenarios to deny.
+     * @principle No security is enforced due to lack of authentication.
+     */
+    match /coupons/{couponId} {
+      allow get, list: if true;
+      allow create, update, delete: if true;
+    }
+
+    /**
+     * @description Allows public read and write access to blog data. **THIS IS INSECURE FOR PRODUCTION.**
+     * @path /blogs/{blogId}
+     * @allow (get, list, create, update, delete) Any unauthenticated user can read and write any blog document.
+     * @deny (none) Since the application has no auth, there are no scenarios to deny.
+     * @principle No security is enforced due to lack of authentication.
+     */
+    match /blogs/{blogId} {
+      allow get, list: if true;
+      allow create, update, delete: if true;
+    }
+  }
+}
