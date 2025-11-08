@@ -42,15 +42,16 @@ export function MainNav() {
     <SidebarMenu>
       {navItems.map((item) => (
         <SidebarMenuItem key={item.href}>
-          <Link href={item.href} legacyBehavior passHref>
-            <SidebarMenuButton
-              isActive={pathname === item.href}
-              tooltip={item.label}
-            >
+          <SidebarMenuButton
+            asChild
+            isActive={pathname === item.href}
+            tooltip={item.label}
+          >
+            <Link href={item.href}>
               {item.icon}
               <span>{item.label}</span>
-            </SidebarMenuButton>
-          </Link>
+            </Link>
+          </SidebarMenuButton>
         </SidebarMenuItem>
       ))}
       <div className="flex-grow" />
@@ -58,15 +59,16 @@ export function MainNav() {
         if (item.admin && !isAdmin && !isDevelopment) return null;
         return (
             <SidebarMenuItem key={item.href}>
-            <Link href={item.href} legacyBehavior passHref>
-                <SidebarMenuButton
+              <SidebarMenuButton
+                asChild
                 isActive={pathname === item.href}
                 tooltip={item.label}
-                >
-                {item.icon}
-                <span>{item.label}</span>
-                </SidebarMenuButton>
-            </Link>
+              >
+                <Link href={item.href}>
+                    {item.icon}
+                    <span>{item.label}</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
         );
       })}
