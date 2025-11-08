@@ -28,9 +28,25 @@ function initializeFirebaseAdmin() {
     return admin.app();
   }
   
-  // This relies on GOOGLE_APPLICATION_CREDENTIALS env var being set
+  // This relies on GOOGLE_APPLICATION_CREDENTIALS and GCLOUD_PROJECT env vars being set
   // in the development environment, which Genkit/Firebase CLI handles.
-  return admin.initializeApp();
+  // We explicitly pass the credentials to initializeApp to avoid issues where
+  // the environment variables are not picked up automatically.
+  const serviceAccount = process.env.GOOGLE_APPLICATION_CREDENTIALS
+    ? JSON.parse(
+        Buffer.from(
+          process.env.GOOGLE_APPLICATION_CREDENTIALS,
+          'base64'
+        ).toString()
+      )
+    : undefined;
+
+  return admin.initializeApp({
+    credential: serviceAccount
+      ? admin.credential.cert(serviceAccount)
+      : undefined,
+    projectId: process.env.GCLOUD_PROJECT,
+  });
 }
 
 export async function setAdmin(input: SetAdminInput): Promise<SetAdminOutput> {
