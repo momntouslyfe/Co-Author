@@ -12,10 +12,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateBookBlueprintInputSchema = z.object({
-  topic: z.string().describe('The topic of the book.'),
-  targetAudience: z.string().describe('The target audience for the book.'),
-  marketAnalysis: z.string().describe('Market analysis for the book topic.'),
-  userInput: z.string().describe('User input and preferences for the book.'),
+  topic: z.string().describe('The core idea or topic of the book.'),
+  language: z.string().describe('The language the book will be written in.'),
+  storytellingFramework: z.string().describe('The storytelling framework to structure the book (e.g., The Hero\'s Journey).'),
+  researchProfile: z.string().optional().describe('An optional, pre-existing AI research profile providing context.'),
 });
 export type GenerateBookBlueprintInput = z.infer<
   typeof GenerateBookBlueprintInputSchema
@@ -38,12 +38,18 @@ const prompt = ai.definePrompt({
   name: 'generateBookBlueprintPrompt',
   input: {schema: GenerateBookBlueprintInputSchema},
   output: {schema: GenerateBookBlueprintOutputSchema},
-  prompt: `You are an expert book outline generator. Based on the topic, target audience, market analysis, and user input, create a detailed and distinct book outline.
+  prompt: `You are an expert book outline generator. Your task is to create a detailed and distinct book outline based on the user's core idea, chosen language, and storytelling framework.
 
-Topic: {{{topic}}}
-Target Audience: {{{targetAudience}}}
-Market Analysis: {{{marketAnalysis}}}
-User Input: {{{userInput}}}
+Core Idea: {{{topic}}}
+Language: {{{language}}}
+Storytelling Framework: {{{storytellingFramework}}}
+
+{{#if researchProfile}}
+AI Research Profile Context:
+{{{researchProfile}}}
+{{/if}}
+
+Based on all the provided information, generate a comprehensive book outline. The outline should be well-structured, logical, and follow the principles of the selected storytelling framework. Ensure the output is only the generated outline.
 
 Outline:`, 
 });

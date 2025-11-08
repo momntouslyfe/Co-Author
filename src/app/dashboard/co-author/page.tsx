@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -14,7 +14,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -27,13 +26,30 @@ import { collection } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
-  topic: z.string().min(5, 'Topic must be at least 5 characters.'),
-  targetAudience: z.string().min(5, 'Target audience must be at least 5 characters.'),
-  marketAnalysis: z.string().optional(),
-  userInput: z.string().optional(),
+  topic: z.string().min(10, 'Please describe your core idea in at least 10 characters.'),
+  language: z.string({ required_error: 'Please select a language.' }),
+  storytellingFramework: z.string({ required_error: 'Please select a framework.' }),
+  researchProfileId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const languages = [
+    { value: 'English', label: 'English' },
+    { value: 'Spanish', label: 'Spanish' },
+    { value: 'French', label: 'French' },
+    { value: 'German', label: 'German' },
+    { value: 'Bangla', label: 'Bangla' },
+    { value: 'Hindi', label: 'Hindi' },
+];
+
+const frameworks = [
+    { value: 'The Hero\'s Journey', label: 'The Hero\'s Journey' },
+    { value: 'The Mentor\'s Journey', label: 'The Mentor\'s Journey' },
+    { value: 'Three-Act Structure', label: 'Three-Act Structure' },
+    { value: 'Fichtean Curve', label: 'Fichtean Curve' },
+    { value: 'Save the Cat', label: 'Save the Cat' },
+];
 
 export default function CoAuthorPage() {
   const { toast } = useToast();
@@ -53,20 +69,24 @@ export default function CoAuthorPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       topic: '',
-      targetAudience: '',
-      marketAnalysis: '',
-      userInput: '',
     },
   });
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
     setResult(null);
+
+    const selectedProfile = researchProfiles?.find(p => p.id === values.researchProfileId);
+    const researchProfileContent = selectedProfile 
+      ? `PAIN POINTS:\n${selectedProfile.painPointAnalysis}\n\nDEEP RESEARCH:\n${selectedProfile.deepTopicResearch}`
+      : undefined;
+
     try {
       const blueprint = await generateBookBlueprint({
-        ...values,
-        marketAnalysis: values.marketAnalysis || 'Not provided',
-        userInput: values.userInput || 'Not provided',
+        topic: values.topic,
+        language: values.language,
+        storytellingFramework: values.storytellingFramework,
+        researchProfile: researchProfileContent,
       });
       setResult(blueprint);
     } catch (error) {
@@ -81,39 +101,16 @@ export default function CoAuthorPage() {
     }
   }
 
-  const handleProfileSelect = (profileId: string) => {
-    const profile = researchProfiles?.find(p => p.id === profileId);
-    if (profile) {
-      form.setValue('topic', profile.topic);
-      form.setValue('targetAudience', profile.targetAudienceSuggestion);
-      form.setValue('marketAnalysis', `PAIN POINTS:\n${profile.painPointAnalysis}\n\nDEEP RESEARCH:\n${profile.deepTopicResearch}`);
-    }
-  };
-
-
   return (
     <div className="grid md:grid-cols-2 gap-8">
       <div className="space-y-6">
         <header>
-            <h1 className="text-3xl font-bold font-headline tracking-tighter">Co-Author Workspace</h1>
+            <h1 className="text-3xl font-bold font-headline tracking-tighter">Create a New Project (Step 1 & 2)</h1>
             <p className="text-muted-foreground">
-            Generate a detailed book outline based on your ideas or a saved research profile.
+              Lock in the "DNA" of your project. This strategy will guide all future AI generation.
             </p>
         </header>
         
-        {researchProfiles && researchProfiles.length > 0 && (
-          <Select onValueChange={handleProfileSelect}>
-            <SelectTrigger>
-              <SelectValue placeholder="Or select a saved research profile..." />
-            </SelectTrigger>
-            <SelectContent>
-              {researchProfiles.map(profile => (
-                <SelectItem key={profile.id} value={profile.id}>{profile.topic}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -121,53 +118,82 @@ export default function CoAuthorPage() {
               name="topic"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Book Topic</FormLabel>
+                  <FormLabel>Your Core Idea</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., The history of ancient Rome" {...field} />
+                    <Textarea placeholder="e.g., 'A book about street food in Dhaka' or 'A mini-course on the basics of investing.'" {...field} rows={3} />
                   </FormControl>
-                  <FormDescription>What is the core subject of your book?</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            <div className="grid md:grid-cols-2 gap-6">
+                <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Project Language</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a language" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {languages.map(lang => (
+                            <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="storytellingFramework"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Storytelling Framework</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a framework" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {frameworks.map(fw => (
+                            <SelectItem key={fw.value} value={fw.value}>{fw.label}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
             <FormField
               control={form.control}
-              name="targetAudience"
+              name="researchProfileId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Target Audience</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., History buffs and students" {...field} />
-                  </FormControl>
-                  <FormDescription>Who are you writing this book for?</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="marketAnalysis"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Market Analysis (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="e.g., Similar books, unique selling points..." {...field} rows={5} />
-                  </FormControl>
-                  <FormDescription>Any research on competing books or market gaps.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="userInput"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Other Preferences (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="e.g., Tone, specific chapters to include..." {...field} />
-                  </FormControl>
-                  <FormDescription>Any other specific instructions for the AI.</FormDescription>
+                  <FormLabel>AI Research Profile (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="None" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {researchProfiles?.map(profile => (
+                        <SelectItem key={profile.id} value={profile.id}>{profile.topic}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select a research profile to give the AI more context for generating the blueprint.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -179,7 +205,7 @@ export default function CoAuthorPage() {
                   Generating...
                 </>
               ) : (
-                'Generate Outline'
+                'Generate Blueprint'
               )}
             </Button>
           </form>
@@ -190,7 +216,7 @@ export default function CoAuthorPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Bot className="w-5 h-5" />
-              Generated Outline
+              Generated Blueprint
             </CardTitle>
             <CardDescription>Your AI-generated book blueprint will appear here.</CardDescription>
           </CardHeader>
@@ -199,7 +225,7 @@ export default function CoAuthorPage() {
             {result ? (
               <p>{result.outline}</p>
             ) : (
-              !loading && <p className="text-muted-foreground">Your outline is waiting to be created...</p>
+              !loading && <p className="text-muted-foreground">Your blueprint is waiting to be created...</p>
             )}
           </CardContent>
         </Card>
