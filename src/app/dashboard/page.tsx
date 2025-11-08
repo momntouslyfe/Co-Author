@@ -24,7 +24,7 @@ export default function Dashboard() {
     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle className="text-3xl font-bold font-headline">Welcome Back!</CardTitle>
             <CardDescription>
               Here&apos;s a quick look at your authoring world.
@@ -38,7 +38,7 @@ export default function Dashboard() {
         </Card>
         <Card asChild>
           <Link href="/dashboard/projects">
-            <CardHeader className="pb-2">
+            <CardHeader>
               <CardDescription>New Project</CardDescription>
               <CardTitle className="text-lg flex items-center gap-2 font-headline">
                 <BookCopy className="w-5 h-5 text-primary" />
@@ -54,7 +54,7 @@ export default function Dashboard() {
         </Card>
         <Card asChild>
           <Link href="/dashboard/research">
-            <CardHeader className="pb-2">
+            <CardHeader>
               <CardDescription>New Research</CardDescription>
               <CardTitle className="text-lg flex items-center gap-2 font-headline">
                 <Search className="w-5 h-5 text-primary" />
@@ -70,7 +70,7 @@ export default function Dashboard() {
         </Card>
         <Card asChild>
           <Link href="/dashboard/blueprint">
-            <CardHeader className="pb-2">
+            <CardHeader>
               <CardDescription>New Blueprint</CardDescription>
               <CardTitle className="text-lg flex items-center gap-2 font-headline">
                 <FileText className="w-5 h-5 text-primary" />
