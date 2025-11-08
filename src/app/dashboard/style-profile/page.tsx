@@ -219,39 +219,41 @@ export default function StyleProfilePage() {
             ) : savedProfiles && savedProfiles.length > 0 ? (
                 <Accordion type="single" collapsible className="w-full space-y-2">
                     {savedProfiles.map(profile => (
-                        <Card key={profile.id} className='p-2'>
-                        <div className="flex items-center justify-between">
-                            <AccordionTrigger className="w-full text-left font-medium p-4 hover:no-underline">
-                                {profile.name}
-                            </AccordionTrigger>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" disabled={deleting === profile.id} className='mr-2'>
-                                        {deleting === profile.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This action cannot be undone. This will permanently delete this style profile.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDelete(profile.id)}>
-                                            Continue
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                        <AccordionContent className="p-4 pt-0">
-                            <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap border-t pt-4">
-                                {profile.styleAnalysis}
-                            </div>
-                        </AccordionContent>
-                        </Card>
+                        <AccordionItem value={profile.id} key={profile.id} asChild>
+                            <Card>
+                                <div className="flex items-center justify-between p-2">
+                                    <AccordionTrigger className="w-full text-left font-medium p-2 hover:no-underline">
+                                        {profile.name}
+                                    </AccordionTrigger>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" disabled={deleting === profile.id} className='mr-2 flex-shrink-0'>
+                                                {deleting === profile.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This action cannot be undone. This will permanently delete this style profile.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(profile.id)}>
+                                                    Continue
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                                <AccordionContent className="p-4 pt-0">
+                                    <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap border-t pt-4">
+                                        {profile.styleAnalysis}
+                                    </div>
+                                </AccordionContent>
+                            </Card>
+                        </AccordionItem>
                     ))}
                 </Accordion>
             ) : (

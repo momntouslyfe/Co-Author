@@ -77,63 +77,69 @@ export default function SavedResearchPage() {
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 </div>
             ) : researchProfiles && researchProfiles.length > 0 ? (
-                <div className="space-y-4">
+                <Accordion type="single" collapsible className="w-full space-y-4">
                     {researchProfiles.map(profile => (
-                        <Card key={profile.id}>
-                            <CardHeader className="flex flex-row items-start justify-between">
-                                <div>
-                                    <CardTitle className="font-headline">{profile.topic}</CardTitle>
-                                    <CardDescription>
-                                        Language: {profile.language} {profile.targetMarket && `| Target Market: ${profile.targetMarket}`}
-                                    </CardDescription>
+                        <AccordionItem value={profile.id} key={profile.id} asChild>
+                            <Card>
+                                <div className="flex flex-row items-center justify-between p-2">
+                                    <AccordionTrigger className="w-full text-left p-2 hover:no-underline">
+                                        <div>
+                                            <p className="font-headline font-semibold">{profile.topic}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Language: {profile.language} {profile.targetMarket && `| Target Market: ${profile.targetMarket}`}
+                                            </p>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" disabled={isDeleting === profile.id} className="flex-shrink-0 mr-2">
+                                                {isDeleting === profile.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This action cannot be undone. This will permanently delete this research profile.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(profile.id)}>
+                                                    Continue
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </div>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" disabled={isDeleting === profile.id}>
-                                            {isDeleting === profile.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                This action cannot be undone. This will permanently delete this research profile.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDelete(profile.id)}>
-                                                Continue
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </CardHeader>
-                            <CardContent>
-                                <Accordion type="single" collapsible className="w-full">
-                                    <AccordionItem value="item-1">
-                                        <AccordionTrigger>Target Audience Suggestion</AccordionTrigger>
-                                        <AccordionContent className="prose prose-sm max-w-none dark:prose-invert">
-                                            {profile.targetAudienceSuggestion}
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                    <AccordionItem value="item-2">
-                                        <AccordionTrigger>Pain Point Analysis</AccordionTrigger>
-                                        <AccordionContent className="prose prose-sm max-w-none dark:prose-invert">
-                                            {profile.painPointAnalysis}
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                    <AccordionItem value="item-3">
-                                        <AccordionTrigger>Deep Topic Research</AccordionTrigger>
-                                        <AccordionContent className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
-                                            {profile.deepTopicResearch}
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                </Accordion>
-                            </CardContent>
-                        </Card>
+                                <AccordionContent className="p-4 pt-0">
+                                    <div className="border-t pt-4 mt-2">
+                                        <Accordion type="single" collapsible className="w-full">
+                                            <AccordionItem value="item-1">
+                                                <AccordionTrigger>Target Audience Suggestion</AccordionTrigger>
+                                                <AccordionContent className="prose prose-sm max-w-none dark:prose-invert">
+                                                    {profile.targetAudienceSuggestion}
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                            <AccordionItem value="item-2">
+                                                <AccordionTrigger>Pain Point Analysis</AccordionTrigger>
+                                                <AccordionContent className="prose prose-sm max-w-none dark:prose-invert">
+                                                    {profile.painPointAnalysis}
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                            <AccordionItem value="item-3">
+                                                <AccordionTrigger>Deep Topic Research</AccordionTrigger>
+                                                <AccordionContent className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
+                                                    {profile.deepTopicResearch}
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        </Accordion>
+                                    </div>
+                                </AccordionContent>
+                            </Card>
+                        </AccordionItem>
                     ))}
-                </div>
+                </Accordion>
             ) : (
                 <Card className="flex flex-col items-center justify-center p-12 text-center">
                     <CardHeader>
