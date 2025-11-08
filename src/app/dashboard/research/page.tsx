@@ -18,8 +18,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { researchBookTopic } from '@/ai/flows/research-book-topic';
 import type { ResearchBookTopicOutput } from '@/ai/flows/research-book-topic';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Save, Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuthUser } from '@/firebase/auth/use-user';
+import { useFirestore } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
   topic: z.string().min(3, 'Topic must be at least 3 characters.'),
@@ -41,7 +44,11 @@ const languages = [
 export default function ResearchPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<ResearchBookTopicOutput | null>(null);
+  const [currentValues, setCurrentValues] = useState<FormValues | null>(null);
+  const { user } = useAuthUser();
+  const firestore = useFirestore();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -54,6 +61,7 @@ export default function ResearchPage() {
   async function onSubmit(values: FormValues) {
     setLoading(true);
     setResult(null);
+    setCurrentValues(values);
     try {
       const researchData = await researchBookTopic(values);
       setResult(researchData);
@@ -66,6 +74,31 @@ export default function ResearchPage() {
       });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSaveResearch() {
+    if (!result || !currentValues || !user) {
+      toast({ title: 'Cannot save', description: 'No research data or user session available.', variant: 'destructive'});
+      return;
+    }
+    setSaving(true);
+    try {
+      const researchProfileCollection = collection(firestore, 'users', user.uid, 'researchProfiles');
+      await addDoc(researchProfileCollection, {
+        userId: user.uid,
+        topic: currentValues.topic,
+        language: currentValues.language,
+        targetMarket: currentValues.targetMarket || '',
+        ...result,
+        createdAt: serverTimestamp(),
+      });
+      toast({ title: 'Success', description: 'Research profile saved successfully.' });
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Error Saving', description: 'Could not save the research profile.', variant: 'destructive'});
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -159,6 +192,12 @@ export default function ResearchPage() {
 
       {result && (
         <div className="space-y-6">
+            <div className="flex justify-end">
+              <Button onClick={handleSaveResearch} disabled={saving}>
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Save Research
+              </Button>
+            </div>
             <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-1">
                     <CardHeader>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -21,6 +21,10 @@ import { useToast } from '@/hooks/use-toast';
 import { generateBookBlueprint } from '@/ai/flows/generate-book-blueprint';
 import type { GenerateBookBlueprintOutput } from '@/ai/flows/generate-book-blueprint';
 import { Bot, Loader2 } from 'lucide-react';
+import { useAuthUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import type { ResearchProfile } from '@/lib/definitions';
+import { collection } from 'firebase/firestore';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   topic: z.string().min(5, 'Topic must be at least 5 characters.'),
@@ -35,6 +39,15 @@ export default function BlueprintPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerateBookBlueprintOutput | null>(null);
+  const { user } = useAuthUser();
+  const firestore = useFirestore();
+
+  const researchProfilesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'users', user.uid, 'researchProfiles');
+  }, [user, firestore]);
+
+  const { data: researchProfiles } = useCollection<ResearchProfile>(researchProfilesQuery);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -68,15 +81,38 @@ export default function BlueprintPage() {
     }
   }
 
+  const handleProfileSelect = (profileId: string) => {
+    const profile = researchProfiles?.find(p => p.id === profileId);
+    if (profile) {
+      form.setValue('topic', profile.topic);
+      form.setValue('targetAudience', profile.targetAudienceSuggestion);
+      form.setValue('marketAnalysis', `PAIN POINTS:\n${profile.painPointAnalysis}\n\nDEEP RESEARCH:\n${profile.deepTopicResearch}`);
+    }
+  };
+
+
   return (
     <div className="grid md:grid-cols-2 gap-8">
       <div className="space-y-6">
         <header>
             <h1 className="text-3xl font-bold font-headline tracking-tighter">AI Blueprint Generator</h1>
             <p className="text-muted-foreground">
-            Generate a detailed book outline based on your ideas.
+            Generate a detailed book outline based on your ideas or a saved research profile.
             </p>
         </header>
+        
+        {researchProfiles && researchProfiles.length > 0 && (
+          <Select onValueChange={handleProfileSelect}>
+            <SelectTrigger>
+              <SelectValue placeholder="Or select a saved research profile..." />
+            </SelectTrigger>
+            <SelectContent>
+              {researchProfiles.map(profile => (
+                <SelectItem key={profile.id} value={profile.id}>{profile.topic}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -115,7 +151,7 @@ export default function BlueprintPage() {
                 <FormItem>
                   <FormLabel>Market Analysis (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="e.g., Similar books, unique selling points..." {...field} />
+                    <Textarea placeholder="e.g., Similar books, unique selling points..." {...field} rows={5} />
                   </FormControl>
                   <FormDescription>Any research on competing books or market gaps.</FormDescription>
                   <FormMessage />

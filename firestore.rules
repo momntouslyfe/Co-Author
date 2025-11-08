@@ -17,8 +17,16 @@ service cloud.firestore {
      * @principle No security is enforced due to lack of authentication.
      */
     match /users/{userId} {
-      allow get, list: if true;
-      allow create, update, delete: if true;
+      allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+
+      /**
+       * @description A user can manage their own research profiles.
+       * @path /users/{userId}/researchProfiles/{researchProfileId}
+       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
+       */
+      match /researchProfiles/{researchProfileId} {
+        allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     /**

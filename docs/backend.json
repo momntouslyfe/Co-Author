@@ -102,6 +102,50 @@
         "authorId",
         "publicationDate"
       ]
+    },
+    "ResearchProfile": {
+      "title": "Research Profile",
+      "type": "object",
+      "description": "Stores a user's saved AI topic research.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "targetMarket": {
+          "type": "string"
+        },
+        "deepTopicResearch": {
+          "type": "string"
+        },
+        "painPointAnalysis": {
+          "type": "string"
+        },
+        "targetAudienceSuggestion": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "topic",
+        "language",
+        "deepTopicResearch",
+        "painPointAnalysis",
+        "targetAudienceSuggestion",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -160,6 +204,26 @@
             {
               "name": "blogId",
               "description": "Unique identifier for the blog post."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/researchProfiles/{researchProfileId}",
+        "definition": {
+          "entityName": "ResearchProfile",
+          "schema": {
+            "$ref": "#/backend/entities/ResearchProfile"
+          },
+          "description": "Stores user-specific research profiles.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The user's ID."
+            },
+            {
+              "name": "researchProfileId",
+              "description": "Unique identifier for the research profile."
             }
           ]
         }

@@ -20,3 +20,15 @@ export type Project = {
   status: 'Draft' | 'In Progress' | 'Completed';
   lastUpdated: string;
 };
+
+export type ResearchProfile = {
+  id: string;
+  userId: string;
+  topic: string;
+  language: string;
+  targetMarket?: string;
+  deepTopicResearch: string;
+  painPointAnalysis: string;
+  targetAudienceSuggestion: string;
+  createdAt: string;
+};
