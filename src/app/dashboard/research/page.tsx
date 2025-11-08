@@ -45,7 +45,7 @@ export default function ResearchPage() {
     try {
       const researchData = await researchBookTopic(values);
       setResult(researchData);
-    } catch (error)_ {
+    } catch (error) {
       console.error(error);
       toast({
         title: 'Error during research',
