@@ -1,20 +1,35 @@
 'use client';
 
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { collection, deleteDoc, doc } from "firebase/firestore";
 import type { ResearchProfile } from "@/lib/definitions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import {
     Accordion,
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
   } from "@/components/ui/accordion"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export default function SavedResearchPage() {
     const { user, isUserLoading } = useAuthUser();
     const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
     const researchProfilesQuery = useMemoFirebase(() => {
         if (!user) return null;
@@ -24,6 +39,28 @@ export default function SavedResearchPage() {
     const { data: researchProfiles, isLoading: profilesLoading } = useCollection<ResearchProfile>(researchProfilesQuery);
 
     const isLoading = isUserLoading || profilesLoading;
+
+    const handleDelete = async (profileId: string) => {
+        if (!user) return;
+        setIsDeleting(profileId);
+        try {
+            const profileDocRef = doc(firestore, 'users', user.uid, 'researchProfiles', profileId);
+            await deleteDoc(profileDocRef);
+            toast({
+                title: "Profile Deleted",
+                description: "The research profile has been successfully deleted.",
+            });
+        } catch (error) {
+            console.error("Error deleting research profile: ", error);
+            toast({
+                title: "Error",
+                description: "Failed to delete the research profile. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsDeleting(null);
+        }
+    }
 
     return (
         <div className="space-y-6">
@@ -42,11 +79,34 @@ export default function SavedResearchPage() {
                 <div className="space-y-4">
                     {researchProfiles.map(profile => (
                         <Card key={profile.id}>
-                            <CardHeader>
-                                <CardTitle className="font-headline">{profile.topic}</CardTitle>
-                                <CardDescription>
-                                    Language: {profile.language} {profile.targetMarket && `| Target Market: ${profile.targetMarket}`}
-                                </CardDescription>
+                            <CardHeader className="flex flex-row items-start justify-between">
+                                <div>
+                                    <CardTitle className="font-headline">{profile.topic}</CardTitle>
+                                    <CardDescription>
+                                        Language: {profile.language} {profile.targetMarket && `| Target Market: ${profile.targetMarket}`}
+                                    </CardDescription>
+                                </div>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" disabled={isDeleting === profile.id}>
+                                            {isDeleting === profile.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete this research profile.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDelete(profile.id)}>
+                                                Continue
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </CardHeader>
                             <CardContent>
                                 <Accordion type="single" collapsible className="w-full">
