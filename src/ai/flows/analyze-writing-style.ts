@@ -36,17 +36,30 @@ const prompt = ai.definePrompt({
 
   File: {{media url=fileDataUri}}
 
-  After extracting the text, analyze the writing style and provide a detailed analysis in a well-structured listicle format. For each point, provide a clear heading and explanation.
+  After extracting the text, analyze the writing style and provide a detailed analysis in a well-structured listicle format.
+  
+  **IMPORTANT FORMATTING RULES:**
+  - For each point in the listicle, provide a clear heading and explanation.
+  - Ensure there is a blank line (a double newline) between each numbered list item to add space and improve readability.
+  - Keep paragraphs within each section concise. If a point requires a longer explanation, break it into smaller paragraphs with a blank line between them.
+
+  Here are the specifications for your analysis:
 
   1.  **Tone & Mood:** Analyze the overall feeling (e.g., Formal, Informal, Humorous, Serious, Optimistic).
+
   2.  **Voice:** Describe the narrator's personality and perspective (e.g., First-person, Third-person omniscient).
+
   3.  **Sentence Structure & Rhythm:** Examine the sentence complexity and flow (e.g., Short and punchy, Long and flowing).
+
   4.  **Vocabulary & Diction:** Assess the word choice (e.g., Simple, Advanced, Technical, Figurative).
+
   5.  **Pacing:** Describe the flow of information (e.g., Fast, Slow, Deliberate).
+
   6.  **Code-Mixing Analysis:** Identify and analyze the use of mixed-language phrases (e.g., 'ইমোশনাল ব্ল্যাক হোল', 'ইনফিরিটি কমপ্লেক্স', 'কগনিটিভ বিহেভিয়ারল থেরাপি'). Comment on its frequency and purpose.
+
   7.  **Overall Summary:** Conclude with a brief summary of the author's unique stylistic signature.
 
-  Return only the detailed analysis as a well-formatted listicle.`,
+  Return only the detailed analysis, following all formatting rules.`,
 });
 
 const analyzeWritingStyleFlow = ai.defineFlow(
