@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { setAdmin } from '@/ai/flows/set-admin';
 
+// Force this page to use the Node.js runtime, required for firebase-admin
+export const runtime = 'nodejs';
 
 const formSchema = z.object({
     email: z.string().email('Please enter a valid email address.'),

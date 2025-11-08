@@ -13,10 +13,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import * as admin from 'firebase-admin';
 
-// Force this flow to run on the Node.js runtime.
-export const runtime = 'nodejs';
-
-
 const SetAdminInputSchema = z.object({
   email: z.string().email().describe('The email address of the user to make an admin.'),
 });
