@@ -22,9 +22,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, Loader2, Save, Trash2 } from 'lucide-react';
+import { Bot, Loader2, Save, Trash2, Upload } from 'lucide-react';
 import { analyzeWritingStyle } from '@/ai/flows/analyze-writing-style';
 import type { StyleProfile } from '@/lib/definitions';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -46,6 +45,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
+import { cn } from '@/lib/utils';
 
 
 const formSchema = z.object({
@@ -62,6 +62,8 @@ export default function StyleProfilePage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [currentProfileName, setCurrentProfileName] = useState<string>("");
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const { user } = useAuthUser();
   const firestore = useFirestore();
@@ -80,6 +82,46 @@ export default function StyleProfilePage() {
   }, [user, firestore]);
 
   const { data: savedProfiles, isLoading: profilesLoading } = useCollection<StyleProfile>(styleProfilesQuery);
+  
+  const handleFile = (file: File | null) => {
+    if (!file) return;
+
+    if (file.type !== 'text/plain') {
+        toast({
+            title: "Invalid File Type",
+            description: "Please upload a .txt file.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target?.result as string;
+        form.setValue('writingSample', text);
+        setFileName(file.name);
+    };
+    reader.readAsText(file);
+  }
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setIsDragging(true);
+    } else if (e.type === "dragleave") {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
@@ -122,6 +164,7 @@ export default function StyleProfilePage() {
         toast({ title: 'Success', description: 'Style profile saved successfully.' });
         setAnalysisResult(null);
         setCurrentProfileName("");
+        setFileName(null);
         form.reset();
     } catch (error) {
         console.error("Error saving style profile:", error);
@@ -221,7 +264,7 @@ export default function StyleProfilePage() {
         <CardHeader>
           <CardTitle>Create a New Style Profile</CardTitle>
           <CardDescription>
-            Provide a sample of your writing (at least 100 characters), and the AI will analyze it.
+            Provide a sample of your writing by uploading a .txt file.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -234,7 +277,7 @@ export default function StyleProfilePage() {
                   <FormItem>
                     <FormLabel>Profile Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 'My Fictional Voice'" {...field} />
+                      <Input placeholder="e.g., 'Conversational Blog Post Style'" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -245,17 +288,33 @@ export default function StyleProfilePage() {
                 name="writingSample"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Writing Sample</FormLabel>
+                    <FormLabel>Upload Writing Sample (.txt)</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Paste a sample of your writing here..."
-                        {...field}
-                        rows={10}
-                      />
+                      <div 
+                        onDragEnter={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDragOver={handleDrag}
+                        onDrop={handleDrop}
+                        className={cn(
+                          "relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-secondary/50 hover:bg-secondary/80",
+                          isDragging && "border-primary bg-primary/10"
+                        )}>
+                          <input 
+                            type="file" 
+                            accept=".txt"
+                            className="absolute w-full h-full opacity-0 cursor-pointer"
+                            onChange={(e) => handleFile(e.target.files?.[0] || null)}
+                          />
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                            <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                            <p className="mb-2 text-sm text-muted-foreground">
+                              <span className="font-semibold">Click to upload</span> or drag and drop
+                            </p>
+                            <p className="text-xs text-muted-foreground">Plain text (.txt only)</p>
+                          </div>
+                          {fileName && <p className="text-xs text-primary absolute bottom-4">{fileName}</p>}
+                      </div>
                     </FormControl>
-                    <FormDescription>
-                      The more text you provide, the more accurate the analysis will be.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
