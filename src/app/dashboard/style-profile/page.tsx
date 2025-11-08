@@ -42,7 +42,6 @@ import {
 import {
     Accordion,
     AccordionContent,
-    AccordionHeader,
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
@@ -220,9 +219,9 @@ export default function StyleProfilePage() {
             ) : savedProfiles && savedProfiles.length > 0 ? (
                 <Accordion type="single" collapsible className="w-full space-y-2">
                     {savedProfiles.map(profile => (
-                        <AccordionItem value={profile.id} key={profile.id} asChild>
-                             <Card>
-                                <AccordionHeader className="flex flex-row items-center justify-between p-2">
+                        <Card key={profile.id}>
+                            <AccordionItem value={profile.id} className="border-b-0">
+                                <div className="flex flex-row items-center justify-between p-2">
                                     <AccordionTrigger className="w-full text-left font-medium p-2 hover:no-underline">
                                         {profile.name}
                                     </AccordionTrigger>
@@ -247,14 +246,14 @@ export default function StyleProfilePage() {
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
-                                </AccordionHeader>
+                                </div>
                                 <AccordionContent className="p-4 pt-0">
                                     <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap border-t pt-4">
                                         {profile.styleAnalysis}
                                     </div>
                                 </AccordionContent>
-                            </Card>
-                        </AccordionItem>
+                            </AccordionItem>
+                        </Card>
                     ))}
                 </Accordion>
             ) : (

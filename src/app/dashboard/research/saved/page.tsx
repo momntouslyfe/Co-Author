@@ -79,8 +79,8 @@ export default function SavedResearchPage() {
             ) : researchProfiles && researchProfiles.length > 0 ? (
                 <Accordion type="single" collapsible className="w-full space-y-4">
                     {researchProfiles.map(profile => (
-                        <AccordionItem value={profile.id} key={profile.id} asChild>
-                            <Card>
+                        <Card key={profile.id}>
+                            <AccordionItem value={profile.id} className="border-b-0">
                                 <div className="flex flex-row items-center justify-between p-2">
                                     <AccordionTrigger className="w-full text-left p-2 hover:no-underline">
                                         <div>
@@ -136,8 +136,8 @@ export default function SavedResearchPage() {
                                         </Accordion>
                                     </div>
                                 </AccordionContent>
-                            </Card>
-                        </AccordionItem>
+                            </AccordionItem>
+                        </Card>
                     ))}
                 </Accordion>
             ) : (
