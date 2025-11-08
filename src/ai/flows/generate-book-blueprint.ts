@@ -39,7 +39,7 @@ const prompt = ai.definePrompt({
   name: 'generateBookBlueprintPrompt',
   input: {schema: GenerateBookBlueprintInputSchema},
   output: {schema: GenerateBookBlueprintOutputSchema},
-  prompt: `You are an expert book outline generator. Your task is to create a concise, structural book outline based on the user's inputs.
+  prompt: `You are an expert book outline generator. Your task is to create a detailed but concise, structural book outline based on the user's inputs.
 
 **Contextual Information:**
 Core Idea: {{{topic}}}
@@ -59,26 +59,40 @@ Use this style profile to influence the tone of the chapter titles and descripti
 {{/if}}
 
 **CRITICAL INSTRUCTIONS:**
-1.  **Be an Outliner, Not a Writer:** Your job is to create the skeleton of the book, not to write the content. The output should be a structural outline only.
-2.  **Concise Descriptions:** Each chapter should have a title and a very brief, one-sentence description. Do not elaborate or provide detailed summaries.
-3.  **Strict Formatting:**
-    *   Use indentation and bullet points (hyphens or asterisks) to create a clear hierarchy (e.g., Parts, Chapters).
-    *   Do NOT number the sub-points (e.g., 1.1, 1.2).
+1.  **Structure Requirements:**
+    *   The outline must contain **13 to 15 chapters**.
+    *   Each chapter must contain **4 to 6 sub-topics**.
+
+2.  **Be an Outliner, Not a Writer:** Your job is to create the skeleton of the book. The output must be a structural outline only.
+
+3.  **Concise Descriptions:**
+    *   Each chapter title should be followed by a very brief, one-sentence description.
+    *   Each sub-topic should be a short phrase or a question, without a description.
+
+4.  **Strict Formatting:**
+    *   Use indentation and bullet points (hyphens or asterisks) to create a clear hierarchy (e.g., Parts, Chapters, sub-topics).
+    *   Do NOT number the sub-topics (e.g., 1.1, 1.2).
     *   The final output should be ONLY the formatted outline and nothing else.
 
 **Example Structure:**
 
 Part 1: The Call to Adventure
   - Chapter 1: The Ordinary World
-    - Introduction to the hero and their normal life.
+    - A brief, one-sentence description of the chapter's focus.
+    - Sub-topic one
+    - Sub-topic two
+    - Sub-topic three
+    - Sub-topic four
+
   - Chapter 2: The Inciting Incident
-    - The single event that disrupts the hero's world.
+    - A brief, one-sentence description of the chapter's focus.
+    - Sub-topic one
+    - Sub-topic two
+    - Sub-topic three
+    - Sub-topic four
+    - Sub-topic five
 
-Part 2: The Road of Trials
-  - Chapter 3: Crossing the Threshold
-    - The hero commits to the journey ahead.
-
-Return only the formatted, concise outline.`,
+Return only the formatted, concise outline, following all rules precisely.`,
 });
 
 const generateBookBlueprintFlow = ai.defineFlow(
