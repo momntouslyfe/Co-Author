@@ -115,12 +115,13 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
                 
                  // Render titles with specific styling
                 if (title === 'Your Action Step' || title === 'Coming Up Next') {
-                    return <h3 key={`title-${index}`} className="text-xl font-bold font-headline mt-10 mb-6">{title}</h3>;
+                    return <h3 key={`title-${index}`} className="text-lg font-bold font-headline mt-8 mb-4">{title}</h3>;
                 }
-                if (index === 0) {
-                     return <h2 key={`title-${index}`} className="font-headline text-3xl mt-10 mb-6 font-bold">{title}</h2>;
+                if (index === 0) { // Main chapter title
+                     return <h2 key={`title-${index}`} className="font-headline text-2xl mt-8 mb-4 font-bold">{title}</h2>;
                 }
-                return <h3 key={`title-${index}`} className="text-2xl font-bold font-headline mt-10 mb-6">{title}</h3>;
+                // Sub-topic titles
+                return <h3 key={`title-${index}`} className="text-xl font-bold font-headline mt-8 mb-4">{title}</h3>;
 
             } else if (trimmedSection !== '') {
                 return (
