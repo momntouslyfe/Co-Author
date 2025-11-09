@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -164,28 +165,19 @@ export default function CoAuthorWorkspacePage() {
     }
   }
 
-  // If there's an error (like permission denied), show an error message.
-  if (error) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Card>
-          <CardHeader>
-            <CardTitle>Error</CardTitle>
-            <CardDescription>Could not load project. Please check permissions or try again later.</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
   // Show a loading screen while the project document is being fetched.
-  // This is the key fix: we wait until `project` is available.
-  if (isProjectLoading || !project) {
+  if (isProjectLoading) {
     return (
         <div className="flex h-screen items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
+  }
+
+  // If loading is done and there's no project, show a 404.
+  // This prevents showing 404 for a moment while data is loading for a valid project.
+  if (!project) {
+    return notFound();
   }
   
   // Determine which view to show
@@ -412,12 +404,15 @@ export default function CoAuthorWorkspacePage() {
                 </CardTitle>
                 <CardDescription>Your book's structure is locked in. You can now proceed to title generation and chapter writing.</CardDescription>
                 </div>
-                <Button onClick={() => {
-                  setSelectedOutline(project.outline || '');
-                  setIsEditing(true);
-                }}>
-                    Edit Blueprint
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => {
+                        setSelectedOutline(project.outline || '');
+                        setIsEditing(true);
+                    }}>
+                        Edit Blueprint
+                    </Button>
+                     <Button>Next: Generate Titles</Button>
+                </div>
             </CardHeader>
             <CardContent className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
               <p>{project.outline}</p>
@@ -441,5 +436,3 @@ function BlueprintDisplay({ outline, onSelect }: { outline: string, onSelect: ()
         </div>
     )
 }
-
-    
