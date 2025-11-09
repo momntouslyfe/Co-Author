@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -96,8 +96,7 @@ export default function CoAuthorWorkspacePage() {
     },
   });
   
-  // When project data loads, set the form default for the topic
-  useState(() => {
+  useEffect(() => {
     if (project?.description) {
       form.reset({ topic: project.description });
     }
@@ -173,24 +172,8 @@ export default function CoAuthorWorkspacePage() {
     );
   }
 
-  if (!isProjectLoading && !project) {
-    return notFound();
-  }
-  
-  // This check is now safe because isProjectLoading is false
   if (!project) {
-    // This case should ideally not be reached if the above notFound() is triggered,
-    // but it's a good safeguard.
-    return (
-        <div className="flex h-screen items-center justify-center">
-             <Card>
-                <CardHeader>
-                    <CardTitle>Project Not Found</CardTitle>
-                    <CardDescription>The project you are looking for does not exist or you do not have permission to view it.</CardDescription>
-                </CardHeader>
-            </Card>
-        </div>
-    );
+    return notFound();
   }
   
   // Determine which view to show
@@ -399,7 +382,7 @@ export default function CoAuthorWorkspacePage() {
             </CardHeader>
             <CardContent>
                 <Textarea
-                    value={selectedOutline || project.outline}
+                    value={selectedOutline || project.outline || ''}
                     onChange={(e) => setSelectedOutline(e.target.value)}
                     className="h-[60vh] font-mono text-sm"
                 />
