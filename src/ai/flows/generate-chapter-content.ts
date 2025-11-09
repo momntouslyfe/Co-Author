@@ -4,9 +4,9 @@
 /**
  * @fileOverview This file defines a Genkit flow for generating the content of a book chapter.
  *
- * This flow now uses an iterative, code-driven approach. It orchestrates multiple, smaller
- * AI calls—one for each sub-topic—to ensure a complete and well-structured chapter is
- * generated reliably every time.
+ * This flow now uses a single, robust prompt to generate the entire chapter content
+ * in one API call. This approach is more efficient and avoids rate-limiting issues
+ * by instructing the AI to handle the full structure internally.
  *
  * @exported generateChapterContent - A function that generates the chapter content.
  * @exported GenerateChapterContentInput - The input type for the function.
@@ -34,124 +34,56 @@ const GenerateChapterContentOutputSchema = z.object({
 });
 export type GenerateChapterContentOutput = z.infer<typeof GenerateChapterContentOutputSchema>;
 
-// Define a new, focused prompt for writing a single section
-const writeSectionPrompt = ai.definePrompt(
-  {
-    name: 'writeChapterSectionPrompt',
-    input: {
-      schema: z.object({
-        bookLanguage: z.string(),
-        chapterTitle: z.string(),
-        subTopic: z.string(),
-        fullOutline: z.string(),
-        storytellingFramework: z.string().optional(),
-        researchProfile: z.string().optional(),
-        styleProfile: z.string().optional(),
-      }),
-    },
-    output: {
-      schema: z.object({
-        sectionContent: z.string(),
-      }),
-    },
-    prompt: `You are an expert ghostwriter. Your current task is to write a comprehensive section for a single sub-topic within a book chapter.
+
+const generateFullChapterPrompt = ai.definePrompt({
+    name: 'generateFullChapterPrompt',
+    input: { schema: GenerateChapterContentInputSchema },
+    output: { schema: GenerateChapterContentOutputSchema },
+    prompt: `You are an expert ghostwriter tasked with writing a complete book chapter in {{{bookLanguage}}}.
 
 **CONTEXT:**
-- Language: {{{bookLanguage}}}
-- Chapter: {{{chapterTitle}}}
+- Book Title: {{{bookTitle}}}
+- Book Topic: {{{bookTopic}}}
 - Full Book Outline: {{{fullOutline}}}
+- Chapter to Write: {{{chapterTitle}}}
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
-
-**YOUR TASK: Write content for this sub-topic:**
-"{{{subTopic}}}"
-
-**CRITICAL INSTRUCTIONS:**
-1.  **Word Count:** Write AT LEAST 400-600 words for this section.
-2.  **Human-Like Writing:**
-    *   **Varied Paragraphs:** Use short paragraphs (3-5 sentences) but VARY their length to create a natural rhythm. Mix short, punchy paragraphs with slightly longer ones.
-    *   **Clarity:** Ensure there's a double newline between every paragraph.
-    *   **No Filler:** Write with impact and clarity.
-3.  **Stay Focused:** All content must be directly related to the sub-topic "{{{subTopic}}}".
 {{#if styleProfile}}
-4.  **Adhere to Style:** You MUST adopt the following writing style:
-    ---
-    {{{styleProfile}}}
-    ---
+- **Writing Style Profile (CRITICAL):**
+  ---
+  {{{styleProfile}}}
+  ---
 {{/if}}
 {{#if researchProfile}}
-5.  **Use Research:** Tailor the content to the audience's pain points and interests based on this research:
-    ---
-    {{{researchProfile}}}
-    ---
+- **Audience Research Profile (CRITICAL):**
+  ---
+  {{{researchProfile}}}
+  ---
 {{/if}}
 
-Return ONLY the written content for this section. Do not add titles or headings.`,
-  }
-);
+**YOUR TASK:**
+Write the entire chapter content from start to finish, following the structure and instructions below precisely.
 
+**CRITICAL STRUCTURE & FORMATTING RULES:**
+1.  **Chapter Title:** Start with the chapter title, enclosed in double dollar signs. Example: \`$$My Chapter Title$$\`
+2.  **Introduction:** After the title, write a short, engaging introduction (2-3 sentences) for the chapter.
+3.  **Sub-Topic Sections:**
+    *   For EACH sub-topic in the list below, you MUST create a section.
+    *   Start each section with the sub-topic title enclosed in double dollar signs. Example: \`$$My Sub-Topic Title$$\`
+    *   Write AT LEAST 400-600 words of comprehensive content for that sub-topic.
+    *   All content must be directly related to its sub-topic.
+4.  **Action Step:** After all sub-topic sections, create a section titled \`$$Your Action Step$$\`. Write a single, practical action step (2-3 sentences) for the reader.
+5.  **Teaser:** After the action step, create a section titled \`$$Coming Up Next$$\`. Write a compelling 1-2 sentence teaser for the next chapter in the outline.
+6.  **Paragraphs & Spacing:**
+    *   Use short, human-like paragraphs (3-5 sentences), but VARY their length for rhythm.
+    *   Crucially, there MUST be a double newline (a blank line) between every paragraph and between every \`$$...$$\` section.
 
-const writeIntroPrompt = ai.definePrompt({
-    name: 'writeChapterIntroPrompt',
-    input: {
-        schema: z.object({
-            bookLanguage: z.string(),
-            chapterTitle: z.string(),
-            fullOutline: z.string(),
-        })
-    },
-    output: {
-        schema: z.object({
-            intro: z.string(),
-        })
-    },
-    prompt: `You are a ghostwriter. Write a short, engaging introduction (2-3 sentences) in {{{bookLanguage}}} for a book chapter titled "{{{chapterTitle}}}".
+**SUB-TOPICS TO COVER:**
+{{#each subTopics}}
+- {{{this}}}
+{{/each}}
 
-Book Outline for Context:
-{{{fullOutline}}}
-`
-});
-
-
-const writeActionStepPrompt = ai.definePrompt({
-    name: 'writeChapterActionStepPrompt',
-    input: {
-        schema: z.object({
-            bookLanguage: z.string(),
-            chapterContent: z.string(),
-        })
-    },
-    output: {
-        schema: z.object({
-            actionStep: z.string(),
-        })
-    },
-    prompt: `You are a writing coach. Based on the following chapter content, write a single, practical, and engaging action step (2-3 sentences) for the reader in {{{bookLanguage}}}. The action step should encourage them to apply what they've learned.
-
-Chapter Content:
-{{{chapterContent}}}
-`
-});
-
-
-const writeTeaserPrompt = ai.definePrompt({
-    name: 'writeChapterTeaserPrompt',
-    input: {
-        schema: z.object({
-            bookLanguage: z.string(),
-            fullOutline: z.string(),
-            currentChapterTitle: z.string(),
-        })
-    },
-    output: {
-        schema: z.object({
-            teaser: z.string(),
-        })
-    },
-    prompt: `You are a copywriter. Based on the provided book outline, write a compelling 1-2 sentence teaser for the chapter that comes *after* "{{{currentChapterTitle}}}". The language should be {{{bookLanguage}}}.
-
-Book Outline:
-{{{fullOutline}}}
-`
+Proceed to write the full chapter now, following all instructions.
+`,
 });
 
 
@@ -159,8 +91,6 @@ export async function generateChapterContent(input: GenerateChapterContentInput)
   return generateChapterContentFlow(input);
 }
 
-// Helper function to introduce a delay
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const generateChapterContentFlow = ai.defineFlow(
   {
@@ -169,80 +99,15 @@ const generateChapterContentFlow = ai.defineFlow(
     outputSchema: GenerateChapterContentOutputSchema,
   },
   async (input) => {
-    // 1. Generate the Intro first
-    const { output: introData } = await writeIntroPrompt({
-        bookLanguage: input.bookLanguage,
-        chapterTitle: input.chapterTitle,
-        fullOutline: input.fullOutline,
-    });
-    if (!introData || !introData.intro) {
-        throw new Error("Failed to generate chapter intro.");
+    // Call the single, powerful prompt to generate everything at once.
+    const { output } = await generateFullChapterPrompt(input);
+
+    if (!output || !output.chapterContent) {
+        throw new Error("AI failed to generate the full chapter content.");
     }
-    const intro = introData.intro;
-    await sleep(1000); // Wait 1 second
-
-    // 2. Iterate over sub-topics and generate content for each sequentially
-    const sectionContents: string[] = [];
-    for (const subTopic of input.subTopics) {
-        try {
-            const { output } = await writeSectionPrompt({
-                bookLanguage: input.bookLanguage,
-                chapterTitle: input.chapterTitle,
-                subTopic: subTopic,
-                fullOutline: input.fullOutline,
-                storytellingFramework: input.storytellingFramework,
-                researchProfile: input.researchProfile,
-                styleProfile: input.styleProfile,
-            });
-
-            if (!output || !output.sectionContent) {
-                console.warn(`Warning: No content generated for sub-topic: "${subTopic}"`);
-                sectionContents.push(`$$${subTopic}$$\n\n[Content generation for this section failed. Please try again.]`);
-            } else {
-                sectionContents.push(`$$${subTopic}$$\n\n${output.sectionContent}`);
-            }
-        } catch (error) {
-            console.error(`Error generating content for sub-topic "${subTopic}":`, error);
-            sectionContents.push(`$$${subTopic}$$\n\n[Content generation for this section failed due to an error. Please try again.]`);
-        }
-        await sleep(1000); // Wait 1 second between each section
-    }
-    
-    // Combine the intro and main content to create the body
-    const chapterBody = [intro, ...sectionContents].join('\n\n');
-
-    // 3. Generate the Action Step based on the written content
-    const { output: actionStepData } = await writeActionStepPrompt({
-        bookLanguage: input.bookLanguage,
-        chapterContent: chapterBody,
-    });
-     if (!actionStepData || !actionStepData.actionStep) {
-        throw new Error("Failed to generate action step.");
-    }
-    const actionStep = actionStepData.actionStep;
-    await sleep(1000); // Wait 1 second
-
-    // 4. Generate the Teaser for the next chapter
-    const { output: teaserData } = await writeTeaserPrompt({
-        bookLanguage: input.bookLanguage,
-        fullOutline: input.fullOutline,
-        currentChapterTitle: input.chapterTitle,
-    });
-    if (!teaserData || !teaserData.teaser) {
-        throw new Error("Failed to generate teaser.");
-    }
-    const teaser = teaserData.teaser;
-
-    // 5. Assemble the full chapter content
-    const assembledContent = [
-      `$$${input.chapterTitle}$$`,
-      chapterBody,
-      `$$Your Action Step$$\n\n${actionStep}`,
-      `$$Coming Up Next$$\n\n${teaser}`,
-    ].join('\n\n');
 
     return {
-      chapterContent: assembledContent,
+      chapterContent: output.chapterContent,
     };
   }
 );
