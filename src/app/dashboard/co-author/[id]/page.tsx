@@ -437,3 +437,5 @@ function BlueprintDisplay({ outline, onSelect }: { outline: string, onSelect: ()
         </div>
     )
 }
+
+    
