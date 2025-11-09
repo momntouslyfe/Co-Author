@@ -40,7 +40,7 @@ const prompt = ai.definePrompt({
   name: 'generateChapterContentPrompt',
   input: {schema: GenerateChapterContentInputSchema},
   output: {schema: GenerateChapterContentOutputSchema},
-  prompt: `You are an expert ghostwriter tasked with writing a single, high-quality book chapter in {{{bookLanguage}}}. The chapter must be at least 2250 words.
+  prompt: `You are an expert ghostwriter tasked with writing a single, comprehensive, high-quality book chapter in {{{bookLanguage}}}.
 
 **OVERALL BOOK CONTEXT:**
 - Book Title: {{{bookTitle}}}
@@ -71,21 +71,19 @@ You MUST adhere strictly to the following writing style. Adopt its tone, voice, 
   - {{{this}}}
 {{/each}}
 
-**CRITICAL FORMATTING AND CONTENT INSTRUCTIONS:**
+**CRITICAL MANDATES: YOU MUST FOLLOW THESE RULES**
 
-1.  **Layout Structure:** You MUST follow this exact layout. Do NOT deviate.
-    *   Start with the chapter title, enclosed in double dollar signs: \`$$chapter title$$\`
-    *   Write a short, engaging introduction (2-3 sentences).
-    *   For each sub-topic, first write the sub-topic title enclosed in double dollar signs: \`$$sub-topic title$$\`
-    *   Then, write the full text for that sub-topic.
-    *   After all sub-topics are written, include a summary section starting with the exact heading: \`Your Action Step:\` (This heading should NOT have $$).
-    *   Finally, end with a teaser for the next chapter, starting with the exact heading: \`Coming Up Next:\` (This heading should NOT have $$).
-
-2.  **Human-Like Writing Mandates:**
-    *   **Paragraphs:** Use short paragraphs, typically 3-5 sentences long. Vary paragraph length for rhythm. Ensure there are clear gaps (a double newline) between paragraphs.
+1.  **HUMAN-LIKE WRITING:**
+    *   **Paragraphs:** Use short paragraphs, typically 3-5 sentences long. You MUST vary paragraph length for rhythm and readability.
+    *   **Clarity:** Ensure there are clear gaps (a double newline) between every paragraph.
     *   **No AI Filler:** Avoid generic phrases, repetition, and overly complex sentences. Write with clarity and impact.
 
-3.  **Word Count:** The total generated content for the chapter MUST be at least 2250 words.
+2.  **LAYOUT STRUCTURE:** You MUST follow this exact layout. Do NOT deviate.
+    *   **Chapter Title:** Start with the chapter title, enclosed in double dollar signs (e.g., \`$$Chapter Title$$\`).
+    *   **Introduction:** Write a short, engaging introduction (2-3 sentences).
+    *   **Sub-Topics:** For each sub-topic, first write the sub-topic title enclosed in double dollar signs (e.g., \`$$Sub-Topic Title$$\`). Then, write the full text for that sub-topic, following all the human-like writing rules.
+    *   **Action Step:** After all sub-topics, add a summary section starting with the exact heading: \`Your Action Step:\` (This heading must NOT have $$).
+    *   **Teaser:** End with a teaser for the next chapter, starting with the exact heading: \`Coming Up Next:\` (This heading must NOT have $$).
 
 **EXAMPLE OF THE REQUIRED OUTPUT FORMAT:**
 
@@ -111,7 +109,7 @@ Victory is sweet, but it attracts unwanted attention. In the next chapter, we'll
 
 ---
 
-Now, write the full chapter for '{{{chapterTitle}}}' following all instructions precisely.`,
+Now, write the full and complete chapter for '{{{chapterTitle}}}' following all instructions precisely and without fail.`,
 });
 
 
