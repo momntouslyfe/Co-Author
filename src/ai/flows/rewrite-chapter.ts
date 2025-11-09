@@ -36,7 +36,7 @@ const rewriteChapterPrompt = ai.definePrompt({
     name: 'rewriteChapterPrompt',
     input: { schema: RewriteChapterInputSchema },
     output: { schema: RewriteChapterOutputSchema },
-    prompt: `You are an expert editor and ghostwriter. Your task is to rewrite the provided book chapter in its entirety, in the specified language, using the provided context and instructions.
+    prompt: `You are an expert editor and ghostwriter. Your task is to rewrite the provided book chapter in its entirety, in the specified language, using the provided context and instructions. You MUST return the complete, rewritten chapter in a single response.
 
 **CONTEXT:**
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
@@ -49,38 +49,42 @@ const rewriteChapterPrompt = ai.definePrompt({
 
 **CRITICAL INSTRUCTIONS:**
 
-1.  **USER'S INSTRUCTION:**
+1.  **SINGLE, COMPLETE OUTPUT:** You MUST rewrite and return the entire chapter in one single operation. Do not stop prematurely. Partial responses are a failure.
+
+2.  **USER'S INSTRUCTION:**
     {{#if instruction}}
     {{{instruction}}}
     {{else}}
     Rewrite the chapter to improve clarity, flow, and impact.
     {{/if}}
 
-2.  **LANGUAGE:** You MUST write the entire response in **{{{language}}}**.
+3.  **LANGUAGE:** You MUST write the entire response in **{{{language}}}**.
 
-3.  **PRESERVE STRUCTURE:** The chapter is divided into sections with titles like \`$$Section Title$$\`. You MUST preserve these section titles and their surrounding double dollar signs exactly as they are. Rewrite the content *within* each section, but do not alter the titles or remove the \`$$\` markers.
+4.  **PRESERVE STRUCTURE:** The chapter is divided into sections with titles like \`$$Section Title$$\`. You MUST preserve these section titles and their surrounding double dollar signs exactly as they are. Rewrite the content *within* each section, but do not alter the titles or remove the \`$$\` markers.
 
-4.  **REWRITE, DON'T JUST EDIT:** Do not simply make minor edits. Substantially rewrite sentences, rephrase ideas, and improve the flow and impact of the entire chapter while preserving the original meaning and core concepts.
+5.  **REWRITE, DON'T JUST EDIT:** Do not simply make minor edits. Substantially rewrite sentences, rephrase ideas, and improve the flow and impact of the entire chapter while preserving the original meaning and core concepts.
 
-5.  **HUMAN-LIKE PARAGRAPHING:**
+6.  **HUMAN-LIKE PARAGRAPHING:**
     *   Use short paragraphs, typically 3-5 sentences long.
     *   You MUST vary paragraph length for rhythm and readability.
     *   Ensure there are clear gaps (a double newline) between every paragraph and section.
 
 {{#if styleProfile}}
-6.  **ADHERE TO WRITING STYLE:** You MUST adopt the following writing style:
+7.  **ADHERE TO WRITING STYLE:** You MUST adopt the following writing style:
     ---
     **Writing Style Profile:**
     {{{styleProfile}}}
     ---
 {{/if}}
 
-7.  **RETURN ONLY THE REWRITTEN CONTENT:** Your output should be only the rewritten chapter text. Do not add any extra commentary.
+8.  **RETURN ONLY THE REWRITTEN CONTENT:** Your output should be only the rewritten chapter text. Do not add any extra commentary or apologies.
 
 **Original Chapter Content to Rewrite:**
 \`\`\`
 {{{chapterContent}}}
 \`\`\`
+
+Proceed to rewrite the entire chapter now. You must not stop until all sections are complete.
 `,
 });
 

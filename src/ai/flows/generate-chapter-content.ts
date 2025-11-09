@@ -61,19 +61,19 @@ const generateFullChapterPrompt = ai.definePrompt({
 {{/if}}
 
 **YOUR TASK:**
-Write the entire chapter content from start to finish, following the structure and instructions below precisely.
+Write the **ENTIRE chapter content from start to finish as a single, complete block of text**. You MUST follow all instructions below precisely. Any deviation or incomplete response is a failure.
 
 **CRITICAL STRUCTURE & FORMATTING RULES:**
-1.  **Chapter Title:** Start with the chapter title, enclosed in double dollar signs. Example: \`$$My Chapter Title$$\`
-2.  **Introduction:** After the title, write a short, engaging introduction (2-3 sentences) for the chapter.
-3.  **Sub-Topic Sections:**
+1.  **Single Output:** You MUST generate the entire chapter in one single response. Do not stop. Do not output anything other than the chapter content.
+2.  **Chapter Title:** Start with the chapter title, enclosed in double dollar signs. Example: \`$$My Chapter Title$$\`
+3.  **Introduction:** After the title, write a short, engaging introduction (2-3 sentences) for the chapter.
+4.  **Sub-Topic Sections:**
     *   For EACH sub-topic in the list below, you MUST create a section.
     *   Start each section with the sub-topic title enclosed in double dollar signs. Example: \`$$My Sub-Topic Title$$\`
-    *   Write AT LEAST 400-600 words of comprehensive content for that sub-topic.
-    *   All content must be directly related to its sub-topic.
-4.  **Action Step:** After all sub-topic sections, create a section titled \`$$Your Action Step$$\`. Write a single, practical action step (2-3 sentences) for the reader.
-5.  **Teaser:** After the action step, create a section titled \`$$Coming Up Next$$\`. Based on the "Full Book Outline", identify the chapter immediately following "{{{chapterTitle}}}" and write a compelling 1-2 sentence teaser that creates anticipation for that specific next chapter's content.
-6.  **Paragraphs & Spacing:**
+    *   Write AT LEAST 400-600 words of comprehensive content for that sub-topic. All content must be directly related to its sub-topic.
+5.  **Action Step:** After all sub-topic sections, create a section titled \`$$Your Action Step$$\`. Write a single, practical action step (2-3 sentences) for the reader based on the chapter's content.
+6.  **Teaser:** After the action step, create a section titled \`$$Coming Up Next$$\`. Based on the "Full Book Outline", identify the chapter immediately following "{{{chapterTitle}}}" and write a compelling 1-2 sentence teaser that creates anticipation for that specific next chapter's content.
+7.  **Paragraphs & Spacing:**
     *   Use short, human-like paragraphs (3-5 sentences), but VARY their length for rhythm.
     *   Crucially, there MUST be a double newline (a blank line) between every paragraph and between every \`$$...$$\` section.
     *   After each \`$$...$$\` title (including Action Step and Coming Up Next), you MUST write the corresponding content on a new line after a double newline.
@@ -84,7 +84,7 @@ Write the entire chapter content from start to finish, following the structure a
 - {{{this}}}
 {{/each}}
 
-Proceed to write the full chapter now, following all instructions.
+Proceed to write the full chapter now. You must not stop until all sections are complete.
 `,
 });
 
