@@ -85,15 +85,15 @@ const rewriteChapterFlow = ai.defineFlow(
     outputSchema: RewriteChapterOutputSchema,
   },
   async ({ chapterContent, styleProfile, language }) => {
-    // Split the chapter into sections based on the $$...$$ titles
-    const sections = chapterContent.split(/(\$\$[^$]+\$\$)/g).filter(Boolean);
+    // Split the chapter into sections based on the $$...$$ titles, keeping the delimiters
+    const sections = chapterContent.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
     
     const rewrittenSections = await Promise.all(
         sections.map(async (section) => {
             const trimmedSection = section.trim();
             // If the section is a title (e.g., $$...$$), keep it as is.
             if (trimmedSection.startsWith('$$') && trimmedSection.endsWith('$$')) {
-                return section;
+                return trimmedSection;
             }
             
             // If the section is actual content, rewrite it.
@@ -105,18 +105,19 @@ const rewriteChapterFlow = ai.defineFlow(
                 });
                 if (!output || !output.rewrittenSection) {
                     console.warn(`Warning: AI failed to rewrite section. Returning original.`);
-                    return section; // Return original section on failure
+                    return trimmedSection; // Return original trimmed section on failure
                 }
                 return output.rewrittenSection;
             }
             
-            // Keep empty lines/spaces between sections
+            // This case should ideally not be hit due to the filter, but as a fallback:
             return section;
         })
     );
 
+    // Reassemble the chapter, ensuring double newlines between parts
     return {
-      rewrittenContent: rewrittenSections.join(''),
+      rewrittenContent: rewrittenSections.join('\n\n'),
     };
   }
 );
