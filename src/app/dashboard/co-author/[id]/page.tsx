@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -101,7 +102,7 @@ export default function CoAuthorWorkspacePage() {
     if (project) {
         form.reset({ 
             topic: project.description || '',
-            // You might want to pre-fill other fields if they are saved in the project document
+            language: project.language || '',
         });
     }
   }, [project, form]);
@@ -155,8 +156,11 @@ export default function CoAuthorWorkspacePage() {
     setSaving(true);
     try {
       if (!projectDocRef) throw new Error("Project reference not found.");
+      const currentFormValues = form.getValues();
       await updateDoc(projectDocRef, {
         outline: selectedOutline,
+        language: currentFormValues.language,
+        description: currentFormValues.topic,
         lastUpdated: serverTimestamp(),
       });
       toast({ title: 'Success', description: 'Master Blueprint saved successfully.' });

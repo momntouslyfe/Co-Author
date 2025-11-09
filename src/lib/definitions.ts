@@ -1,3 +1,4 @@
+
 export type User = {
   name: string;
   email: string;
@@ -17,6 +18,7 @@ export type Project = {
   description?: string;
   imageUrl?: string;
   imageHint?: string;
+  language?: string;
   chapters?: Chapter[];
   outline?: string;
   status: 'Draft' | 'In Progress' | 'Completed';

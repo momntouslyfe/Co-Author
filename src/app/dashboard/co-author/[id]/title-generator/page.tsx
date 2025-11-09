@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -42,12 +43,20 @@ export default function TitleGeneratorPage() {
       });
       return;
     }
+    if (!project?.language) {
+      toast({
+        title: 'Language Missing',
+        description: 'A project language must be set to generate titles.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setLoading(true);
     setTitles([]);
     try {
       const result = await generateBookTitles({
         outline: project.outline,
-        language: 'English', // This could be dynamic if stored in project
+        language: project.language,
       });
       setTitles(result.titles);
       if (result.titles.length > 0) {
