@@ -141,24 +141,29 @@ const ChapterEditor = ({
             toast({ title: "Language not set", description: "Project language is required to rewrite.", variant: "destructive" });
             return;
         }
-
+    
         setIsRewritingSection(sectionIndex);
         setOpenRewritePopoverIndex(null);
-
+    
         try {
             const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
             const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
-            const researchPrompt = relevantResearchProfile 
+            const researchPrompt = relevantResearchProfile
                 ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
                 : undefined;
-            
+    
             const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
-            // For intro, there's no preceding title in our split array, so handle differently
-            const isIntro = sectionIndex === 0 && !allSections[0].startsWith('$$');
-            const title = isIntro ? 'Introduction' : allSections[isIntro ? sectionIndex : sectionIndex * 2].replaceAll('$$', '').trim();
+            const hasChapterTitle = allSections.length > 0 && allSections[0].startsWith('$$');
+            const introSectionIndex = -1; // special index for intro
+            const isIntro = sectionIndex === introSectionIndex;
+    
+            // Determine the title of the section being rewritten
+            const title = isIntro
+                ? 'Introduction'
+                : allSections[(sectionIndex * 2) + (hasChapterTitle ? 0 : -1)]?.replaceAll('$$', '').trim() ?? 'Unknown Section';
+    
             const needsFullContext = title === 'Your Action Step' || title === 'Coming Up Next';
-            
-
+    
             const result = await rewriteSection({
                 sectionContent: sectionContentToRewrite,
                 chapterContent: needsFullContext ? content : undefined,
@@ -168,22 +173,23 @@ const ChapterEditor = ({
                 language: project.language,
                 instruction,
             });
-
+    
             if (result && result.rewrittenSection) {
-                // If it was the intro, it's the first element.
                 if (isIntro) {
-                    allSections[0] = `\n\n${result.rewrittenSection.trim()}\n\n`;
+                    // Intro content is either at index 0 (no chapter title) or 1 (with chapter title)
+                    const introContentIndex = hasChapterTitle ? 1 : 0;
+                    allSections[introContentIndex] = `\n\n${result.rewrittenSection.trim()}\n\n`;
                 } else {
-                    // The content part is at `sectionIndex * 2 + 1` for non-intro sections
-                    allSections[sectionIndex * 2 + 1] = `\n\n${result.rewrittenSection.trim()}\n\n`;
+                    // Content part is after the title part
+                    const contentIndex = (sectionIndex * 2) + (hasChapterTitle ? 1 : 0);
+                    allSections[contentIndex] = `\n\n${result.rewrittenSection.trim()}\n\n`;
                 }
-                
-                onContentChange(allSections.join('')); 
+                onContentChange(allSections.join(''));
                 toast({ title: "Section Rewritten", description: "The AI has rewritten the section." });
             } else {
                 throw new Error("AI returned empty content during section rewrite.");
             }
-
+    
         } catch (error) {
             console.error("Error rewriting section:", error);
             toast({ title: "AI Rewrite Failed", variant: "destructive", description: "Could not rewrite the section." });
@@ -191,7 +197,7 @@ const ChapterEditor = ({
             setIsRewritingSection(null);
             setRewriteSectionInstruction('');
         }
-    }
+    };
 
 
     const renderContent = () => {
@@ -863,4 +869,6 @@ export default function ChapterPage() {
     
 
     
+
+
 
