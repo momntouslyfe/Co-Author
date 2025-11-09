@@ -50,8 +50,11 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
             const topic = trimmedLine.substring(2).trim();
             // This is a simple check to exclude the italicized description, might need refinement
             if (!topic.startsWith('*This chapter')) {
-                subTopics.push(topic);
+                 if (topic) subTopics.push(topic);
             }
+        } else if (inTargetChapter && trimmedLine === '') {
+            // Stop collecting sub-topics after the first blank line in the target chapter section
+            if (subTopics.length > 0) break;
         }
     }
     
@@ -202,8 +205,8 @@ export default function ChapterPage() {
   }, [project, chapterDetails, chapterId]);
 
   const generateChapter = useCallback(async () => {
-    if (!project || !chapterDetails || subTopics.length === 0) {
-        toast({ title: "Missing Information", description: "Cannot generate chapter without project details.", variant: "destructive" });
+    if (!project || !chapterDetails || !subTopics || subTopics.length === 0) {
+        toast({ title: "Missing Information", description: "Cannot generate chapter without project details or sub-topics.", variant: "destructive" });
         return;
     }
 
@@ -227,13 +230,17 @@ export default function ChapterPage() {
             researchProfile: researchPrompt,
         });
 
-        setChapterContent(result.chapterContent);
-        setPageState('writing');
-        toast({ title: "Chapter Draft Ready", description: "The AI has generated the first draft." });
+        if (result && result.chapterContent) {
+            setChapterContent(result.chapterContent);
+            setPageState('writing');
+            toast({ title: "Chapter Draft Ready", description: "The AI has generated the first draft." });
+        } else {
+            throw new Error("AI returned empty content.");
+        }
 
     } catch (error) {
         console.error("Error generating content:", error);
-        toast({ title: "AI Generation Failed", variant: "destructive", description: "Could not generate chapter content." });
+        toast({ title: "AI Generation Failed", variant: "destructive", description: "Could not generate chapter content. Please check the AI configuration and try again." });
         setPageState('overview');
     }
   }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, relevantResearchProfile, toast]);
@@ -334,11 +341,15 @@ export default function ChapterPage() {
                             <CardDescription>The AI will use these points to structure the chapter.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ul className="list-disc pl-5 space-y-2">
-                                {subTopics.map((topic, index) => (
-                                    <li key={index}>{topic}</li>
-                                ))}
-                            </ul>
+                            {subTopics.length > 0 ? (
+                                <ul className="list-disc pl-5 space-y-2">
+                                    {subTopics.map((topic, index) => (
+                                        <li key={index}>{topic}</li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">No sub-topics found for this chapter in the blueprint.</p>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -360,7 +371,7 @@ export default function ChapterPage() {
                             </Select>
                             <p className="text-xs text-muted-foreground mt-2">Select a style profile to guide the AI's voice and tone.</p>
                         </div>
-                         <Button onClick={generateChapter} size="lg" className="w-full">
+                         <Button onClick={generateChapter} size="lg" className="w-full" disabled={subTopics.length === 0}>
                             <Wand2 className="mr-2 h-4 w-4" />
                             Write with AI
                         </Button>
@@ -377,7 +388,7 @@ export default function ChapterPage() {
        <Card>
         <CardHeader className="flex-row items-start justify-between">
             <div>
-                <CardTitle className="font-headline text-2xl">{chapterDetails.title}</CardTitle>
+                <CardTitle className="font-headline text-xl">{chapterDetails.title}</CardTitle>
                 <CardDescription>Part of: {chapterDetails.part}</CardDescription>
             </div>
             <div className="flex gap-2">
@@ -426,6 +437,8 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
 
     
 
