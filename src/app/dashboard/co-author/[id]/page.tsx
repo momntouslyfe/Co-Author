@@ -104,6 +104,8 @@ export default function CoAuthorWorkspacePage() {
             topic: project.description || '',
             language: project.language || undefined,
             storytellingFramework: project.storytellingFramework || undefined,
+            researchProfileId: project.researchProfileId || undefined,
+            styleProfileId: project.styleProfileId || undefined,
         });
     }
   }, [project, form]);
@@ -163,6 +165,8 @@ export default function CoAuthorWorkspacePage() {
         language: currentFormValues.language,
         description: currentFormValues.topic,
         storytellingFramework: currentFormValues.storytellingFramework,
+        researchProfileId: currentFormValues.researchProfileId,
+        styleProfileId: currentFormValues.styleProfileId,
         lastUpdated: serverTimestamp(),
       });
       toast({ title: 'Success', description: 'Master Blueprint saved successfully.' });
@@ -275,7 +279,7 @@ export default function CoAuthorWorkspacePage() {
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>AI Research Profile (Optional)</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="None" />
@@ -301,7 +305,7 @@ export default function CoAuthorWorkspacePage() {
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>AI Style Profile (Optional)</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="None" />
@@ -439,3 +443,4 @@ function BlueprintDisplay({ outline, onSelect }: { outline: string, onSelect: ()
         </div>
     )
 }
+

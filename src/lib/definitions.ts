@@ -27,6 +27,8 @@ export type Project = {
   status: 'Draft' | 'In Progress' | 'Completed';
   createdAt: string;
   lastUpdated: string;
+  researchProfileId?: string;
+  styleProfileId?: string;
 };
 
 export type ResearchProfile = {
@@ -48,3 +50,4 @@ export type StyleProfile = {
     styleAnalysis: string;
     createdAt: string;
 };
+

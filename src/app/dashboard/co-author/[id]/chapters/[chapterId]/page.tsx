@@ -201,17 +201,25 @@ export default function ChapterPage() {
   const subTopics = chapterData?.subTopics || [];
 
   useEffect(() => {
-    if (project && chapterDetails) {
+    if (project) {
+        // Pre-select saved chapter content if available
         const savedChapter = project.chapters?.find(c => c.id === chapterId);
         if (savedChapter && savedChapter.content) {
             setChapterContent(savedChapter.content);
             setPageState('writing');
         }
+
+        // Pre-select storytelling framework from project
+        if (project.storytellingFramework) {
+            setSelectedFramework(project.storytellingFramework);
+        }
+        
+        // Pre-select research profile from project
+        if (project.researchProfileId) {
+            setSelectedResearchId(project.researchProfileId);
+        }
     }
-    if (project?.storytellingFramework) {
-        setSelectedFramework(project.storytellingFramework);
-    }
-  }, [project, chapterDetails, chapterId]);
+  }, [project, chapterId]);
 
   const generateChapter = useCallback(async () => {
     if (!project || !chapterDetails || !subTopics || subTopics.length === 0) {
@@ -529,3 +537,4 @@ export default function ChapterPage() {
     </div>
   );
 }
+
