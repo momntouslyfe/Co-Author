@@ -118,10 +118,10 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
                     return <h3 key={`title-${index}`} className="text-lg font-bold font-headline mt-8 mb-4">{title}</h3>;
                 }
                 if (index === 0) { // Main chapter title
-                     return <h2 key={`title-${index}`} className="font-headline text-2xl mt-8 mb-4 font-bold">{title}</h2>;
+                     return <h2 key={`title-${index}`} className="font-headline text-xl mt-8 mb-4 font-bold">{title}</h2>;
                 }
                 // Sub-topic titles
-                return <h3 key={`title-${index}`} className="text-xl font-bold font-headline mt-8 mb-4">{title}</h3>;
+                return <h3 key={`title-${index}`} className="text-lg font-bold font-headline mt-8 mb-4">{title}</h3>;
 
             } else if (trimmedSection !== '') {
                 return (
