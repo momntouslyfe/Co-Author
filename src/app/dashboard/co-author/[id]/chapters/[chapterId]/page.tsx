@@ -345,16 +345,16 @@ export default function ChapterPage() {
                 </div>
             ) : (
                 <div className="space-y-4">
+                    <div className="flex justify-end gap-2 mb-4">
+                        <Button variant="outline" size="sm">
+                            <User className="mr-2 h-4 w-4" /> My Insights
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleCopyContent}>
+                            <Copy className="mr-2 h-4 w-4" /> Copy
+                        </Button>
+                    </div>
                     <div className="relative">
                         <ChapterEditor content={chapterContent} onContentChange={setChapterContent} />
-                         <div className="absolute top-2 right-2 flex gap-2">
-                            <Button variant="outline" size="sm">
-                                <User className="mr-2 h-4 w-4" /> My Insights
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={handleCopyContent}>
-                                <Copy className="mr-2 h-4 w-4" /> Copy
-                            </Button>
-                        </div>
                     </div>
                     <div className="flex justify-end">
                         <Button onClick={handleSaveContent} disabled={isSaving}>
