@@ -113,14 +113,14 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
             if (trimmedSection.startsWith('$$') && trimmedSection.endsWith('$$')) {
                 const title = trimmedSection.replaceAll('$$', '');
                 
+                 // Render titles with specific styling
                 if (title === 'Your Action Step' || title === 'Coming Up Next') {
-                    return <h3 key={`title-${index}`} className="text-base font-bold font-headline mt-10 mb-6">{title}</h3>;
+                    return <h3 key={`title-${index}`} className="text-xl font-bold font-headline mt-10 mb-6">{title}</h3>;
                 }
-                 // Render the first title as h2, subsequent ones as h3
                 if (index === 0) {
-                     return <h2 key={`title-${index}`} className="font-headline text-xl mt-10 mb-6 font-bold">{title}</h2>;
+                     return <h2 key={`title-${index}`} className="font-headline text-3xl mt-10 mb-6 font-bold">{title}</h2>;
                 }
-                return <h3 key={`title-${index}`} className="text-base font-bold font-headline mt-10 mb-6">{title}</h3>;
+                return <h3 key={`title-${index}`} className="text-2xl font-bold font-headline mt-10 mb-6">{title}</h3>;
 
             } else if (trimmedSection !== '') {
                 return (
@@ -281,6 +281,10 @@ export default function ChapterPage() {
         toast({ title: "No Content", description: "There is no content to rewrite.", variant: "destructive" });
         return;
     }
+     if (!project?.language) {
+        toast({ title: "Language not set", description: "Project language is required to rewrite the chapter.", variant: "destructive" });
+        return;
+    }
 
     setPageState('rewriting');
     try {
@@ -290,6 +294,7 @@ export default function ChapterPage() {
         const result = await rewriteChapter({
             chapterContent: chapterContent,
             styleProfile: stylePrompt,
+            language: project.language,
         });
 
         if (result && result.rewrittenContent) {
@@ -304,7 +309,7 @@ export default function ChapterPage() {
     } finally {
         setPageState('writing');
     }
-  }, [chapterContent, styleProfiles, selectedStyleId, toast]);
+  }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language]);
 
 
   if (isProjectLoading) {

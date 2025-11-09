@@ -19,6 +19,7 @@ import {z} from 'genkit';
 const RewriteChapterInputSchema = z.object({
   chapterContent: z.string().describe('The full content of the chapter to be rewritten.'),
   styleProfile: z.string().optional().describe('An optional, pre-existing writing style profile to guide the tone and voice.'),
+  language: z.string().describe('The language the chapter should be rewritten in.'),
 });
 export type RewriteChapterInput = z.infer<typeof RewriteChapterInputSchema>;
 
@@ -34,6 +35,7 @@ const rewriteSectionPrompt = ai.definePrompt({
       schema: z.object({
         sectionContent: z.string(),
         styleProfile: z.string().optional(),
+        language: z.string(),
       }),
     },
     output: {
@@ -41,26 +43,28 @@ const rewriteSectionPrompt = ai.definePrompt({
         rewrittenSection: z.string(),
       }),
     },
-    prompt: `You are an expert editor and ghostwriter. Your task is to rewrite the provided text section.
+    prompt: `You are an expert editor and ghostwriter. Your task is to rewrite the provided text section in the specified language.
 
 **CRITICAL INSTRUCTIONS:**
 
-1.  **REWRITE, DON'T JUST EDIT:** Do not simply make minor edits. Rewrite sentences, rephrase ideas, and improve the flow and impact of the entire section while preserving the original meaning and core concepts.
+1.  **LANGUAGE:** You MUST write the entire response in **{{{language}}}**.
 
-2.  **HUMAN-LIKE PARAGRAPHING:**
+2.  **REWRITE, DON'T JUST EDIT:** Do not simply make minor edits. Rewrite sentences, rephrase ideas, and improve the flow and impact of the entire section while preserving the original meaning and core concepts.
+
+3.  **HUMAN-LIKE PARAGRAPHING:**
     *   Use short paragraphs, typically 3-5 sentences long.
     *   You MUST vary paragraph length for rhythm and readability.
     *   Ensure there are clear gaps (a double newline) between every paragraph.
 
 {{#if styleProfile}}
-3.  **ADHERE TO WRITING STYLE:** You MUST adopt the following writing style:
+4.  **ADHERE TO WRITING STYLE:** You MUST adopt the following writing style:
     ---
     **Writing Style Profile:**
     {{{styleProfile}}}
     ---
 {{/if}}
 
-4.  **RETURN ONLY THE REWRITTEN CONTENT:** Your output should be only the rewritten section text. Do not add any titles or extra formatting.
+5.  **RETURN ONLY THE REWRITTEN CONTENT:** Your output should be only the rewritten section text. Do not add any titles or extra formatting.
 
 **Original Section Content to Rewrite:**
 \`\`\`
@@ -80,7 +84,7 @@ const rewriteChapterFlow = ai.defineFlow(
     inputSchema: RewriteChapterInputSchema,
     outputSchema: RewriteChapterOutputSchema,
   },
-  async ({ chapterContent, styleProfile }) => {
+  async ({ chapterContent, styleProfile, language }) => {
     // Split the chapter into sections based on the $$...$$ titles
     const sections = chapterContent.split(/(\$\$[^$]+\$\$)/g).filter(Boolean);
     
@@ -97,6 +101,7 @@ const rewriteChapterFlow = ai.defineFlow(
                  const { output } = await rewriteSectionPrompt({
                     sectionContent: trimmedSection,
                     styleProfile: styleProfile,
+                    language: language,
                 });
                 if (!output || !output.rewrittenSection) {
                     console.warn(`Warning: AI failed to rewrite section. Returning original.`);
