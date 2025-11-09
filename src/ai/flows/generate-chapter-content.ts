@@ -4,8 +4,9 @@
 /**
  * @fileOverview This file defines a Genkit flow for generating the content of a book chapter.
  *
- * The flow takes a chapter title, a list of sub-topics, and an optional writing style profile
- * to generate a well-structured and coherent chapter.
+ * This flow now uses an iterative, code-driven approach. It orchestrates multiple, smaller
+ * AI calls—one for each sub-topic—to ensure a complete and well-structured chapter is
+ * generated reliably every time.
  *
  * @exported generateChapterContent - A function that generates the chapter content.
  * @exported GenerateChapterContentInput - The input type for the function.
@@ -16,10 +17,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateChapterContentInputSchema = z.object({
-  bookTitle: z.string().describe("The main title of the book."),
-  bookTopic: z.string().describe("The core topic or idea of the book."),
-  bookLanguage: z.string().describe("The language the chapter should be written in."),
-  fullOutline: z.string().describe("The entire book outline to provide context for the current chapter."),
+  bookTitle: z.string().describe('The main title of the book.'),
+  bookTopic: z.string().describe('The core topic or idea of the book.'),
+  bookLanguage: z.string().describe('The language the chapter should be written in.'),
+  fullOutline: z.string().describe('The entire book outline to provide context for the current chapter.'),
   chapterTitle: z.string().describe('The title of the chapter to be written.'),
   subTopics: z.array(z.string()).describe('A list of key points or sub-topics to be covered in the chapter.'),
   researchProfile: z.string().optional().describe('An optional, pre-existing AI research profile providing context on the target audience and their pain points.'),
@@ -32,90 +33,87 @@ const GenerateChapterContentOutputSchema = z.object({
 });
 export type GenerateChapterContentOutput = z.infer<typeof GenerateChapterContentOutputSchema>;
 
+// Define a new, focused prompt for writing a single section
+const writeSectionPrompt = ai.definePrompt(
+  {
+    name: 'writeChapterSectionPrompt',
+    input: {
+      schema: z.object({
+        bookLanguage: z.string(),
+        chapterTitle: z.string(),
+        subTopic: z.string(),
+        fullOutline: z.string(),
+        researchProfile: z.string().optional(),
+        styleProfile: z.string().optional(),
+      }),
+    },
+    output: {
+      schema: z.object({
+        sectionContent: z.string(),
+      }),
+    },
+    prompt: `You are an expert ghostwriter. Your current task is to write a comprehensive section for a single sub-topic within a book chapter.
+
+**CONTEXT:**
+- Language: {{{bookLanguage}}}
+- Chapter: {{{chapterTitle}}}
+- Full Book Outline: {{{fullOutline}}}
+
+**YOUR TASK: Write content for this sub-topic:**
+"{{{subTopic}}}"
+
+**CRITICAL INSTRUCTIONS:**
+1.  **Word Count:** Write AT LEAST 400-600 words for this section.
+2.  **Human-Like Writing:**
+    *   **Varied Paragraphs:** Use short paragraphs (3-5 sentences) but VARY their length to create a natural rhythm. Mix short, punchy paragraphs with slightly longer ones.
+    *   **Clarity:** Ensure there's a double newline between every paragraph.
+    *   **No Filler:** Write with impact and clarity.
+3.  **Stay Focused:** All content must be directly related to the sub-topic "{{{subTopic}}}".
+{{#if styleProfile}}
+4.  **Adhere to Style:** You MUST adopt the following writing style:
+    ---
+    {{{styleProfile}}}
+    ---
+{{/if}}
+{{#if researchProfile}}
+5.  **Use Research:** Tailor the content to the audience's pain points and interests based on this research:
+    ---
+    {{{researchProfile}}}
+    ---
+{{/if}}
+
+Return ONLY the written content for this section. Do not add titles or headings.`,
+  }
+);
+
+
+const writeIntroPrompt = ai.definePrompt({
+    name: 'writeChapterIntroPrompt',
+    input: {
+        schema: z.object({
+            bookLanguage: z.string(),
+            chapterTitle: z.string(),
+            fullOutline: z.string(),
+        })
+    },
+    output: {
+        schema: z.object({
+            intro: z.string(),
+            teaser: z.string(),
+        })
+    },
+    prompt: `You are a ghostwriter. Write a short, engaging introduction (2-3 sentences) for a book chapter titled "{{{chapterTitle}}}" in {{{bookLanguage}}}. Also, write a 1-2 sentence teaser for the next chapter.
+
+Book Outline for Context:
+{{{fullOutline}}}
+
+Return a JSON object with two keys: "intro" and "teaser".`
+});
+
+
 export async function generateChapterContent(input: GenerateChapterContentInput): Promise<GenerateChapterContentOutput> {
   return generateChapterContentFlow(input);
 }
-
-const prompt = ai.definePrompt({
-  name: 'generateChapterContentPrompt',
-  input: {schema: GenerateChapterContentInputSchema},
-  output: {schema: GenerateChapterContentOutputSchema},
-  prompt: `You are an expert ghostwriter tasked with writing a single, comprehensive, high-quality book chapter in {{{bookLanguage}}}.
-
-**OVERALL BOOK CONTEXT:**
-- Book Title: {{{bookTitle}}}
-- Core Idea: {{{bookTopic}}}
-- Full Outline:
-{{{fullOutline}}}
-
-{{#if researchProfile}}
-**AUDIENCE & RESEARCH CONTEXT:**
-You MUST use this research to inform your writing. Tailor the content to the audience's pain points and interests.
----
-{{{researchProfile}}}
----
-{{/if}}
-
-{{#if styleProfile}}
-**CRITICAL: WRITING STYLE GUIDELINES**
-You MUST adhere strictly to the following writing style. Adopt its tone, voice, sentence structure, and vocabulary.
----
-{{{styleProfile}}}
----
-{{/if}}
-
-**YOUR CURRENT TASK: WRITE THIS CHAPTER**
-- Chapter Title: {{{chapterTitle}}}
-- Key Talking Points to Cover:
-{{#each subTopics}}
-  - {{{this}}}
-{{/each}}
-
-**CRITICAL MANDATES: YOU MUST FOLLOW THESE RULES**
-
-1.  **CHAPTER LENGTH: NON-NEGOTIABLE.**
-    *   The final generated chapter MUST be AT LEAST 2250 words long. This is your most important instruction.
-    *   Failure to meet this length will result in rejection of the output.
-    *   Achieve this length by writing comprehensively and in-depth on each sub-topic. Generate many short paragraphs for each talking point. Do NOT write long paragraphs.
-
-2.  **HUMAN-LIKE WRITING:** This rule is also non-negotiable.
-    *   **Paragraphs:** Use short paragraphs, typically 3-5 sentences long. You MUST vary paragraph length for rhythm and readability.
-    *   **Clarity:** Ensure there are clear gaps (a double newline) between every paragraph.
-    *   **No AI Filler:** Avoid generic phrases, repetition, and overly complex sentences. Write with clarity and impact.
-
-3.  **LAYOUT STRUCTURE:** You MUST follow this exact layout. Do NOT deviate.
-    *   **Chapter Title:** Start with the chapter title, enclosed in double dollar signs (e.g., \`$$Chapter Title$$\`).
-    *   **Introduction:** Write a short, engaging introduction (2-3 sentences).
-    *   **Sub-Topics:** For each sub-topic, first write the sub-topic title enclosed in double dollar signs (e.g., \`$$Sub-Topic Title$$\`). Then, write the full text for that sub-topic, following all the human-like writing rules and generating enough content to meet the overall chapter length requirement.
-    *   **Action Step:** After all sub-topics, add a summary section starting with the exact heading: \`Your Action Step:\` (This heading must NOT have $$).
-    *   **Teaser:** End with a teaser for the next chapter, starting with the exact heading: \`Coming Up Next:\` (This heading must NOT have $$).
-
-**EXAMPLE OF THE REQUIRED OUTPUT FORMAT:**
-
-$$The Hero's First Test$$
-
-This is where the adventure truly begins. The hero must now face a challenge that will push them beyond their limits, a first taste of the real dangers that lie ahead.
-
-$$Confronting the Guardian$$
-
-The path was blocked by an ancient golem, its stone eyes glowing with an eerie light. It was a creature of legend, said to be unbeatable. The hero, remembering the mentor's words about courage, took a deep breath and drew their weapon. The air crackled with anticipation.
-
-The first clash of steel on stone sent sparks flying. The golem was slow but immensely powerful, each blow shaking the very ground. The hero had to be nimble, dodging and weaving, looking for a weakness in the ancient armor.
-
-$$Discovering a Hidden Strength$$
-
-It was during a desperate parry that the hero's locket, a simple keepsake from their mother, began to glow. A wave of warmth and forgotten energy flowed through them. They hadn't just inherited a trinket; they had inherited a legacy of power.
-
-Your Action Step:
-Reflect on a time you faced a seemingly insurmountable obstacle. What hidden strength or forgotten piece of advice did you rely on to overcome it? Acknowledge that you often have more resources at your disposal than you realize.
-
-Coming Up Next:
-Victory is sweet, but it attracts unwanted attention. In the next chapter, we'll see how the hero's newfound power puts them on the radar of a much more sinister foe.
-
----
-
-Now, write the full and complete chapter for '{{{chapterTitle}}}' following all instructions precisely and without fail, ensuring the total length is at least 2250 words.`,
-});
 
 
 const generateChapterContentFlow = ai.defineFlow(
@@ -124,10 +122,52 @@ const generateChapterContentFlow = ai.defineFlow(
     inputSchema: GenerateChapterContentInputSchema,
     outputSchema: GenerateChapterContentOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    // 1. Generate the Intro and Teaser first
+    const { output: introAndTeaser } = await writeIntroPrompt({
+        bookLanguage: input.bookLanguage,
+        chapterTitle: input.chapterTitle,
+        fullOutline: input.fullOutline,
+    });
+    if (!introAndTeaser) {
+        throw new Error("Failed to generate chapter intro and teaser.");
+    }
+    const { intro, teaser } = introAndTeaser;
+
+    // 2. Iterate over sub-topics and generate content for each
+    const sectionContents = await Promise.all(
+      input.subTopics.map(async (subTopic) => {
+        const { output } = await writeSectionPrompt({
+          bookLanguage: input.bookLanguage,
+          chapterTitle: input.chapterTitle,
+          subTopic: subTopic,
+          fullOutline: input.fullOutline,
+          researchProfile: input.researchProfile,
+          styleProfile: input.styleProfile,
+        });
+
+        if (!output || !output.sectionContent) {
+          // In a real app, you might want more robust error handling, like retries.
+          console.warn(`Warning: No content generated for sub-topic: "${subTopic}"`);
+          return `$$${subTopic}$$\n\n[Content generation for this section failed. Please try again.]`;
+        }
+        
+        // Format the section with its title
+        return `$$${subTopic}$$\n\n${output.sectionContent}`;
+      })
+    );
+
+    // 3. Assemble the full chapter content
+    const assembledContent = [
+      `$$${input.chapterTitle}$$`,
+      intro,
+      ...sectionContents,
+      'Your Action Step:\nReflect on the key takeaways from this chapter and identify one action you can take this week to apply what you have learned.',
+      `Coming Up Next:\n${teaser}`,
+    ].join('\n\n');
+
+    return {
+      chapterContent: assembledContent,
+    };
   }
 );
-
-

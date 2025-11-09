@@ -71,7 +71,7 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
 type PageState = 'overview' | 'generating' | 'writing' | 'rewriting';
 
 // New Component for the interactive editor
-const ChapterEditor = ({ content, onContentChange, selectedStyle }: { content: string; onContentChange: (newContent: string) => void; selectedStyle: string }) => {
+const ChapterEditor = ({ project, chapterDetails, content, onContentChange, selectedStyleId, styleProfiles }: { project: Project, chapterDetails: Chapter, content: string; onContentChange: (newContent: string) => void; selectedStyleId: string; styleProfiles: StyleProfile[] | null }) => {
     
     const [isExtending, setIsExtending] = useState<number | null>(null);
     const { toast } = useToast();
@@ -79,9 +79,14 @@ const ChapterEditor = ({ content, onContentChange, selectedStyle }: { content: s
     const handleExtendClick = async (paragraph: string, index: number) => {
         setIsExtending(index);
         try {
+            const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
+
             const result = await expandBookContent({
-                content: paragraph,
-                style: selectedStyle,
+                bookTitle: project.title,
+                fullOutline: project.outline || '',
+                chapterTitle: chapterDetails.title,
+                contentToExpand: paragraph,
+                styleProfile: selectedStyle?.styleAnalysis,
             });
 
             const paragraphs = content.split('\n\n');
@@ -270,14 +275,6 @@ export default function ChapterPage() {
     toast({ title: 'Content Copied', description: 'The chapter content has been copied to your clipboard.' });
   }
 
-  const selectedStyleText = useMemo(() => {
-    if (selectedStyleId === 'default') {
-        return "the same style as the provided content";
-    }
-    return styleProfiles?.find(p => p.id === selectedStyleId)?.styleAnalysis || "the same style as the provided content";
-  }, [selectedStyleId, styleProfiles]);
-
-
   const handleRewriteChapter = useCallback(async () => {
     if (!chapterContent) {
         toast({ title: "No Content", description: "There is no content to rewrite.", variant: "destructive" });
@@ -438,9 +435,12 @@ export default function ChapterPage() {
                     </div>
                     <div className="relative">
                         <ChapterEditor
+                          project={project}
+                          chapterDetails={chapterDetails}
                           content={chapterContent}
                           onContentChange={setChapterContent}
-                          selectedStyle={selectedStyleText}
+                          selectedStyleId={selectedStyleId}
+                          styleProfiles={styleProfiles}
                         />
                     </div>
                     <div className="flex justify-end pt-4 border-t">
@@ -456,9 +456,3 @@ export default function ChapterPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
