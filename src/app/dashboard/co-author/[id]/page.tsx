@@ -102,7 +102,8 @@ export default function CoAuthorWorkspacePage() {
     if (project) {
         form.reset({ 
             topic: project.description || '',
-            language: project.language || '',
+            language: project.language || undefined,
+            // storytellingFramework is not saved in the project, so we don't load it.
         });
     }
   }, [project, form]);
@@ -227,7 +228,7 @@ export default function CoAuthorWorkspacePage() {
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Project Language</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a language" />
@@ -437,5 +438,3 @@ function BlueprintDisplay({ outline, onSelect }: { outline: string, onSelect: ()
         </div>
     )
 }
-
-    
