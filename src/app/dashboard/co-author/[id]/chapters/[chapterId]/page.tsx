@@ -48,23 +48,23 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
                 };
             }
         } else if (inTargetChapter && chapter && (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* '))) {
-            subTopics.push(trimmedLine.substring(2));
-        } else if (inTargetChapter && chapter && trimmedLine.startsWith('//')) {
-            // Description line, skip
+            const topic = trimmedLine.substring(2).trim();
+            // This is a simple check to exclude the italicized description, might need refinement
+            if (!topic.startsWith('*This chapter')) {
+                subTopics.push(topic);
+            }
         }
     }
     
     if (chapter) {
-        // Post-process to remove the description from subtopics if it was caught
-        const filteredSubTopics = subTopics.filter(topic => !topic.startsWith('*This chapter'));
-        return { chapter, subTopics: filteredSubTopics };
+        return { chapter, subTopics };
     }
 
     return null;
 };
 
 // New state to manage the workflow on this page
-type PageState = 'overview' | 'writing';
+type PageState = 'overview' | 'generating' | 'writing';
 
 export default function ChapterPage() {
   const { toast } = useToast();
@@ -79,7 +79,6 @@ export default function ChapterPage() {
   const [pageState, setPageState] = useState<PageState>('overview');
   const [chapterContent, setChapterContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [selectedStyleId, setSelectedStyleId] = useState<string>('default');
 
   const projectDocRef = useMemoFirebase(() => {
@@ -104,6 +103,7 @@ export default function ChapterPage() {
   const chapterDetails = chapterData?.chapter;
   const subTopics = chapterData?.subTopics || [];
 
+  // Effect to load existing content or if content is generated
   useEffect(() => {
     if (project && chapterDetails) {
         const savedChapter = project.chapters?.find(c => c.id === chapterId);
@@ -114,38 +114,40 @@ export default function ChapterPage() {
     }
   }, [project, chapterDetails, chapterId]);
 
-  const handleGenerateContent = async () => {
-    if (!chapterDetails || subTopics.length === 0) {
-        toast({ title: "Chapter details missing", variant: "destructive" });
-        return;
+  // Effect to handle AI content generation when state changes to 'generating'
+  useEffect(() => {
+    if (pageState === 'generating' && chapterDetails && subTopics.length > 0) {
+        const generate = async () => {
+             try {
+                const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
+                const stylePrompt = selectedStyle?.styleAnalysis;
+
+                const result = await generateChapterContent({
+                    chapterTitle: chapterDetails.title,
+                    subTopics: subTopics,
+                    styleProfile: stylePrompt,
+                });
+
+                setChapterContent(result.chapterContent);
+                setPageState('writing');
+                toast({ title: "Chapter Draft Ready", description: "The AI has generated the first draft." });
+
+            } catch (error) {
+                console.error("Error generating content:", error);
+                toast({ title: "AI Generation Failed", variant: "destructive" });
+                setPageState('overview'); // Go back to overview on failure
+            }
+        };
+        generate();
     }
-    setIsGenerating(true);
-    try {
-        const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
-        const stylePrompt = selectedStyle?.styleAnalysis;
+  }, [pageState, chapterDetails, subTopics, styleProfiles, selectedStyleId, toast]);
 
-        const result = await generateChapterContent({
-            chapterTitle: chapterDetails.title,
-            subTopics: subTopics,
-            styleProfile: stylePrompt,
-        });
-
-        setChapterContent(result.chapterContent);
-        setPageState('writing');
-        toast({ title: "Chapter Draft Ready", description: "The AI has generated the first draft." });
-
-    } catch (error) {
-        console.error("Error generating content:", error);
-        toast({ title: "AI Generation Failed", variant: "destructive" });
-    } finally {
-        setIsGenerating(false);
-    }
-  };
 
   const handleSaveContent = useCallback(async () => {
     if (!projectDocRef || !chapterDetails) return;
     setIsSaving(true);
     try {
+        // This logic first removes the old chapter version and then adds the new one.
         const existingChapter = project?.chapters?.find(c => c.id === chapterId);
         if (existingChapter) {
             await updateDoc(projectDocRef, { chapters: arrayRemove(existingChapter) });
@@ -239,13 +241,25 @@ export default function ChapterPage() {
                             </Select>
                             <p className="text-xs text-muted-foreground mt-2">Select a style profile to guide the AI's voice and tone.</p>
                         </div>
-                         <Button onClick={handleGenerateContent} disabled={isGenerating} size="lg" className="w-full">
-                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                         <Button onClick={() => setPageState('generating')} size="lg" className="w-full">
+                            <Wand2 className="mr-2 h-4 w-4" />
                             Write with AI
                         </Button>
                     </div>
                 </CardContent>
             </Card>
+        </div>
+    );
+  }
+
+  if (pageState === 'generating') {
+    return (
+        <div className="flex h-[70vh] flex-col items-center justify-center space-y-4">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <div className="text-center">
+                <p className="text-lg font-semibold">AI is writing your chapter...</p>
+                <p className="text-muted-foreground">Please wait a moment while the first draft is being created.</p>
+            </div>
         </div>
     );
   }
@@ -288,3 +302,5 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
