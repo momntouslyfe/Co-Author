@@ -14,6 +14,7 @@ import {z} from 'genkit';
 
 const RewriteSectionInputSchema = z.object({
   sectionContent: z.string().describe('The content of the chapter section to be rewritten.'),
+  chapterContent: z.string().optional().describe('The full content of the chapter for context, used when rewriting summary sections like Action Steps.'),
   styleProfile: z.string().optional().describe('An optional, pre-existing writing style profile to guide the tone and voice.'),
   researchProfile: z.string().optional().describe('An optional, pre-existing AI research profile providing context on the target audience and their pain points.'),
   storytellingFramework: z.string().optional().describe('The storytelling framework for the book (e.g., The Hero\'s Journey).'),
@@ -40,6 +41,13 @@ export const rewriteSectionPrompt = ai.definePrompt({
 - Research Profile: Tailor the content to the audience's pain points and interests based on this research:
   ---
   {{{researchProfile}}}
+  ---
+{{/if}}
+
+{{#if chapterContent}}
+- **Full Chapter Content for Context:** When rewriting a summary section (like an action step), use the full chapter content below to inform your response.
+  ---
+  {{{chapterContent}}}
   ---
 {{/if}}
 

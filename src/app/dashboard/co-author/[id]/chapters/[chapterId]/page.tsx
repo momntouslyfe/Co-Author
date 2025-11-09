@@ -151,9 +151,14 @@ const ChapterEditor = ({
             const researchPrompt = relevantResearchProfile 
                 ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
                 : undefined;
+            
+            const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+            const title = allSections[sectionIndex * 2].replaceAll('$$', '').trim();
+            const needsFullContext = title === 'Your Action Step' || title === 'Coming Up Next';
 
             const result = await rewriteSection({
                 sectionContent: sectionContentToRewrite,
+                chapterContent: needsFullContext ? content : undefined,
                 styleProfile: selectedStyle?.styleAnalysis,
                 researchProfile: researchPrompt,
                 storytellingFramework: selectedFramework,
@@ -162,7 +167,6 @@ const ChapterEditor = ({
             });
 
             if (result && result.rewrittenSection) {
-                const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
                 // The content part is at `sectionIndex * 2 + 1`
                 // We add newlines before and after to maintain spacing.
                 allSections[sectionIndex * 2 + 1] = `\n\n${result.rewrittenSection.trim()}\n\n`;
