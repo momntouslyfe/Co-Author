@@ -6,7 +6,7 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection, getDocs, query, where } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
-import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User } from 'lucide-react';
+import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { expandBookContent } from '@/ai/flows/expand-book-content';
 import type { Chapter, ResearchProfile, StyleProfile } from '@/lib/definitions';
+import { rewriteChapter } from '@/ai/flows/rewrite-chapter';
 
 // Enhanced helper to parse chapter details including sub-topics
 const parseChapterDetails = (outline: string, chapterId: string): { chapter: Chapter, subTopics: string[] } | null => {
@@ -67,7 +68,7 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
 };
 
 // New state to manage the workflow on this page
-type PageState = 'overview' | 'generating' | 'writing';
+type PageState = 'overview' | 'generating' | 'writing' | 'rewriting';
 
 // New Component for the interactive editor
 const ChapterEditor = ({ content, onContentChange, selectedStyle }: { content: string; onContentChange: (newContent: string) => void; selectedStyle: string }) => {
@@ -277,6 +278,37 @@ export default function ChapterPage() {
   }, [selectedStyleId, styleProfiles]);
 
 
+  const handleRewriteChapter = useCallback(async () => {
+    if (!chapterContent) {
+        toast({ title: "No Content", description: "There is no content to rewrite.", variant: "destructive" });
+        return;
+    }
+
+    setPageState('rewriting');
+    try {
+        const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
+        const stylePrompt = selectedStyle?.styleAnalysis;
+
+        const result = await rewriteChapter({
+            chapterContent: chapterContent,
+            styleProfile: stylePrompt,
+        });
+
+        if (result && result.rewrittenContent) {
+            setChapterContent(result.rewrittenContent);
+            toast({ title: "Chapter Rewritten", description: "The AI has rewritten the chapter." });
+        } else {
+            throw new Error("AI returned empty content during rewrite.");
+        }
+    } catch (error) {
+        console.error("Error rewriting chapter:", error);
+        toast({ title: "AI Rewrite Failed", variant: "destructive", description: "Could not rewrite the chapter. Please try again." });
+    } finally {
+        setPageState('writing');
+    }
+  }, [chapterContent, styleProfiles, selectedStyleId, toast]);
+
+
   if (isProjectLoading) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
@@ -379,12 +411,16 @@ export default function ChapterPage() {
             </div>
         </CardHeader>
         <CardContent>
-            {pageState === 'generating' ? (
+            {pageState === 'generating' || pageState === 'rewriting' ? (
                 <div className="flex h-[65vh] flex-col items-center justify-center space-y-4 rounded-md border border-dashed">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                     <div className="text-center">
-                        <p className="text-lg font-semibold">AI is writing your chapter...</p>
-                        <p className="text-muted-foreground">Please wait a moment while the first draft is being created.</p>
+                        <p className="text-lg font-semibold">
+                            {pageState === 'generating' ? 'AI is writing your chapter...' : 'AI is rewriting the chapter...'}
+                        </p>
+                        <p className="text-muted-foreground">
+                            {pageState === 'generating' ? 'Please wait a moment while the first draft is being created.' : 'This may take a moment. Please wait.'}
+                        </p>
                     </div>
                 </div>
             ) : (
@@ -392,6 +428,9 @@ export default function ChapterPage() {
                     <div className="flex justify-end gap-2 mb-4 sticky top-0 bg-background py-2 z-10">
                         <Button variant="outline" size="sm">
                             <User className="mr-2 h-4 w-4" /> My Insights
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleRewriteChapter}>
+                            <RefreshCw className="mr-2 h-4 w-4" /> Rewrite Chapter
                         </Button>
                         <Button variant="outline" size="sm" onClick={handleCopyContent}>
                             <Copy className="mr-2 h-4 w-4" /> Copy
@@ -423,4 +462,3 @@ export default function ChapterPage() {
     
 
     
-

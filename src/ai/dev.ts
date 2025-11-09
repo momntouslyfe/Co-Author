@@ -9,3 +9,4 @@ import '@/ai/flows/set-admin.ts';
 import '@/ai/flows/analyze-writing-style.ts';
 import '@/ai/flows/generate-book-titles.ts';
 import '@/ai/flows/generate-chapter-content.ts';
+import '@/ai/flows/rewrite-chapter.ts';
