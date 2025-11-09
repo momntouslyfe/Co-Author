@@ -195,13 +195,12 @@ const ChapterEditor = ({
             
             const title = titlePart.replaceAll('$$', '');
             const isMainTitle = sectionIndex === 0;
-            const isActionOrNext = title === 'Your Action Step' || title === 'Coming Up Next';
             
             renderedSections.push(
                 <div key={`section-container-${sectionIndex}`} className="group/section relative">
                     <div className="flex items-center justify-between">
                          <h3 className={`font-headline mt-8 mb-4 font-bold ${isMainTitle ? 'text-xl' : 'text-lg'}`}>{title}</h3>
-                         {!isMainTitle && !isActionOrNext && (
+                         {!isMainTitle && (
                              <Popover open={openRewritePopoverIndex === sectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? sectionIndex : null)}>
                                  <PopoverTrigger asChild>
                                     <Button 
@@ -769,5 +768,7 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
 
     
