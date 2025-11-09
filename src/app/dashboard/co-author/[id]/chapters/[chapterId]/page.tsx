@@ -77,10 +77,12 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
     
     const [isExtending, setIsExtending] = useState<number | null>(null);
     const [extendInstruction, setExtendInstruction] = useState('');
+    const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
     const { toast } = useToast();
 
     const handleExtendClick = async (paragraph: string, index: number, instruction?: string) => {
         setIsExtending(index);
+        setOpenPopoverIndex(null); // Close the popover
         try {
             const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
 
@@ -133,7 +135,7 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
                     <div key={`p-container-${index}`} className="mb-4 group">
                         <p className="text-base leading-relaxed">{trimmedSection}</p>
                         <div className="text-right opacity-0 group-hover:opacity-100 transition-opacity mt-2">
-                           <Popover>
+                           <Popover open={openPopoverIndex === index} onOpenChange={(isOpen) => setOpenPopoverIndex(isOpen ? index : null)}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === index}>
                                         {isExtending === index ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
@@ -158,7 +160,7 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
                                             />
                                             <Button size="sm" onClick={() => handleExtendClick(trimmedSection, index, extendInstruction)} disabled={!extendInstruction || isExtending === index}>
                                                 <Pencil className="mr-2 h-4 w-4" />
-                                                Apply Instruction
+                                                Write More With Your Instruction
                                             </Button>
                                         </div>
                                          <div className="relative">
@@ -583,3 +585,5 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
