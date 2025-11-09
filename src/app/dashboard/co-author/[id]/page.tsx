@@ -63,7 +63,7 @@ export default function CoAuthorWorkspacePage() {
   const projectId = params.id;
 
   const projectDocRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !projectId) return null;
     return doc(firestore, 'users', user.uid, 'projects', projectId);
   }, [user, firestore, projectId]);
 
