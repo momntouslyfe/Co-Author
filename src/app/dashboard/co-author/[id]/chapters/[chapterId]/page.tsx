@@ -65,47 +65,39 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
 type PageState = 'overview' | 'generating' | 'writing';
 
 // New Component for the interactive editor
-const ChapterEditor = ({ content, onContentChange }: { content: string; onContentChange: (newContent: string) => void }) => {
-    // This component will now render the content with formatting and interactive elements
-    // For now, we'll just parse it for display, but keep editing in a textarea
-    
-    const renderFormattedContent = () => {
-        return content.split('\n\n').map((paragraph, pIndex) => {
-            const trimmedParagraph = paragraph.trim();
-            if (trimmedParagraph.startsWith('$$') && trimmedParagraph.endsWith('$$')) {
-                return <h3 key={pIndex} className="text-2xl font-bold font-headline mt-8 mb-4">{trimmedParagraph.replaceAll('$$', '')}</h3>;
+const ChapterEditor = ({ content }: { content: string; }) => {
+    const renderContent = () => {
+        return content.split('\n').map((line, index) => {
+            const trimmedLine = line.trim();
+
+            if (trimmedLine.startsWith('$$') && trimmedLine.endsWith('$$')) {
+                const title = trimmedLine.replaceAll('$$', '');
+                return <h3 key={index} className="text-3xl font-bold font-headline mt-10 mb-6">{title}</h3>;
             }
-            if (trimmedParagraph.startsWith('Your Action Step:') || trimmedParagraph.startsWith('Coming Up Next:')) {
-                return <h4 key={pIndex} className="text-xl font-bold font-headline mt-6 mb-2">{trimmedParagraph}</h4>;
+            
+            if (trimmedLine.startsWith('Your Action Step:') || trimmedLine.startsWith('Coming Up Next:')) {
+                return <h4 key={index} className="text-2xl font-bold font-headline mt-8 mb-4">{trimmedLine}</h4>;
             }
-            if (trimmedParagraph === '') {
-                return null; // Don't render empty paragraphs
+
+            if (trimmedLine === '') {
+                return null; // Don't render empty lines as paragraphs
             }
 
             return (
-                <div key={pIndex} className="relative group mb-4">
-                    <p>{paragraph}</p>
-                    <div className="absolute top-0 -right-24 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                         <Button variant="outline" size="sm" className="text-xs">
+                <div key={index} className="mb-4 group">
+                    <p className="text-base leading-relaxed">{line}</p>
+                    <div className="text-right opacity-0 group-hover:opacity-100 transition-opacity mt-2">
+                        <Button variant="outline" size="sm" className="text-xs">
                              <Sparkles className="mr-2 h-3 w-3" />
-                             Extend
+                             Extend With AI
                          </Button>
                     </div>
                 </div>
-            )
+            );
         });
     };
 
-    // A simple toggle between a formatted view and a raw textarea could be an approach.
-    // For now, we'll use a Textarea for simplicity of editing, but the AI prompt ensures good formatting.
-    return (
-        <Textarea
-           value={content}
-           onChange={(e) => onContentChange(e.target.value)}
-           placeholder="Your chapter content will appear here..."
-           className="h-[75vh] text-base leading-relaxed"
-        />
-    )
+    return <div className="prose prose-lg max-w-none dark:prose-invert">{renderContent()}</div>;
 };
 
 
@@ -355,7 +347,7 @@ export default function ChapterPage() {
                         </Button>
                     </div>
                     <div className="relative">
-                        <ChapterEditor content={chapterContent} onContentChange={setChapterContent} />
+                        <ChapterEditor content={chapterContent} />
                     </div>
                     <div className="flex justify-end">
                         <Button onClick={handleSaveContent} disabled={isSaving}>
