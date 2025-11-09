@@ -252,20 +252,8 @@ export default function ChapterPage() {
     );
   }
 
-  if (pageState === 'generating') {
-    return (
-        <div className="flex h-[70vh] flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <div className="text-center">
-                <p className="text-lg font-semibold">AI is writing your chapter...</p>
-                <p className="text-muted-foreground">Please wait a moment while the first draft is being created.</p>
-            </div>
-        </div>
-    );
-  }
 
-
-  return ( // This is the 'writing' state
+  return ( // This renders for both 'writing' and 'generating' states
     <div className="space-y-6">
        <Card>
         <CardHeader className="flex-row items-start justify-between">
@@ -281,8 +269,16 @@ export default function ChapterPage() {
             </div>
         </CardHeader>
         <CardContent>
-            <div className="grid md:grid-cols-3 gap-6">
-                <div className="md:col-span-3 space-y-4">
+            {pageState === 'generating' ? (
+                <div className="flex h-[65vh] flex-col items-center justify-center space-y-4 rounded-md border border-dashed">
+                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                    <div className="text-center">
+                        <p className="text-lg font-semibold">AI is writing your chapter...</p>
+                        <p className="text-muted-foreground">Please wait a moment while the first draft is being created.</p>
+                    </div>
+                </div>
+            ) : (
+                <div className="space-y-4">
                      <Textarea
                         value={chapterContent}
                         onChange={(e) => setChapterContent(e.target.value)}
@@ -296,11 +292,9 @@ export default function ChapterPage() {
                         </Button>
                     </div>
                 </div>
-            </div>
+            )}
         </CardContent>
        </Card>
     </div>
   );
 }
-
-    
