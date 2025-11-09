@@ -108,7 +108,7 @@ export default function ChapterPage() {
   const router = useRouter();
   const params = useParams<{ id: string; chapterId: string }>();
   const projectId = params.id;
-  const chapterId = params.id;
+  const chapterId = params.chapterId;
 
   const { user } = useAuthUser();
   const firestore = useFirestore();
