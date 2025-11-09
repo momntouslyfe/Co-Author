@@ -106,8 +106,9 @@ const ChapterEditor = ({
     
     const { toast } = useToast();
 
-    const handleExtendClick = async (paragraph: string, index: number, instruction?: string) => {
-        setIsExtending(index);
+    const handleExtendClick = async (paragraph: string, sectionIndex: number, paragraphIndex: number, instruction?: string) => {
+        const uniqueIndex = sectionIndex * 1000 + paragraphIndex;
+        setIsExtending(uniqueIndex);
         setOpenExtendPopoverIndex(null); // Close the popover
         try {
             const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
@@ -121,10 +122,24 @@ const ChapterEditor = ({
                 styleProfile: selectedStyle?.styleAnalysis,
             });
 
-            const paragraphs = content.split('\n\n');
-            // Insert the new content right after the paragraph that was clicked
-            paragraphs.splice(index + 1, 0, result.expandedContent);
-            onContentChange(paragraphs.join('\n\n'));
+            // Split by the delimiter, but keep the delimiter in the array.
+            const sections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+            const hasChapterTitle = sections[0].startsWith('$$');
+            const introContentIndex = hasChapterTitle ? 1 : 0;
+            const contentStartIndex = hasChapterTitle ? 2 : 1;
+
+            if (sectionIndex === -1) { // Intro section
+                const introParagraphs = (sections[introContentIndex] || '').trim().split('\n\n');
+                introParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
+                sections[introContentIndex] = `\n\n${introParagraphs.join('\n\n')}\n\n`;
+            } else { // Sub-topic sections
+                const contentPartIndex = contentStartIndex + (sectionIndex * 2) + 1;
+                const sectionParagraphs = (sections[contentPartIndex] || '').trim().split('\n\n');
+                sectionParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
+                sections[contentPartIndex] = `\n\n${sectionParagraphs.join('\n\n')}\n\n`;
+            }
+
+            onContentChange(sections.join(''));
             toast({ title: "Content Extended", description: "New content has been added." });
 
         } catch (error) {
@@ -202,7 +217,6 @@ const ChapterEditor = ({
 
     const renderContent = () => {
         // Split by the delimiter, but keep the delimiter in the array.
-        // This regex now handles the intro case better by looking ahead
         const sections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
         
         if (sections.length === 0) return null;
@@ -212,7 +226,7 @@ const ChapterEditor = ({
         // Identify if the first block is the chapter title.
         const hasChapterTitle = sections[0].startsWith('$$');
         const chapterTitle = hasChapterTitle ? sections[0].replaceAll('$$', '') : chapterDetails.title;
-        const introContent = hasChapterTitle ? (sections[1] || '') : sections[0];
+        const introContent = hasChapterTitle ? (sections[1] || '') : (sections[0] || '');
         const contentStartIndex = hasChapterTitle ? 2 : 1;
         const introSectionIndex = -1; // Special index for intro
 
@@ -220,7 +234,7 @@ const ChapterEditor = ({
         renderedSections.push(
             <div key="section-container-intro" className="group/section relative">
                 <div className="flex items-center justify-between">
-                    <h3 className="font-headline mt-8 mb-4 font-bold text-xl">{chapterTitle}</h3>
+                    <h2 className="font-headline mt-8 mb-4 font-bold text-2xl">{chapterTitle}</h2>
                     <Popover open={openRewritePopoverIndex === introSectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? introSectionIndex : null)}>
                         <PopoverTrigger asChild>
                             <Button 
@@ -276,10 +290,10 @@ const ChapterEditor = ({
                         <div key={`p-container-intro-${pIndex}`} className="mb-4 group/paragraph">
                              <p className="text-base leading-relaxed">{paragraph}</p>
                              <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
-                                <Popover open={openExtendPopoverIndex === (introSectionIndex * 100 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (introSectionIndex * 100 + pIndex) : null)}>
+                                <Popover open={openExtendPopoverIndex === (introSectionIndex * 1000 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (introSectionIndex * 1000 + pIndex) : null)}>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === (introSectionIndex * 100 + pIndex)}>
-                                                {isExtending === (introSectionIndex * 100 + pIndex) ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
+                                            <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === (introSectionIndex * 1000 + pIndex)}>
+                                                {isExtending === (introSectionIndex * 1000 + pIndex) ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
                                                 Extend With AI
                                             </Button>
                                         </PopoverTrigger>
@@ -299,7 +313,7 @@ const ChapterEditor = ({
                                                         value={extendInstruction}
                                                         onChange={(e) => setExtendInstruction(e.target.value)}
                                                     />
-                                                    <Button size="sm" onClick={() => handleExtendClick(paragraph, (introSectionIndex * 100 + pIndex), extendInstruction)} disabled={!extendInstruction || isExtending === (introSectionIndex * 100 + pIndex)}>
+                                                    <Button size="sm" onClick={() => handleExtendClick(paragraph, introSectionIndex, pIndex, extendInstruction)} disabled={!extendInstruction || isExtending === (introSectionIndex * 1000 + pIndex)}>
                                                         <Pencil className="mr-2 h-4 w-4" />
                                                         Write More With My instruction
                                                     </Button>
@@ -314,7 +328,7 @@ const ChapterEditor = ({
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <Button size="sm" variant="secondary" onClick={() => handleExtendClick(paragraph, (introSectionIndex * 100 + pIndex))} disabled={isExtending === (introSectionIndex * 100 + pIndex)}>
+                                                <Button size="sm" variant="secondary" onClick={() => handleExtendClick(paragraph, introSectionIndex, pIndex)} disabled={isExtending === (introSectionIndex * 1000 + pIndex)}>
                                                     <Wand2 className="mr-2 h-4 w-4" />
                                                     Just Write More
                                                 </Button>
@@ -341,7 +355,7 @@ const ChapterEditor = ({
             renderedSections.push(
                 <div key={`section-container-${sectionIndex}`} className="group/section relative">
                     <div className="flex items-center justify-between">
-                         <h3 className={`font-headline mt-8 mb-4 font-bold text-lg`}>{title}</h3>
+                         <h3 className={`font-headline mt-8 mb-4 font-bold text-xl`}>{title}</h3>
                          <Popover open={openRewritePopoverIndex === sectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? sectionIndex : null)}>
                              <PopoverTrigger asChild>
                                 <Button 
@@ -405,10 +419,10 @@ const ChapterEditor = ({
                             <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4 group/paragraph">
                                 <p className="text-base leading-relaxed">{paragraph}</p>
                                 <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
-                                <Popover open={openExtendPopoverIndex === (sectionIndex * 100 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (sectionIndex * 100 + pIndex) : null)}>
+                                <Popover open={openExtendPopoverIndex === (sectionIndex * 1000 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (sectionIndex * 1000 + pIndex) : null)}>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === (sectionIndex * 100 + pIndex)}>
-                                                {isExtending === (sectionIndex * 100 + pIndex) ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
+                                            <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
+                                                {isExtending === (sectionIndex * 1000 + pIndex) ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
                                                 Extend With AI
                                             </Button>
                                         </PopoverTrigger>
@@ -428,7 +442,7 @@ const ChapterEditor = ({
                                                         value={extendInstruction}
                                                         onChange={(e) => setExtendInstruction(e.target.value)}
                                                     />
-                                                    <Button size="sm" onClick={() => handleExtendClick(paragraph, (sectionIndex * 100 + pIndex), extendInstruction)} disabled={!extendInstruction || isExtending === (sectionIndex * 100 + pIndex)}>
+                                                    <Button size="sm" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex, extendInstruction)} disabled={!extendInstruction || isExtending === (sectionIndex * 1000 + pIndex)}>
                                                         <Pencil className="mr-2 h-4 w-4" />
                                                         Write More With My instruction
                                                     </Button>
@@ -443,7 +457,7 @@ const ChapterEditor = ({
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <Button size="sm" variant="secondary" onClick={() => handleExtendClick(paragraph, (sectionIndex * 100 + pIndex))} disabled={isExtending === (sectionIndex * 100 + pIndex)}>
+                                                <Button size="sm" variant="secondary" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex)} disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
                                                     <Wand2 className="mr-2 h-4 w-4" />
                                                     Just Write More
                                                 </Button>
@@ -917,3 +931,6 @@ export default function ChapterPage() {
 
 
 
+
+
+    
