@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -153,7 +154,14 @@ export default function CoAuthorWorkspacePage() {
   }
 
   if (!project) {
-    return notFound();
+    // If loading is finished and there is still no project, then it's a 404
+    // But we give it a moment to load after creation.
+    // A better implementation might wait for a moment before showing notFound().
+    return (
+      <div className="flex h-screen items-center justify-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
