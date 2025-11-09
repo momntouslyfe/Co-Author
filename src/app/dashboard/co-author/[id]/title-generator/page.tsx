@@ -95,7 +95,7 @@ export default function TitleGeneratorPage() {
         description: 'Your new project title has been saved.',
       });
       // Navigate to the next step, e.g., the chapter list
-      // router.push(`/dashboard/co-author/${projectId}/chapters`);
+      router.push(`/dashboard/co-author/${projectId}/chapters`);
     } catch (error) {
       console.error('Error saving title:', error);
       toast({

@@ -1,4 +1,5 @@
 
+
 export type User = {
   name: string;
   email: string;
@@ -8,6 +9,7 @@ export type User = {
 export type Chapter = {
   id: string;
   title: string;
+  part: string;
   content: string;
 };
 
