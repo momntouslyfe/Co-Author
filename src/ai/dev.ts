@@ -7,3 +7,4 @@ import '@/ai/flows/research-book-topic.ts';
 import '@/ai/flows/expand-book-content.ts';
 import '@/ai/flows/set-admin.ts';
 import '@/ai/flows/analyze-writing-style.ts';
+import '@/ai/flows/generate-book-titles.ts';

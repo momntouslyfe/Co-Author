@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -26,8 +24,10 @@ import { useAuthUser, useFirestore, useCollection, useMemoFirebase, useDoc } fro
 import type { ResearchProfile, StyleProfile, Project } from '@/lib/definitions';
 import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useParams, notFound } from 'next/navigation';
+import { useParams, notFound, useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Link from 'next/link';
+
 
 const formSchema = z.object({
   topic: z.string().min(10, 'Please describe your core idea in at least 10 characters.'),
@@ -98,10 +98,14 @@ export default function CoAuthorWorkspacePage() {
   });
   
   useEffect(() => {
-    if (project?.description) {
-      form.reset({ topic: project.description });
+    if (project) {
+        form.reset({ 
+            topic: project.description || '',
+            // You might want to pre-fill other fields if they are saved in the project document
+        });
     }
   }, [project, form]);
+
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
@@ -165,7 +169,6 @@ export default function CoAuthorWorkspacePage() {
     }
   }
 
-  // Show a loading screen while the project document is being fetched.
   if (isProjectLoading) {
     return (
         <div className="flex h-screen items-center justify-center">
@@ -174,25 +177,21 @@ export default function CoAuthorWorkspacePage() {
     );
   }
 
-  // If loading is done and there's no project, show a 404.
-  // This prevents showing 404 for a moment while data is loading for a valid project.
-  if (!project) {
+  if (!project && !isProjectLoading) {
     return notFound();
   }
   
-  // Determine which view to show
-  const showBlueprintGenerator = !project.outline;
-  const showMasterBlueprint = !!project.outline && !isEditing;
-  const showEditor = !!project.outline && isEditing;
+  const showBlueprintGenerator = !project?.outline;
+  const showMasterBlueprint = !!project?.outline && !isEditing;
+  const showEditor = !!project?.outline && isEditing;
 
 
   return (
     <div className="space-y-8">
-      {/* View 1: Initial Blueprint Generator */}
-      {(showBlueprintGenerator && !isEditing) && (
+      {(showBlueprintGenerator && !result && !isEditing) && (
         <div className="space-y-6">
             <header>
-                <h1 className="text-3xl font-bold font-headline tracking-tighter">Co-Author Workspace: {project.title}</h1>
+                <h1 className="text-3xl font-bold font-headline tracking-tighter">Co-Author Workspace: {project?.title}</h1>
                 <p className="text-muted-foreground">
                 Step 1: Generate your book's blueprint. This strategy will guide all future AI generation.
                 </p>
@@ -210,7 +209,6 @@ export default function CoAuthorWorkspacePage() {
                         <Textarea 
                             placeholder={"e.g., 'A book about street food in Dhaka' or 'A mini-course on the basics of investing.'"}
                             {...field}
-                            defaultValue={project.description}
                             rows={3} 
                         />
                     </FormControl>
@@ -340,7 +338,6 @@ export default function CoAuthorWorkspacePage() {
         </div>
       )}
 
-      {/* View 2: Outline Selection */}
       {result && !isEditing && (
         <Card>
             <CardHeader>
@@ -368,8 +365,7 @@ export default function CoAuthorWorkspacePage() {
         </Card>
       )}
 
-      {/* View 3: Blueprint Editor */}
-      {(isEditing || showEditor) && (
+      {showEditor && (
         <Card>
             <CardHeader className="flex flex-row items-start justify-between">
                 <div>
@@ -386,7 +382,7 @@ export default function CoAuthorWorkspacePage() {
             </CardHeader>
             <CardContent>
                 <Textarea
-                    value={selectedOutline || project.outline || ''}
+                    value={selectedOutline || project?.outline || ''}
                     onChange={(e) => setSelectedOutline(e.target.value)}
                     className="h-[60vh] font-mono text-sm"
                 />
@@ -394,28 +390,29 @@ export default function CoAuthorWorkspacePage() {
         </Card>
       )}
 
-       {/* View 4: Locked Master Blueprint */}
        {showMasterBlueprint && (
          <Card>
             <CardHeader className="flex flex-row items-start justify-between">
                 <div>
                 <CardTitle className="flex items-center gap-2 font-headline">
-                    Master Blueprint for "{project.title}"
+                    Master Blueprint for "{project?.title}"
                 </CardTitle>
                 <CardDescription>Your book's structure is locked in. You can now proceed to title generation and chapter writing.</CardDescription>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={() => {
-                        setSelectedOutline(project.outline || '');
+                        setSelectedOutline(project?.outline || '');
                         setIsEditing(true);
                     }}>
                         Edit Blueprint
                     </Button>
-                     <Button>Next: Generate Titles</Button>
+                     <Button asChild>
+                        <Link href={`/dashboard/co-author/${projectId}/title-generator`}>Next: Generate Titles</Link>
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
-              <p>{project.outline}</p>
+              <p>{project?.outline}</p>
             </CardContent>
         </Card>
        )}
