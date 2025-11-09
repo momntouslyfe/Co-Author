@@ -227,8 +227,8 @@ const generateChapterContentFlow = ai.defineFlow(
     const assembledContent = [
       `$$${input.chapterTitle}$$`,
       chapterBody,
-      `Your Action Step:\n${actionStep}`,
-      `Coming Up Next:\n${teaser}`,
+      `$$Your Action Step$$\n\n${actionStep}`,
+      `$$Coming Up Next$$\n\n${teaser}`,
     ].join('\n\n');
 
     return {
@@ -236,5 +236,3 @@ const generateChapterContentFlow = ai.defineFlow(
     };
   }
 );
-
-    

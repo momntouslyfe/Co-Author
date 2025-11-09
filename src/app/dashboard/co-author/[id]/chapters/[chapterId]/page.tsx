@@ -112,15 +112,16 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
 
             if (trimmedSection.startsWith('$$') && trimmedSection.endsWith('$$')) {
                 const title = trimmedSection.replaceAll('$$', '');
-                // Render the first title as h2, subsequent ones as h3
+                
+                if (title === 'Your Action Step' || title === 'Coming Up Next') {
+                    return <h3 key={`title-${index}`} className="text-base font-bold font-headline mt-10 mb-6">{title}</h3>;
+                }
+                 // Render the first title as h2, subsequent ones as h3
                 if (index === 0) {
                      return <h2 key={`title-${index}`} className="font-headline text-xl mt-10 mb-6 font-bold">{title}</h2>;
                 }
                 return <h3 key={`title-${index}`} className="text-base font-bold font-headline mt-10 mb-6">{title}</h3>;
 
-            } else if (trimmedSection.startsWith('Your Action Step:') || trimmedSection.startsWith('Coming Up Next:')) {
-                return <h4 key={`heading-${index}`} className="text-lg font-bold font-headline mt-8 mb-4">{trimmedSection}</h4>;
-            
             } else if (trimmedSection !== '') {
                 return (
                     <div key={`p-container-${index}`} className="mb-4 group">
