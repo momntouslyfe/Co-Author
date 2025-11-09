@@ -6,7 +6,7 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection, getDocs, query, where } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
-import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw } from 'lucide-react';
+import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -143,6 +143,13 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
     return <div className="prose prose-lg max-w-none dark:prose-invert">{renderContent()}</div>;
 };
 
+const frameworks = [
+    { value: 'The Hero\'s Journey', label: 'The Hero\'s Journey' },
+    { value: 'The Mentor\'s Journey', label: 'The Mentor\'s Journey' },
+    { value: 'Three-Act Structure', label: 'Three-Act Structure' },
+    { value: 'Fichtean Curve', label: 'Fichtean Curve' },
+    { value: 'Save the Cat', label: 'Save the Cat' },
+];
 
 
 export default function ChapterPage() {
@@ -159,6 +166,9 @@ export default function ChapterPage() {
   const [chapterContent, setChapterContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [selectedStyleId, setSelectedStyleId] = useState<string>('default');
+  const [selectedResearchId, setSelectedResearchId] = useState<string>('none');
+  const [selectedFramework, setSelectedFramework] = useState<string>('');
+
 
   const projectDocRef = useMemoFirebase(() => {
     if (!user || !projectId) return null;
@@ -179,16 +189,12 @@ export default function ChapterPage() {
     return parseChapterDetails(project.outline, chapterId);
   }, [project?.outline, chapterId]);
   
-  const researchProfileQuery = useMemoFirebase(() => {
-    if (!user || !project?.description) return null;
-    return query(
-      collection(firestore, 'users', user.uid, 'researchProfiles'),
-      where('topic', '==', project.description)
-    );
-  }, [user, firestore, project?.description]);
+  const researchProfilesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'users', user.uid, 'researchProfiles');
+  }, [user, firestore]);
 
-  const { data: researchProfiles } = useCollection<ResearchProfile>(researchProfileQuery);
-  const relevantResearchProfile = researchProfiles?.[0];
+  const { data: researchProfiles } = useCollection<ResearchProfile>(researchProfilesQuery);
 
 
   const chapterDetails = chapterData?.chapter;
@@ -201,6 +207,9 @@ export default function ChapterPage() {
             setChapterContent(savedChapter.content);
             setPageState('writing');
         }
+    }
+    if (project?.storytellingFramework) {
+        setSelectedFramework(project.storytellingFramework);
     }
   }, [project, chapterDetails, chapterId]);
 
@@ -215,6 +224,7 @@ export default function ChapterPage() {
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
         const stylePrompt = selectedStyle?.styleAnalysis;
 
+        const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
         const researchPrompt = relevantResearchProfile 
             ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
             : undefined;
@@ -226,7 +236,7 @@ export default function ChapterPage() {
             fullOutline: project.outline || '',
             chapterTitle: chapterDetails.title,
             subTopics: subTopics,
-            storytellingFramework: project.storytellingFramework,
+            storytellingFramework: selectedFramework,
             styleProfile: stylePrompt,
             researchProfile: researchPrompt,
         });
@@ -244,7 +254,7 @@ export default function ChapterPage() {
         toast({ title: "AI Generation Failed", variant: "destructive", description: "Could not generate chapter content. Please check the AI configuration and try again." });
         setPageState('overview');
     }
-  }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, relevantResearchProfile, toast]);
+  }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, researchProfiles, selectedResearchId, selectedFramework, toast]);
 
 
   const handleSaveContent = useCallback(async () => {
@@ -293,6 +303,7 @@ export default function ChapterPage() {
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
         const stylePrompt = selectedStyle?.styleAnalysis;
 
+        const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
         const researchPrompt = relevantResearchProfile
             ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
             : undefined;
@@ -301,7 +312,7 @@ export default function ChapterPage() {
             chapterContent: chapterContent,
             styleProfile: stylePrompt,
             researchProfile: researchPrompt,
-            storytellingFramework: project.storytellingFramework,
+            storytellingFramework: selectedFramework,
             language: project.language,
         });
 
@@ -317,7 +328,7 @@ export default function ChapterPage() {
     } finally {
         setPageState('writing');
     }
-  }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, project?.storytellingFramework, relevantResearchProfile]);
+  }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, selectedFramework, researchProfiles, selectedResearchId]);
 
 
   if (isProjectLoading) {
@@ -350,7 +361,7 @@ export default function ChapterPage() {
             <Card>
                 <CardHeader className="flex-row items-start justify-between">
                     <div>
-                        <CardTitle className="font-headline text-2xl">{chapterDetails.title}</CardTitle>
+                        <CardTitle className="font-headline text-xl">{chapterDetails.title}</CardTitle>
                         <CardDescription>Part of: {chapterDetails.part}</CardDescription>
                     </div>
                      <Button asChild variant="outline">
@@ -360,19 +371,67 @@ export default function ChapterPage() {
                 <CardContent className="space-y-6">
                     <Card className="bg-secondary/50">
                         <CardHeader>
-                            <CardTitle className="text-lg">Chapter Talking Points</CardTitle>
-                            <CardDescription>The AI will use these points to structure the chapter.</CardDescription>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <Bot className="w-5 h-5"/>
+                                AI Writing Context
+                            </CardTitle>
+                            <CardDescription>The AI will use the following context to write this chapter. You can change these settings before generating.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            {subTopics.length > 0 ? (
-                                <ul className="list-disc pl-5 space-y-2">
-                                    {subTopics.map((topic, index) => (
-                                        <li key={index}>{topic}</li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">No sub-topics found for this chapter in the blueprint.</p>
-                            )}
+                        <CardContent className="space-y-4">
+                            <div className="p-4 border rounded-lg">
+                                <div className="flex items-start gap-3">
+                                    <BookOpen className="w-5 h-5 mt-1 text-primary" />
+                                    <div>
+                                        <h4 className="font-semibold">Chapter Talking Points</h4>
+                                        {subTopics.length > 0 ? (
+                                            <ul className="list-disc pl-5 space-y-1 text-sm mt-1">
+                                                {subTopics.map((topic, index) => (
+                                                    <li key={index}>{topic}</li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground mt-1">No sub-topics found for this chapter in the blueprint.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                             <div className="p-4 border rounded-lg">
+                                <div className="flex items-start gap-3">
+                                    <Drama className="w-5 h-5 mt-1 text-primary" />
+                                    <div className='w-full'>
+                                        <h4 className="font-semibold">Storytelling Framework</h4>
+                                        <Select value={selectedFramework} onValueChange={setSelectedFramework}>
+                                            <SelectTrigger className="mt-2">
+                                                <SelectValue placeholder="Select a framework" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                            {frameworks.map(fw => (
+                                                <SelectItem key={fw.value} value={fw.value}>{fw.label}</SelectItem>
+                                            ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-4 border rounded-lg">
+                                <div className="flex items-start gap-3">
+                                    <BrainCircuit className="w-5 h-5 mt-1 text-primary" />
+                                    <div className='w-full'>
+                                        <h4 className="font-semibold">AI Research Profile</h4>
+                                         <Select value={selectedResearchId} onValueChange={setSelectedResearchId}>
+                                            <SelectTrigger className="mt-2">
+                                                <SelectValue placeholder="Select a research profile" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">None</SelectItem>
+                                                {researchProfiles?.map(p => (
+                                                    <SelectItem key={p.id} value={p.id}>{p.topic}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 

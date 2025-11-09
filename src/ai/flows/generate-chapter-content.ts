@@ -108,8 +108,7 @@ const writeIntroPrompt = ai.definePrompt({
 
 Book Outline for Context:
 {{{fullOutline}}}
-
-Return a JSON object with a single key: "intro".`
+`
 });
 
 
@@ -130,8 +129,7 @@ const writeActionStepPrompt = ai.definePrompt({
 
 Chapter Content:
 {{{chapterContent}}}
-
-Return a JSON object with a single key: "actionStep".`
+`
 });
 
 
@@ -153,8 +151,7 @@ const writeTeaserPrompt = ai.definePrompt({
 
 Book Outline:
 {{{fullOutline}}}
-
-Return a JSON object with a single key: "teaser".`
+`
 });
 
 
