@@ -99,15 +99,59 @@ const writeIntroPrompt = ai.definePrompt({
     output: {
         schema: z.object({
             intro: z.string(),
-            teaser: z.string(),
         })
     },
-    prompt: `You are a ghostwriter. Write a short, engaging introduction (2-3 sentences) for a book chapter titled "{{{chapterTitle}}}" in {{{bookLanguage}}}. Also, write a 1-2 sentence teaser for the next chapter.
+    prompt: `You are a ghostwriter. Write a short, engaging introduction (2-3 sentences) in {{{bookLanguage}}} for a book chapter titled "{{{chapterTitle}}}".
 
 Book Outline for Context:
 {{{fullOutline}}}
 
-Return a JSON object with two keys: "intro" and "teaser".`
+Return a JSON object with a single key: "intro".`
+});
+
+
+const writeActionStepPrompt = ai.definePrompt({
+    name: 'writeChapterActionStepPrompt',
+    input: {
+        schema: z.object({
+            bookLanguage: z.string(),
+            chapterContent: z.string(),
+        })
+    },
+    output: {
+        schema: z.object({
+            actionStep: z.string(),
+        })
+    },
+    prompt: `You are a writing coach. Based on the following chapter content, write a single, practical, and engaging action step (2-3 sentences) for the reader in {{{bookLanguage}}}. The action step should encourage them to apply what they've learned.
+
+Chapter Content:
+{{{chapterContent}}}
+
+Return a JSON object with a single key: "actionStep".`
+});
+
+
+const writeTeaserPrompt = ai.definePrompt({
+    name: 'writeChapterTeaserPrompt',
+    input: {
+        schema: z.object({
+            bookLanguage: z.string(),
+            fullOutline: z.string(),
+            currentChapterTitle: z.string(),
+        })
+    },
+    output: {
+        schema: z.object({
+            teaser: z.string(),
+        })
+    },
+    prompt: `You are a copywriter. Based on the provided book outline, write a compelling 1-2 sentence teaser for the chapter that comes *after* "{{{currentChapterTitle}}}". The language should be {{{bookLanguage}}}.
+
+Book Outline:
+{{{fullOutline}}}
+
+Return a JSON object with a single key: "teaser".`
 });
 
 
@@ -123,16 +167,16 @@ const generateChapterContentFlow = ai.defineFlow(
     outputSchema: GenerateChapterContentOutputSchema,
   },
   async (input) => {
-    // 1. Generate the Intro and Teaser first
-    const { output: introAndTeaser } = await writeIntroPrompt({
+    // 1. Generate the Intro first
+    const { output: introData } = await writeIntroPrompt({
         bookLanguage: input.bookLanguage,
         chapterTitle: input.chapterTitle,
         fullOutline: input.fullOutline,
     });
-    if (!introAndTeaser) {
-        throw new Error("Failed to generate chapter intro and teaser.");
+    if (!introData) {
+        throw new Error("Failed to generate chapter intro.");
     }
-    const { intro, teaser } = introAndTeaser;
+    const { intro } = introData;
 
     // 2. Iterate over sub-topics and generate content for each
     const sectionContents = await Promise.all(
@@ -147,22 +191,43 @@ const generateChapterContentFlow = ai.defineFlow(
         });
 
         if (!output || !output.sectionContent) {
-          // In a real app, you might want more robust error handling, like retries.
           console.warn(`Warning: No content generated for sub-topic: "${subTopic}"`);
           return `$$${subTopic}$$\n\n[Content generation for this section failed. Please try again.]`;
         }
         
-        // Format the section with its title
         return `$$${subTopic}$$\n\n${output.sectionContent}`;
       })
     );
+    
+    // Combine the intro and main content to create the body
+    const chapterBody = [intro, ...sectionContents].join('\n\n');
 
-    // 3. Assemble the full chapter content
+    // 3. Generate the Action Step based on the written content
+    const { output: actionStepData } = await writeActionStepPrompt({
+        bookLanguage: input.bookLanguage,
+        chapterContent: chapterBody,
+    });
+     if (!actionStepData) {
+        throw new Error("Failed to generate action step.");
+    }
+    const { actionStep } = actionStepData;
+
+    // 4. Generate the Teaser for the next chapter
+    const { output: teaserData } = await writeTeaserPrompt({
+        bookLanguage: input.bookLanguage,
+        fullOutline: input.fullOutline,
+        currentChapterTitle: input.chapterTitle,
+    });
+    if (!teaserData) {
+        throw new Error("Failed to generate teaser.");
+    }
+    const { teaser } = teaserData;
+
+    // 5. Assemble the full chapter content
     const assembledContent = [
       `$$${input.chapterTitle}$$`,
-      intro,
-      ...sectionContents,
-      'Your Action Step:\nReflect on the key takeaways from this chapter and identify one action you can take this week to apply what you have learned.',
+      chapterBody,
+      `Your Action Step:\n${actionStep}`,
       `Coming Up Next:\n${teaser}`,
     ].join('\n\n');
 
@@ -171,3 +236,5 @@ const generateChapterContentFlow = ai.defineFlow(
     };
   }
 );
+
+    
