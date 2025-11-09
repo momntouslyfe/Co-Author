@@ -73,15 +73,17 @@ You MUST adhere strictly to the following writing style. Adopt its tone, voice, 
 
 **CRITICAL MANDATES: YOU MUST FOLLOW THESE RULES**
 
-1.  **HUMAN-LIKE WRITING:**
+1.  **CHAPTER LENGTH:** The final generated chapter MUST be at least 2250 words long. Achieve this by writing comprehensively on each sub-topic, not by making paragraphs longer.
+
+2.  **HUMAN-LIKE WRITING:** This rule is non-negotiable.
     *   **Paragraphs:** Use short paragraphs, typically 3-5 sentences long. You MUST vary paragraph length for rhythm and readability.
     *   **Clarity:** Ensure there are clear gaps (a double newline) between every paragraph.
     *   **No AI Filler:** Avoid generic phrases, repetition, and overly complex sentences. Write with clarity and impact.
 
-2.  **LAYOUT STRUCTURE:** You MUST follow this exact layout. Do NOT deviate.
+3.  **LAYOUT STRUCTURE:** You MUST follow this exact layout. Do NOT deviate.
     *   **Chapter Title:** Start with the chapter title, enclosed in double dollar signs (e.g., \`$$Chapter Title$$\`).
     *   **Introduction:** Write a short, engaging introduction (2-3 sentences).
-    *   **Sub-Topics:** For each sub-topic, first write the sub-topic title enclosed in double dollar signs (e.g., \`$$Sub-Topic Title$$\`). Then, write the full text for that sub-topic, following all the human-like writing rules.
+    *   **Sub-Topics:** For each sub-topic, first write the sub-topic title enclosed in double dollar signs (e.g., \`$$Sub-Topic Title$$\`). Then, write the full text for that sub-topic, following all the human-like writing rules and generating enough content to meet the overall chapter length requirement.
     *   **Action Step:** After all sub-topics, add a summary section starting with the exact heading: \`Your Action Step:\` (This heading must NOT have $$).
     *   **Teaser:** End with a teaser for the next chapter, starting with the exact heading: \`Coming Up Next:\` (This heading must NOT have $$).
 
@@ -109,7 +111,7 @@ Victory is sweet, but it attracts unwanted attention. In the next chapter, we'll
 
 ---
 
-Now, write the full and complete chapter for '{{{chapterTitle}}}' following all instructions precisely and without fail.`,
+Now, write the full and complete chapter for '{{{chapterTitle}}}' following all instructions precisely and without fail, ensuring the total length is at least 2250 words.`,
 });
 
 
@@ -124,3 +126,4 @@ const generateChapterContentFlow = ai.defineFlow(
     return output!;
   }
 );
+
