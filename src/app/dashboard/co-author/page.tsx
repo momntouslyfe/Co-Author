@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
 import {
   Card,
@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -25,6 +25,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +49,7 @@ export default function CoAuthorPage() {
     const router = useRouter();
 
     const [isCreating, setIsCreating] = useState(false);
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [newProjectName, setNewProjectName] = useState('');
     const [open, setOpen] = useState(false);
 
@@ -69,6 +81,8 @@ export default function CoAuthorPage() {
                 status: 'Draft',
                 createdAt: serverTimestamp(),
                 lastUpdated: serverTimestamp(),
+                imageUrl: `https://picsum.photos/seed/${Math.random()}/600/800`,
+                imageHint: 'book cover'
             });
             toast({
                 title: "Project Created",
@@ -88,6 +102,27 @@ export default function CoAuthorPage() {
             setIsCreating(false);
         }
     };
+
+    const handleDeleteProject = async (projectId: string) => {
+        if (!user) return;
+        setIsDeleting(projectId);
+        try {
+            await deleteDoc(doc(firestore, 'users', user.uid, 'projects', projectId));
+            toast({
+                title: 'Project Deleted',
+                description: 'Your project has been successfully deleted.'
+            });
+        } catch (error) {
+            console.error("Error deleting project:", error);
+            toast({
+                title: "Error Deleting Project",
+                description: "Could not delete the project. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsDeleting(null);
+        }
+    }
 
 
     return (
@@ -144,7 +179,28 @@ export default function CoAuthorPage() {
           ) : projects && projects.length > 0 ? (
             <div className="grid sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {projects.map((project) => (
-                <Card key={project.id} className="flex flex-col">
+                <Card key={project.id} className="flex flex-col relative group">
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon" className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {isDeleting === project.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the project "{project.title}".
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteProject(project.id)} disabled={isDeleting === project.id}>
+                                    {isDeleting === project.id ? 'Deleting...' : 'Continue'}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                     <CardHeader className="p-0">
                     <Link href={`/dashboard/co-author/${project.id}`}>
                         <div className="aspect-[3/4] w-full relative">
@@ -160,7 +216,7 @@ export default function CoAuthorPage() {
                     </CardHeader>
                     <CardContent className="p-4 flex-grow">
                     <h3 className="font-bold font-headline text-lg">{project.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                         {project.description || 'No description yet.'}
                     </p>
                     </CardContent>
