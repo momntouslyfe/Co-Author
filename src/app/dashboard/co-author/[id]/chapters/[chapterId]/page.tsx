@@ -73,6 +73,7 @@ type PageState = 'overview' | 'generating' | 'writing';
 const ChapterEditor = ({ content, onContentChange, selectedStyle }: { content: string; onContentChange: (newContent: string) => void; selectedStyle: string }) => {
     
     const [isExtending, setIsExtending] = useState<number | null>(null);
+    const { toast } = useToast();
 
     const handleExtendClick = async (paragraph: string, index: number) => {
         setIsExtending(index);
@@ -83,12 +84,14 @@ const ChapterEditor = ({ content, onContentChange, selectedStyle }: { content: s
             });
 
             const paragraphs = content.split('\n\n');
-            const newParagraphs = [...paragraphs];
-            newParagraphs[index] = result.expandedContent;
-            onContentChange(newParagraphs.join('\n\n'));
+            // Insert the new content right after the paragraph that was clicked
+            paragraphs.splice(index + 1, 0, result.expandedContent);
+            onContentChange(paragraphs.join('\n\n'));
+            toast({ title: "Content Extended", description: "New content has been added." });
 
         } catch (error) {
             console.error("Failed to extend content", error);
+            toast({ title: "AI Extend Failed", description: "Could not generate additional content.", variant: "destructive" });
         } finally {
             setIsExtending(null);
         }
@@ -105,7 +108,7 @@ const ChapterEditor = ({ content, onContentChange, selectedStyle }: { content: s
                 const title = trimmedSection.replaceAll('$$', '');
                 // Render the first title as h2, subsequent ones as h3
                 if (index === 0) {
-                     return <h2 key={`title-${index}`} className="text-xl font-bold font-headline mt-10 mb-6">{title}</h2>;
+                     return <h2 key={`title-${index}`} className="font-headline text-xl mt-10 mb-6 font-bold">{title}</h2>;
                 }
                 return <h3 key={`title-${index}`} className="text-base font-bold font-headline mt-10 mb-6">{title}</h3>;
 
@@ -420,3 +423,4 @@ export default function ChapterPage() {
     
 
     
+
