@@ -1,7 +1,12 @@
-import {genkit} from 'genkit';
+import {genkit, configureGenkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 
+// Initialize the Google AI plugin with the API key from the environment variable.
+const googleAIPlugin = googleAI({
+    apiKey: process.env.GEMINI_API_KEY,
+});
+
 export const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [googleAIPlugin],
   model: 'googleai/gemini-2.5-flash',
 });
