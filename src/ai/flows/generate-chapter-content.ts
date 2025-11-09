@@ -72,10 +72,12 @@ Write the entire chapter content from start to finish, following the structure a
     *   Write AT LEAST 400-600 words of comprehensive content for that sub-topic.
     *   All content must be directly related to its sub-topic.
 4.  **Action Step:** After all sub-topic sections, create a section titled \`$$Your Action Step$$\`. Write a single, practical action step (2-3 sentences) for the reader.
-5.  **Teaser:** After the action step, create a section titled \`$$Coming Up Next$$\`. Write a compelling 1-2 sentence teaser for the next chapter in the outline.
+5.  **Teaser:** After the action step, create a section titled \`$$Coming Up Next$$\`. Based on the "Full Book Outline", identify the chapter immediately following "{{{chapterTitle}}}" and write a compelling 1-2 sentence teaser that creates anticipation for that specific next chapter's content.
 6.  **Paragraphs & Spacing:**
     *   Use short, human-like paragraphs (3-5 sentences), but VARY their length for rhythm.
     *   Crucially, there MUST be a double newline (a blank line) between every paragraph and between every \`$$...$$\` section.
+    *   After each \`$$...$$\` title (including Action Step and Coming Up Next), you MUST write the corresponding content on a new line after a double newline.
+
 
 **SUB-TOPICS TO COVER:**
 {{#each subTopics}}
