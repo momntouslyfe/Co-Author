@@ -4,9 +4,9 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove } from 'firebase/firestore';
-import type { Project, Chapter } from '@/lib/definitions';
-import { Loader2, Bot, Save, Sparkles, Wand2, ArrowRight } from 'lucide-react';
+import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection, getDocs, query, where } from 'firebase/firestore';
+import type { Project, Chapter, ResearchProfile, StyleProfile } from '@/lib/definitions';
+import { Loader2, Bot, Save, Wand2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -14,8 +14,6 @@ import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { generateChapterContent } from '@/ai/flows/generate-chapter-content';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import type { StyleProfile } from '@/lib/definitions';
-import { collection } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Enhanced helper to parse chapter details including sub-topics
@@ -99,6 +97,20 @@ export default function ChapterPage() {
     if (!project?.outline || !chapterId) return null;
     return parseChapterDetails(project.outline, chapterId);
   }, [project?.outline, chapterId]);
+  
+  // This memo finds the most relevant research profile based on the project's description/topic.
+  // It's a simple text match, but effective for this use case.
+  const researchProfileQuery = useMemoFirebase(() => {
+    if (!user || !project?.description) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'researchProfiles'),
+      where('topic', '==', project.description)
+    );
+  }, [user, firestore, project?.description]);
+
+  const { data: researchProfiles } = useCollection<ResearchProfile>(researchProfileQuery);
+  const relevantResearchProfile = researchProfiles?.[0];
+
 
   const chapterDetails = chapterData?.chapter;
   const subTopics = chapterData?.subTopics || [];
@@ -114,33 +126,43 @@ export default function ChapterPage() {
     }
   }, [project, chapterDetails, chapterId]);
 
-  // Effect to handle AI content generation when state changes to 'generating'
-  useEffect(() => {
-    if (pageState === 'generating' && chapterDetails && subTopics.length > 0) {
-        const generate = async () => {
-             try {
-                const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
-                const stylePrompt = selectedStyle?.styleAnalysis;
-
-                const result = await generateChapterContent({
-                    chapterTitle: chapterDetails.title,
-                    subTopics: subTopics,
-                    styleProfile: stylePrompt,
-                });
-
-                setChapterContent(result.chapterContent);
-                setPageState('writing');
-                toast({ title: "Chapter Draft Ready", description: "The AI has generated the first draft." });
-
-            } catch (error) {
-                console.error("Error generating content:", error);
-                toast({ title: "AI Generation Failed", variant: "destructive" });
-                setPageState('overview'); // Go back to overview on failure
-            }
-        };
-        generate();
+  const generateChapter = useCallback(async () => {
+    if (!project || !chapterDetails || subTopics.length === 0) {
+        toast({ title: "Missing Information", description: "Cannot generate chapter without project details.", variant: "destructive" });
+        return;
     }
-  }, [pageState, chapterDetails, subTopics, styleProfiles, selectedStyleId, toast]);
+
+    setPageState('generating');
+    try {
+        const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
+        const stylePrompt = selectedStyle?.styleAnalysis;
+
+        // Combine research into a single string for the prompt
+        const researchPrompt = relevantResearchProfile 
+            ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
+            : undefined;
+
+        const result = await generateChapterContent({
+            bookTitle: project.title,
+            bookTopic: project.description || '',
+            bookLanguage: project.language || 'English',
+            fullOutline: project.outline || '',
+            chapterTitle: chapterDetails.title,
+            subTopics: subTopics,
+            styleProfile: stylePrompt,
+            researchProfile: researchPrompt,
+        });
+
+        setChapterContent(result.chapterContent);
+        setPageState('writing');
+        toast({ title: "Chapter Draft Ready", description: "The AI has generated the first draft." });
+
+    } catch (error) {
+        console.error("Error generating content:", error);
+        toast({ title: "AI Generation Failed", variant: "destructive", description: "Could not generate chapter content." });
+        setPageState('overview'); // Go back to overview on failure
+    }
+  }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, relevantResearchProfile, toast]);
 
 
   const handleSaveContent = useCallback(async () => {
@@ -205,7 +227,7 @@ export default function ChapterPage() {
                         <CardDescription>Part of: {chapterDetails.part}</CardDescription>
                     </div>
                      <Button asChild variant="outline">
-                        <Link href={`/dashboard/co-author/${projectId}/chapters`}>Back to Chapter List</Link>
+                        <Link href={`/dashboard/co-author/${projectId}/chapters`}><ArrowLeft className="mr-2 h-4 w-4" />Back to Chapters</Link>
                     </Button>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -241,7 +263,7 @@ export default function ChapterPage() {
                             </Select>
                             <p className="text-xs text-muted-foreground mt-2">Select a style profile to guide the AI's voice and tone.</p>
                         </div>
-                         <Button onClick={() => setPageState('generating')} size="lg" className="w-full">
+                         <Button onClick={generateChapter} size="lg" className="w-full">
                             <Wand2 className="mr-2 h-4 w-4" />
                             Write with AI
                         </Button>
@@ -271,7 +293,7 @@ export default function ChapterPage() {
         <CardContent>
             {pageState === 'generating' ? (
                 <div className="flex h-[65vh] flex-col items-center justify-center space-y-4 rounded-md border border-dashed">
-                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                    <Bot className="h-16 w-16 animate-spin text-primary" />
                     <div className="text-center">
                         <p className="text-lg font-semibold">AI is writing your chapter...</p>
                         <p className="text-muted-foreground">Please wait a moment while the first draft is being created.</p>
