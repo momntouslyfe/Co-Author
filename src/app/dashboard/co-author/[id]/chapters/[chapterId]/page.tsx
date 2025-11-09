@@ -6,7 +6,7 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection, getDocs, query, where } from 'firebase/firestore';
 import type { Project, Chapter, ResearchProfile, StyleProfile } from '@/lib/definitions';
-import { Loader2, Bot, Save, Wand2, ArrowLeft } from 'lucide-react';
+import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -64,12 +64,51 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
 // New state to manage the workflow on this page
 type PageState = 'overview' | 'generating' | 'writing';
 
+// New Component for the interactive editor
+const ChapterEditor = ({ content, onContentChange }: { content: string; onContentChange: (newContent: string) => void }) => {
+    const renderContent = () => {
+        return content.split('\n').map((line, index) => {
+            const trimmedLine = line.trim();
+            if (trimmedLine.startsWith('$$') && trimmedLine.endsWith('$$')) {
+                return <h3 key={index} className="text-xl font-bold font-headline mt-6 mb-3">{trimmedLine.replaceAll('$$', '')}</h3>;
+            }
+            if (trimmedLine.startsWith('Your Action Step:') || trimmedLine.startsWith('Coming Up Next:')) {
+                 return <h4 key={index} className="text-lg font-bold font-headline mt-6 mb-2">{trimmedLine}</h4>;
+            }
+            if (trimmedLine === '') {
+                return <div key={index} className="h-4" />; // Spacer for paragraph gaps
+            }
+            return (
+                <div key={index} className="relative group">
+                    <p className="mb-4">{line}</p>
+                    <div className="absolute top-0 -right-32 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col gap-2">
+                         <Button variant="outline" size="sm" className="text-xs">
+                             <Sparkles className="mr-2 h-3 w-3" />
+                             Extend
+                         </Button>
+                    </div>
+                </div>
+            );
+        });
+    };
+
+    return (
+         <Textarea
+            value={content}
+            onChange={(e) => onContentChange(e.target.value)}
+            placeholder="Start writing your chapter here..."
+            className="h-[65vh] text-base"
+        />
+    )
+};
+
+
 export default function ChapterPage() {
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams<{ id: string; chapterId: string }>();
   const projectId = params.id;
-  const chapterId = params.chapterId;
+  const chapterId = params.id;
 
   const { user } = useAuthUser();
   const firestore = useFirestore();
@@ -98,8 +137,6 @@ export default function ChapterPage() {
     return parseChapterDetails(project.outline, chapterId);
   }, [project?.outline, chapterId]);
   
-  // This memo finds the most relevant research profile based on the project's description/topic.
-  // It's a simple text match, but effective for this use case.
   const researchProfileQuery = useMemoFirebase(() => {
     if (!user || !project?.description) return null;
     return query(
@@ -115,13 +152,12 @@ export default function ChapterPage() {
   const chapterDetails = chapterData?.chapter;
   const subTopics = chapterData?.subTopics || [];
 
-  // Effect to load existing content or if content is generated
   useEffect(() => {
     if (project && chapterDetails) {
         const savedChapter = project.chapters?.find(c => c.id === chapterId);
         if (savedChapter && savedChapter.content) {
             setChapterContent(savedChapter.content);
-            setPageState('writing'); // If content exists, go straight to writing
+            setPageState('writing');
         }
     }
   }, [project, chapterDetails, chapterId]);
@@ -137,7 +173,6 @@ export default function ChapterPage() {
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
         const stylePrompt = selectedStyle?.styleAnalysis;
 
-        // Combine research into a single string for the prompt
         const researchPrompt = relevantResearchProfile 
             ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
             : undefined;
@@ -152,6 +187,11 @@ export default function ChapterPage() {
             styleProfile: stylePrompt,
             researchProfile: researchPrompt,
         });
+        
+        let formattedContent = result.chapterContent.replace(`$$${chapterDetails.title}$$`, '').trim();
+        subTopics.forEach(subTopic => {
+            formattedContent = formattedContent.replace(`$$${subTopic}$$`, `\n\n**${subTopic}**\n`);
+        });
 
         setChapterContent(result.chapterContent);
         setPageState('writing');
@@ -160,7 +200,7 @@ export default function ChapterPage() {
     } catch (error) {
         console.error("Error generating content:", error);
         toast({ title: "AI Generation Failed", variant: "destructive", description: "Could not generate chapter content." });
-        setPageState('overview'); // Go back to overview on failure
+        setPageState('overview');
     }
   }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, relevantResearchProfile, toast]);
 
@@ -169,7 +209,6 @@ export default function ChapterPage() {
     if (!projectDocRef || !chapterDetails) return;
     setIsSaving(true);
     try {
-        // This logic first removes the old chapter version and then adds the new one.
         const existingChapter = project?.chapters?.find(c => c.id === chapterId);
         if (existingChapter) {
             await updateDoc(projectDocRef, { chapters: arrayRemove(existingChapter) });
@@ -191,6 +230,11 @@ export default function ChapterPage() {
       setIsSaving(false);
     }
   }, [projectDocRef, chapterDetails, chapterContent, chapterId, project?.chapters, toast]);
+  
+  const handleCopyContent = () => {
+    navigator.clipboard.writeText(chapterContent);
+    toast({ title: 'Content Copied', description: 'The chapter content has been copied to your clipboard.' });
+  }
 
 
   if (isProjectLoading) {
@@ -275,7 +319,7 @@ export default function ChapterPage() {
   }
 
 
-  return ( // This renders for both 'writing' and 'generating' states
+  return ( 
     <div className="space-y-6">
        <Card>
         <CardHeader className="flex-row items-start justify-between">
@@ -293,7 +337,7 @@ export default function ChapterPage() {
         <CardContent>
             {pageState === 'generating' ? (
                 <div className="flex h-[65vh] flex-col items-center justify-center space-y-4 rounded-md border border-dashed">
-                    <Bot className="h-16 w-16 animate-spin text-primary" />
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
                     <div className="text-center">
                         <p className="text-lg font-semibold">AI is writing your chapter...</p>
                         <p className="text-muted-foreground">Please wait a moment while the first draft is being created.</p>
@@ -301,12 +345,17 @@ export default function ChapterPage() {
                 </div>
             ) : (
                 <div className="space-y-4">
-                     <Textarea
-                        value={chapterContent}
-                        onChange={(e) => setChapterContent(e.target.value)}
-                        placeholder="Start writing your chapter here..."
-                        className="h-[65vh] text-base"
-                    />
+                    <div className="relative">
+                        <ChapterEditor content={chapterContent} onContentChange={setChapterContent} />
+                         <div className="absolute top-2 right-2 flex gap-2">
+                            <Button variant="outline" size="sm">
+                                <User className="mr-2 h-4 w-4" /> My Insights
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={handleCopyContent}>
+                                <Copy className="mr-2 h-4 w-4" /> Copy
+                            </Button>
+                        </div>
+                    </div>
                     <div className="flex justify-end">
                         <Button onClick={handleSaveContent} disabled={isSaving}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}

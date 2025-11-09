@@ -28,7 +28,7 @@ const GenerateChapterContentInputSchema = z.object({
 export type GenerateChapterContentInput = z.infer<typeof GenerateChapterContentInputSchema>;
 
 const GenerateChapterContentOutputSchema = z.object({
-  chapterContent: z.string().describe('The fully generated content of the book chapter.'),
+  chapterContent: z.string().describe('The fully generated content of the book chapter, following the specific layout and formatting rules.'),
 });
 export type GenerateChapterContentOutput = z.infer<typeof GenerateChapterContentOutputSchema>;
 
@@ -40,7 +40,7 @@ const prompt = ai.definePrompt({
   name: 'generateChapterContentPrompt',
   input: {schema: GenerateChapterContentInputSchema},
   output: {schema: GenerateChapterContentOutputSchema},
-  prompt: `You are an expert ghostwriter tasked with writing a single book chapter in {{{bookLanguage}}}.
+  prompt: `You are an expert ghostwriter tasked with writing a single, high-quality book chapter in {{{bookLanguage}}}. The chapter must be at least 2250 words.
 
 **OVERALL BOOK CONTEXT:**
 - Book Title: {{{bookTitle}}}
@@ -71,13 +71,49 @@ You MUST adhere strictly to the following writing style. Adopt its tone, voice, 
   - {{{this}}}
 {{/each}}
 
-**INSTRUCTIONS:**
-1.  **Write the Full Chapter:** Write a complete, engaging, and well-structured book chapter based on the title and talking points provided.
-2.  **Stay in Context:** Ensure this chapter logically follows the previous chapters and sets up for the next ones, based on the full outline.
-3.  **Be Comprehensive:** Start with a strong introduction that grabs the reader's attention. Elaborate on each sub-topic in a smooth and logical flow. Conclude the chapter effectively, summarizing key takeaways or creating a hook for the next chapter.
-4.  **Raw Content Only:** Do NOT include the chapter title (e.g., "### Chapter 1: ...") in your output. Return only the raw, ready-to-use chapter content itself, with no introductory or concluding remarks from you, the AI.
-`,
+**CRITICAL FORMATTING AND CONTENT INSTRUCTIONS:**
+
+1.  **Layout Structure:** You MUST follow this exact layout. Do NOT deviate.
+    *   Start with the chapter title, enclosed in double dollar signs: \`$$chapter title$$\`
+    *   Write a short, engaging introduction (2-3 sentences).
+    *   For each sub-topic, first write the sub-topic title enclosed in double dollar signs: \`$$sub-topic title$$\`
+    *   Then, write the full text for that sub-topic.
+    *   After all sub-topics are written, include a summary section starting with the exact heading: \`Your Action Step:\`
+    *   Finally, end with a teaser for the next chapter, starting with the exact heading: \`Coming Up Next:\`
+
+2.  **Human-Like Writing Mandates:**
+    *   **Paragraphs:** Use short paragraphs, typically 3-5 sentences long. Vary paragraph length for rhythm. Ensure there are clear gaps (a double newline) between paragraphs.
+    *   **No AI Filler:** Avoid generic phrases, repetition, and overly complex sentences. Write with clarity and impact.
+
+3.  **Word Count:** The total generated content for the chapter MUST be at least 2250 words.
+
+**EXAMPLE OF THE REQUIRED OUTPUT FORMAT:**
+
+$$The Hero's First Test$$
+
+This is where the adventure truly begins. The hero must now face a challenge that will push them beyond their limits, a first taste of the real dangers that lie ahead.
+
+$$Confronting the Guardian$$
+
+The path was blocked by an ancient golem, its stone eyes glowing with an eerie light. It was a creature of legend, said to be unbeatable. The hero, remembering the mentor's words about courage, took a deep breath and drew their weapon. The air crackled with anticipation.
+
+The first clash of steel on stone sent sparks flying. The golem was slow but immensely powerful, each blow shaking the very ground. The hero had to be nimble, dodging and weaving, looking for a weakness in the ancient armor.
+
+$$Discovering a Hidden Strength$$
+
+It was during a desperate parry that the hero's locket, a simple keepsake from their mother, began to glow. A wave of warmth and forgotten energy flowed through them. They hadn't just inherited a trinket; they had inherited a legacy of power.
+
+Your Action Step:
+Reflect on a time you faced a seemingly insurmountable obstacle. What hidden strength or forgotten piece of advice did you rely on to overcome it? Acknowledge that you often have more resources at your disposal than you realize.
+
+Coming Up Next:
+Victory is sweet, but it attracts unwanted attention. In the next chapter, we'll see how the hero's newfound power puts them on the radar of a much more sinister foe.
+
+---
+
+Now, write the full chapter for '{{{chapterTitle}}}' following all instructions precisely.`,
 });
+
 
 const generateChapterContentFlow = ai.defineFlow(
   {
