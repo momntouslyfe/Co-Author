@@ -78,8 +78,8 @@ You MUST adhere strictly to the following writing style. Adopt its tone, voice, 
     *   Write a short, engaging introduction (2-3 sentences).
     *   For each sub-topic, first write the sub-topic title enclosed in double dollar signs: \`$$sub-topic title$$\`
     *   Then, write the full text for that sub-topic.
-    *   After all sub-topics are written, include a summary section starting with the exact heading: \`Your Action Step:\`
-    *   Finally, end with a teaser for the next chapter, starting with the exact heading: \`Coming Up Next:\`
+    *   After all sub-topics are written, include a summary section starting with the exact heading: \`Your Action Step:\` (This heading should NOT have $$).
+    *   Finally, end with a teaser for the next chapter, starting with the exact heading: \`Coming Up Next:\` (This heading should NOT have $$).
 
 2.  **Human-Like Writing Mandates:**
     *   **Paragraphs:** Use short paragraphs, typically 3-5 sentences long. Vary paragraph length for rhythm. Ensure there are clear gaps (a double newline) between paragraphs.

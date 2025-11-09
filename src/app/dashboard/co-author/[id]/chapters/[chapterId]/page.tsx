@@ -66,38 +66,44 @@ type PageState = 'overview' | 'generating' | 'writing';
 
 // New Component for the interactive editor
 const ChapterEditor = ({ content, onContentChange }: { content: string; onContentChange: (newContent: string) => void }) => {
-    const renderContent = () => {
-        return content.split('\n').map((line, index) => {
-            const trimmedLine = line.trim();
-            if (trimmedLine.startsWith('$$') && trimmedLine.endsWith('$$')) {
-                return <h3 key={index} className="text-xl font-bold font-headline mt-6 mb-3">{trimmedLine.replaceAll('$$', '')}</h3>;
+    // This component will now render the content with formatting and interactive elements
+    // For now, we'll just parse it for display, but keep editing in a textarea
+    
+    const renderFormattedContent = () => {
+        return content.split('\n\n').map((paragraph, pIndex) => {
+            const trimmedParagraph = paragraph.trim();
+            if (trimmedParagraph.startsWith('$$') && trimmedParagraph.endsWith('$$')) {
+                return <h3 key={pIndex} className="text-2xl font-bold font-headline mt-8 mb-4">{trimmedParagraph.replaceAll('$$', '')}</h3>;
             }
-            if (trimmedLine.startsWith('Your Action Step:') || trimmedLine.startsWith('Coming Up Next:')) {
-                 return <h4 key={index} className="text-lg font-bold font-headline mt-6 mb-2">{trimmedLine}</h4>;
+            if (trimmedParagraph.startsWith('Your Action Step:') || trimmedParagraph.startsWith('Coming Up Next:')) {
+                return <h4 key={pIndex} className="text-xl font-bold font-headline mt-6 mb-2">{trimmedParagraph}</h4>;
             }
-            if (trimmedLine === '') {
-                return <div key={index} className="h-4" />; // Spacer for paragraph gaps
+            if (trimmedParagraph === '') {
+                return null; // Don't render empty paragraphs
             }
+
             return (
-                <div key={index} className="relative group">
-                    <p className="mb-4">{line}</p>
-                    <div className="absolute top-0 -right-32 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col gap-2">
+                <div key={pIndex} className="relative group mb-4">
+                    <p>{paragraph}</p>
+                    <div className="absolute top-0 -right-24 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                          <Button variant="outline" size="sm" className="text-xs">
                              <Sparkles className="mr-2 h-3 w-3" />
                              Extend
                          </Button>
                     </div>
                 </div>
-            );
+            )
         });
     };
 
+    // A simple toggle between a formatted view and a raw textarea could be an approach.
+    // For now, we'll use a Textarea for simplicity of editing, but the AI prompt ensures good formatting.
     return (
-         <Textarea
-            value={content}
-            onChange={(e) => onContentChange(e.target.value)}
-            placeholder="Start writing your chapter here..."
-            className="h-[65vh] text-base"
+        <Textarea
+           value={content}
+           onChange={(e) => onContentChange(e.target.value)}
+           placeholder="Your chapter content will appear here..."
+           className="h-[75vh] text-base leading-relaxed"
         />
     )
 };
@@ -187,11 +193,6 @@ export default function ChapterPage() {
             styleProfile: stylePrompt,
             researchProfile: researchPrompt,
         });
-        
-        let formattedContent = result.chapterContent.replace(`$$${chapterDetails.title}$$`, '').trim();
-        subTopics.forEach(subTopic => {
-            formattedContent = formattedContent.replace(`$$${subTopic}$$`, `\n\n**${subTopic}**\n`);
-        });
 
         setChapterContent(result.chapterContent);
         setPageState('writing');
@@ -225,7 +226,7 @@ export default function ChapterPage() {
       toast({ title: 'Content Saved' });
     } catch (error) {
       console.error('Error saving content:', error);
-      toast({ title: 'Error Saving', variant: 'destructive' });
+      toast({ title: 'Error Saving', variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
