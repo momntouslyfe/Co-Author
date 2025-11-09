@@ -1,274 +1,188 @@
 'use client';
 
 import { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import type { Project } from '@/lib/definitions';
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, PlusCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useToast } from '@/hooks/use-toast';
-import { generateBookBlueprint } from '@/ai/flows/generate-book-blueprint';
-import type { GenerateBookBlueprintOutput } from '@/ai/flows/generate-book-blueprint';
-import { Bot, Loader2 } from 'lucide-react';
-import { useAuthUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import type { ResearchProfile, StyleProfile } from '@/lib/definitions';
-import { collection } from 'firebase/firestore';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRouter } from 'next/navigation';
 
-const formSchema = z.object({
-  topic: z.string().min(10, 'Please describe your core idea in at least 10 characters.'),
-  language: z.string({ required_error: 'Please select a language.' }),
-  storytellingFramework: z.string({ required_error: 'Please select a framework.' }),
-  researchProfileId: z.string().optional(),
-  styleProfileId: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-const languages = [
-    { value: 'English', label: 'English' },
-    { value: 'Spanish', label: 'Spanish' },
-    { value: 'French', label: 'French' },
-    { value: 'German', label: 'German' },
-    { value: 'Bangla', label: 'Bangla' },
-    { value: 'Hindi', label: 'Hindi' },
-];
-
-const frameworks = [
-    { value: 'The Hero\'s Journey', label: 'The Hero\'s Journey' },
-    { value: 'The Mentor\'s Journey', label: 'The Mentor\'s Journey' },
-    { value: 'Three-Act Structure', label: 'Three-Act Structure' },
-    { value: 'Fichtean Curve', label: 'Fichtean Curve' },
-    { value: 'Save the Cat', label: 'Save the Cat' },
-];
 
 export default function CoAuthorPage() {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<GenerateBookBlueprintOutput | null>(null);
-  const { user } = useAuthUser();
-  const firestore = useFirestore();
+    const { user, isUserLoading } = useAuthUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const router = useRouter();
 
-  const researchProfilesQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return collection(firestore, 'users', user.uid, 'researchProfiles');
-  }, [user, firestore]);
+    const [isCreating, setIsCreating] = useState(false);
+    const [newProjectName, setNewProjectName] = useState('');
+    const [open, setOpen] = useState(false);
 
-  const styleProfilesQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return collection(firestore, 'users', user.uid, 'styleProfiles');
-  }, [user, firestore]);
+    const projectsQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, 'users', user.uid, 'projects');
+    }, [user, firestore]);
 
-  const { data: researchProfiles } = useCollection<ResearchProfile>(researchProfilesQuery);
-  const { data: styleProfiles } = useCollection<StyleProfile>(styleProfilesQuery);
+    const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
+    
+    const isLoading = isUserLoading || projectsLoading;
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      topic: '',
-    },
-  });
+    const handleCreateProject = async () => {
+        if (!user || !newProjectName.trim()) {
+            toast({
+                title: "Invalid Project Name",
+                description: "Please provide a name for your new project.",
+                variant: "destructive",
+            });
+            return;
+        }
 
-  async function onSubmit(values: FormValues) {
-    setLoading(true);
-    setResult(null);
+        setIsCreating(true);
+        try {
+            const projectCollection = collection(firestore, 'users', user.uid, 'projects');
+            const newProjectDoc = await addDoc(projectCollection, {
+                userId: user.uid,
+                title: newProjectName,
+                status: 'Draft',
+                createdAt: serverTimestamp(),
+                lastUpdated: serverTimestamp(),
+            });
+            toast({
+                title: "Project Created",
+                description: `Successfully created "${newProjectName}".`,
+            });
+            setOpen(false);
+            setNewProjectName('');
+            router.push(`/dashboard/co-author/${newProjectDoc.id}`);
+        } catch (error) {
+            console.error("Error creating project:", error);
+            toast({
+                title: "Error Creating Project",
+                description: "Could not create the project. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsCreating(false);
+        }
+    };
 
-    const selectedResearchProfile = researchProfiles?.find(p => p.id === values.researchProfileId);
-    const researchProfileContent = selectedResearchProfile 
-      ? `PAIN POINTS:\n${selectedResearchProfile.painPointAnalysis}\n\nDEEP RESEARCH:\n${selectedResearchProfile.deepTopicResearch}`
-      : undefined;
 
-    const selectedStyleProfile = styleProfiles?.find(p => p.id === values.styleProfileId);
-    const styleProfileContent = selectedStyleProfile?.styleAnalysis;
-
-    try {
-      const blueprint = await generateBookBlueprint({
-        topic: values.topic,
-        language: values.language,
-        storytellingFramework: values.storytellingFramework,
-        researchProfile: researchProfileContent,
-        styleProfile: styleProfileContent,
-      });
-      setResult(blueprint);
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: 'Error Generating Blueprint',
-        description: 'An unexpected error occurred. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="space-y-8">
-      <div className="space-y-6">
-        <header>
-            <h1 className="text-3xl font-bold font-headline tracking-tighter">Create a New Project (Step 1 & 2)</h1>
-            <p className="text-muted-foreground">
-              Lock in the "DNA" of your project. This strategy will guide all future AI generation.
-            </p>
-        </header>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="topic"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Your Core Idea</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="e.g., 'A book about street food in Dhaka' or 'A mini-course on the basics of investing.'" {...field} rows={3} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid md:grid-cols-2 gap-6">
-                <FormField
-                control={form.control}
-                name="language"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Project Language</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a language" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        {languages.map(lang => (
-                            <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="storytellingFramework"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Storytelling Framework</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a framework" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        {frameworks.map(fw => (
-                            <SelectItem key={fw.value} value={fw.value}>{fw.label}</SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
+    return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+                <h1 className="text-3xl font-bold font-headline tracking-tighter">Co-Author Projects</h1>
+                <p className="text-muted-foreground">
+                Manage your books and continue your writing journey.
+                </p>
             </div>
-            <div className="grid md:grid-cols-2 gap-6">
-                <FormField
-                control={form.control}
-                name="researchProfileId"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>AI Research Profile (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="None" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {researchProfiles?.map(profile => (
-                            <SelectItem key={profile.id} value={profile.id}>{profile.topic}</SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    <FormDescription>
-                        Select a research profile to give the AI more context for generating the blueprint.
-                    </FormDescription>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="styleProfileId"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>AI Style Profile (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="None" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {styleProfiles?.map(profile => (
-                            <SelectItem key={profile.id} value={profile.id}>{profile.name}</SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    <FormDescription>
-                        Select a style profile to guide the AI's writing voice.
-                    </FormDescription>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        New Project
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                    <DialogTitle>Create New Project</DialogTitle>
+                    <DialogDescription>
+                        Give your new project a name. Click save when you're done.
+                    </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="name" className="text-right">
+                            Name
+                            </Label>
+                            <Input
+                            id="name"
+                            value={newProjectName}
+                            onChange={(e) => setNewProjectName(e.target.value)}
+                            className="col-span-3"
+                            placeholder="e.g., 'My Next Bestseller'"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                    <Button onClick={handleCreateProject} disabled={isCreating}>
+                        {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save and Continue
+                    </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+          </div>
+
+          {isLoading ? (
+             <div className="flex h-64 items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate Blueprint'
-              )}
-            </Button>
-          </form>
-        </Form>
-      </div>
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <Bot className="w-5 h-5" />
-              Generated Blueprint
-            </CardTitle>
-            <CardDescription>Your AI-generated book blueprint will appear here.</CardDescription>
-          </CardHeader>
-          <CardContent className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-headline whitespace-pre-wrap h-[60vh] overflow-y-auto">
-            {loading && <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
-            {result ? (
-              <p>{result.outline}</p>
-            ) : (
-              !loading && <p className="text-muted-foreground">Your blueprint is waiting to be created...</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+          ) : projects && projects.length > 0 ? (
+            <div className="grid sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {projects.map((project) => (
+                <Card key={project.id} className="flex flex-col">
+                    <CardHeader className="p-0">
+                    <Link href={`/dashboard/co-author/${project.id}`}>
+                        <div className="aspect-[3/4] w-full relative">
+                        <Image
+                            src={project.imageUrl || `https://picsum.photos/seed/${project.id}/600/800`}
+                            alt={`Cover for ${project.title}`}
+                            fill
+                            className="object-cover rounded-t-lg"
+                            data-ai-hint={project.imageHint || 'book cover'}
+                        />
+                        </div>
+                    </Link>
+                    </CardHeader>
+                    <CardContent className="p-4 flex-grow">
+                    <h3 className="font-bold font-headline text-lg">{project.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        {project.description || 'No description yet.'}
+                    </p>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0">
+                    <Button asChild variant="secondary" className="w-full">
+                        <Link href={`/dashboard/co-author/${project.id}`}>Open Workspace</Link>
+                    </Button>
+                    </CardFooter>
+                </Card>
+                ))}
+            </div>
+          ) : (
+            <Card className="flex flex-col items-center justify-center p-12 text-center border-dashed">
+                <CardHeader>
+                    <CardTitle>No Projects Yet</CardTitle>
+                    <CardDescription>
+                        Click "New Project" to start your next masterpiece.
+                    </CardDescription>
+                </CardHeader>
+            </Card>
+          )}
+
+        </div>
+    );
 }

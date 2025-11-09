@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
-  BookCopy,
   Search,
   FileText,
   Share2,
@@ -23,10 +22,9 @@ import { useAuthUser } from '@/firebase/auth/use-user';
 
 const navItems = [
   { href: '/dashboard', icon: <LayoutDashboard />, label: 'Dashboard' },
-  { href: '/dashboard/projects', icon: <BookCopy />, label: 'My Projects' },
+  { href: '/dashboard/co-author', icon: <FileText />, label: 'Co-Author' },
   { href: '/dashboard/research', icon: <Search />, label: 'Topic Research' },
   { href: '/dashboard/research/saved', icon: <Archive />, label: 'Saved Research' },
-  { href: '/dashboard/co-author', icon: <FileText />, label: 'CO-Author' },
   { href: '/dashboard/style-profile', icon: <Palette />, label: 'Style Profile' },
   { href: '/dashboard/affiliate', icon: <Share2 />, label: 'Affiliate' },
   { href: '/dashboard/blog', icon: <Rss />, label: 'Blog' },
@@ -42,13 +40,20 @@ export function MainNav() {
   const { isAdmin } = useAuthUser();
   const isDevelopment = process.env.NODE_ENV === 'development';
 
+  const isActive = (href: string) => {
+    if (href === '/dashboard/co-author') {
+      return pathname.startsWith('/dashboard/co-author');
+    }
+    return pathname === href;
+  }
+
   return (
     <SidebarMenu>
       {navItems.map((item) => (
         <SidebarMenuItem key={item.href}>
           <SidebarMenuButton
             asChild
-            isActive={pathname === item.href}
+            isActive={isActive(item.href)}
             tooltip={item.label}
           >
             <Link href={item.href}>

@@ -175,6 +175,24 @@
         "styleAnalysis",
         "createdAt"
       ]
+    },
+    "Project": {
+      "title": "Project",
+      "type": "object",
+      "description": "Represents a user's book project.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "imageHint": { "type": "string" },
+        "outline": { "type": "string" },
+        "status": { "type": "string", "enum": ["Draft", "In Progress", "Completed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "status", "createdAt", "lastUpdated"]
     }
   },
   "auth": {
@@ -274,6 +292,18 @@
               "name": "styleProfileId",
               "description": "Unique identifier for the style profile."
             }
+          ]
+        }
+      },
+       {
+        "path": "/users/{userId}/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": { "$ref": "#/backend/entities/Project" },
+          "description": "Stores user-specific book projects.",
+          "params": [
+            { "name": "userId", "description": "The user's ID." },
+            { "name": "projectId", "description": "Unique ID for the project." }
           ]
         }
       }

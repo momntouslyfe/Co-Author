@@ -12,12 +12,15 @@ export type Chapter = {
 
 export type Project = {
   id: string;
+  userId: string;
   title:string;
-  description: string;
-  imageUrl: string;
-  imageHint: string;
-  chapters: Chapter[];
+  description?: string;
+  imageUrl?: string;
+  imageHint?: string;
+  chapters?: Chapter[];
+  outline?: string;
   status: 'Draft' | 'In Progress' | 'Completed';
+  createdAt: string;
   lastUpdated: string;
 };
 
