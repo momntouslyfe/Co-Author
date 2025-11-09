@@ -159,6 +159,8 @@ export async function generateChapterContent(input: GenerateChapterContentInput)
   return generateChapterContentFlow(input);
 }
 
+// Helper function to introduce a delay
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const generateChapterContentFlow = ai.defineFlow(
   {
@@ -177,28 +179,34 @@ const generateChapterContentFlow = ai.defineFlow(
         throw new Error("Failed to generate chapter intro.");
     }
     const intro = introData.intro;
+    await sleep(1000); // Wait 1 second
 
-    // 2. Iterate over sub-topics and generate content for each
-    const sectionContents = await Promise.all(
-      input.subTopics.map(async (subTopic) => {
-        const { output } = await writeSectionPrompt({
-          bookLanguage: input.bookLanguage,
-          chapterTitle: input.chapterTitle,
-          subTopic: subTopic,
-          fullOutline: input.fullOutline,
-          storytellingFramework: input.storytellingFramework,
-          researchProfile: input.researchProfile,
-          styleProfile: input.styleProfile,
-        });
+    // 2. Iterate over sub-topics and generate content for each sequentially
+    const sectionContents: string[] = [];
+    for (const subTopic of input.subTopics) {
+        try {
+            const { output } = await writeSectionPrompt({
+                bookLanguage: input.bookLanguage,
+                chapterTitle: input.chapterTitle,
+                subTopic: subTopic,
+                fullOutline: input.fullOutline,
+                storytellingFramework: input.storytellingFramework,
+                researchProfile: input.researchProfile,
+                styleProfile: input.styleProfile,
+            });
 
-        if (!output || !output.sectionContent) {
-          console.warn(`Warning: No content generated for sub-topic: "${subTopic}"`);
-          return `$$${subTopic}$$\n\n[Content generation for this section failed. Please try again.]`;
+            if (!output || !output.sectionContent) {
+                console.warn(`Warning: No content generated for sub-topic: "${subTopic}"`);
+                sectionContents.push(`$$${subTopic}$$\n\n[Content generation for this section failed. Please try again.]`);
+            } else {
+                sectionContents.push(`$$${subTopic}$$\n\n${output.sectionContent}`);
+            }
+        } catch (error) {
+            console.error(`Error generating content for sub-topic "${subTopic}":`, error);
+            sectionContents.push(`$$${subTopic}$$\n\n[Content generation for this section failed due to an error. Please try again.]`);
         }
-        
-        return `$$${subTopic}$$\n\n${output.sectionContent}`;
-      })
-    );
+        await sleep(1000); // Wait 1 second between each section
+    }
     
     // Combine the intro and main content to create the body
     const chapterBody = [intro, ...sectionContents].join('\n\n');
@@ -212,6 +220,7 @@ const generateChapterContentFlow = ai.defineFlow(
         throw new Error("Failed to generate action step.");
     }
     const actionStep = actionStepData.actionStep;
+    await sleep(1000); // Wait 1 second
 
     // 4. Generate the Teaser for the next chapter
     const { output: teaserData } = await writeTeaserPrompt({
@@ -237,5 +246,3 @@ const generateChapterContentFlow = ai.defineFlow(
     };
   }
 );
-
-    
