@@ -71,7 +71,7 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
 };
 
 // New state to manage the workflow on this page
-type PageState = 'overview' | 'generating' | 'writing' | 'rewriting' | 'rewriting-section';
+type PageState = 'overview' | 'generating' | 'writing' | 'rewriting';
 
 // New Component for the interactive editor
 const ChapterEditor = ({ 
@@ -84,8 +84,6 @@ const ChapterEditor = ({
     selectedResearchId,
     researchProfiles,
     selectedFramework,
-    onRewriteSectionStart,
-    onRewriteSectionEnd
 }: { 
     project: Project, 
     chapterDetails: Chapter, 
@@ -96,8 +94,6 @@ const ChapterEditor = ({
     selectedResearchId: string;
     researchProfiles: ResearchProfile[] | null;
     selectedFramework: string;
-    onRewriteSectionStart: () => void;
-    onRewriteSectionEnd: (newContent: string) => void;
 }) => {
     
     const [isExtending, setIsExtending] = useState<number | null>(null);
@@ -147,7 +143,6 @@ const ChapterEditor = ({
         }
 
         setIsRewritingSection(sectionIndex);
-        onRewriteSectionStart(); // Notify parent that a section rewrite is starting
         setOpenRewritePopoverIndex(null);
 
         try {
@@ -168,8 +163,10 @@ const ChapterEditor = ({
 
             if (result && result.rewrittenSection) {
                 const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
-                allSections[sectionIndex * 2 + 1] = `\n\n${result.rewrittenSection}\n\n`;
-                onRewriteSectionEnd(allSections.join('')); 
+                // The content part is at `sectionIndex * 2 + 1`
+                // We add newlines before and after to maintain spacing.
+                allSections[sectionIndex * 2 + 1] = `\n\n${result.rewrittenSection.trim()}\n\n`;
+                onContentChange(allSections.join('')); 
                 toast({ title: "Section Rewritten", description: "The AI has rewritten the section." });
             } else {
                 throw new Error("AI returned empty content during section rewrite.");
@@ -178,7 +175,6 @@ const ChapterEditor = ({
         } catch (error) {
             console.error("Error rewriting section:", error);
             toast({ title: "AI Rewrite Failed", variant: "destructive", description: "Could not rewrite the section." });
-            onRewriteSectionEnd(content);
         } finally {
             setIsRewritingSection(null);
             setRewriteSectionInstruction('');
@@ -187,9 +183,11 @@ const ChapterEditor = ({
 
 
     const renderContent = () => {
+        // Split by the delimiter, but keep the delimiter in the array.
         const sections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
         const renderedSections: JSX.Element[] = [];
         
+        // Loop through pairs of [Title, Content]
         for (let i = 0; i < sections.length; i += 2) {
             const titlePart = sections[i];
             const contentPart = sections[i + 1] || '';
@@ -678,14 +676,13 @@ export default function ChapterPage() {
             </div>
         </CardHeader>
         <CardContent>
-            {pageState === 'generating' || pageState === 'rewriting' || pageState === 'rewriting-section' ? (
+            {pageState === 'generating' || pageState === 'rewriting' ? (
                 <div className="flex h-[65vh] flex-col items-center justify-center space-y-4 rounded-md border border-dashed">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                     <div className="text-center">
                         <p className="text-lg font-semibold">
                             {pageState === 'generating' && 'AI is writing your chapter...'}
                             {pageState === 'rewriting' && 'AI is rewriting the chapter...'}
-                            {pageState === 'rewriting-section' && 'AI is rewriting the section...'}
                         </p>
                         <p className="text-muted-foreground">
                             {pageState === 'generating' ? 'Please wait a moment while the first draft is being created.' : 'This may take a moment. Please wait.'}
@@ -757,11 +754,6 @@ export default function ChapterPage() {
                           selectedResearchId={selectedResearchId}
                           researchProfiles={researchProfiles}
                           selectedFramework={selectedFramework}
-                          onRewriteSectionStart={() => setPageState('rewriting-section')}
-                          onRewriteSectionEnd={(newContent) => {
-                              setChapterContent(newContent);
-                              setPageState('writing');
-                          }}
                         />
                     </div>
                     <div className="flex justify-end pt-4 border-t">
@@ -777,3 +769,5 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
