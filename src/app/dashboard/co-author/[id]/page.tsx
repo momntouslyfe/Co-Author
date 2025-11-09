@@ -25,7 +25,8 @@ import { useAuthUser, useFirestore, useCollection, useMemoFirebase, useDoc } fro
 import type { ResearchProfile, StyleProfile, Project } from '@/lib/definitions';
 import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { notFound, useParams } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const formSchema = z.object({
   topic: z.string().min(10, 'Please describe your core idea in at least 10 characters.'),
@@ -63,13 +64,17 @@ export default function CoAuthorWorkspacePage() {
   const params = useParams<{ id: string }>();
   const projectId = params.id;
 
+  const [result, setResult] = useState<GenerateBookBlueprintOutput | null>(null);
+  const [selectedOutline, setSelectedOutline] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+
   const projectDocRef = useMemoFirebase(() => {
     if (!user || !projectId) return null;
     return doc(firestore, 'users', user.uid, 'projects', projectId);
   }, [user, firestore, projectId]);
 
   const { data: project, isLoading: isProjectLoading } = useDoc<Project>(projectDocRef);
-  const [result, setResult] = useState<GenerateBookBlueprintOutput | null>(null);
 
   const researchProfilesQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -90,10 +95,19 @@ export default function CoAuthorWorkspacePage() {
       topic: '',
     },
   });
+  
+  // When project data loads, set the form default for the topic
+  useState(() => {
+    if (project?.description) {
+      form.reset({ topic: project.description });
+    }
+  }, [project, form]);
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
     setResult(null);
+    setSelectedOutline(null);
+    setIsEditing(false);
 
     const selectedResearchProfile = researchProfiles?.find(p => p.id === values.researchProfileId);
     const researchProfileContent = selectedResearchProfile 
@@ -124,8 +138,13 @@ export default function CoAuthorWorkspacePage() {
     }
   }
 
+  const handleSelectOutline = (outline: string) => {
+    setSelectedOutline(outline);
+    setIsEditing(true);
+  }
+
   async function handleSaveBlueprint() {
-    if (!result || !project) {
+    if (!selectedOutline) {
         toast({ title: 'Cannot save', description: 'No blueprint data available.', variant: 'destructive'});
         return;
     }
@@ -133,10 +152,11 @@ export default function CoAuthorWorkspacePage() {
     try {
       if (!projectDocRef) throw new Error("Project reference not found.");
       await updateDoc(projectDocRef, {
-        outline: result.outline,
+        outline: selectedOutline,
         lastUpdated: serverTimestamp(),
       });
-      toast({ title: 'Success', description: 'Blueprint saved successfully.' });
+      toast({ title: 'Success', description: 'Master Blueprint saved successfully.' });
+      setIsEditing(false); // Lock it in
     } catch (error) {
       console.error(error);
       toast({ title: 'Error Saving', description: 'Could not save the blueprint.', variant: 'destructive'});
@@ -153,191 +173,268 @@ export default function CoAuthorWorkspacePage() {
     );
   }
 
+  if (!isProjectLoading && !project) {
+    return notFound();
+  }
+  
   if (!project) {
-    // If loading is finished and there is still no project, then it's a 404
-    // But we give it a moment to load after creation.
-    // A better implementation might wait for a moment before showing notFound().
     return (
-      <div className="flex h-screen items-center justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
+        <div className="flex h-screen items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
     );
   }
 
+  // Determine which view to show
+  const showBlueprintGenerator = !project.outline;
+  const showMasterBlueprint = !!project.outline && !isEditing;
+  const showEditor = !!project.outline && isEditing;
+
+
   return (
     <div className="space-y-8">
-      <div className="space-y-6">
-        <header>
-            <h1 className="text-3xl font-bold font-headline tracking-tighter">Co-Author Workspace: {project.title}</h1>
-            <p className="text-muted-foreground">
-              Lock in the "DNA" of your project. This strategy will guide all future AI generation.
-            </p>
-        </header>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="topic"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Your Core Idea</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                        placeholder={project.description || "e.g., 'A book about street food in Dhaka' or 'A mini-course on the basics of investing.'"}
-                        {...field}
-                        defaultValue={project.description}
-                        rows={3} 
+      {/* View 1: Initial Blueprint Generator */}
+      {(showBlueprintGenerator && !isEditing) && (
+        <div className="space-y-6">
+            <header>
+                <h1 className="text-3xl font-bold font-headline tracking-tighter">Co-Author Workspace: {project.title}</h1>
+                <p className="text-muted-foreground">
+                Step 1: Generate your book's blueprint. This strategy will guide all future AI generation.
+                </p>
+            </header>
+            
+            <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                control={form.control}
+                name="topic"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Your Core Idea</FormLabel>
+                    <FormControl>
+                        <Textarea 
+                            placeholder={"e.g., 'A book about street food in Dhaka' or 'A mini-course on the basics of investing.'"}
+                            {...field}
+                            defaultValue={project.description}
+                            rows={3} 
+                        />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <div className="grid md:grid-cols-2 gap-6">
+                    <FormField
+                    control={form.control}
+                    name="language"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Project Language</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a language" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {languages.map(lang => (
+                                <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid md:grid-cols-2 gap-6">
-                <FormField
-                control={form.control}
-                name="language"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Project Language</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a language" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        {languages.map(lang => (
-                            <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    </FormItem>
+                    <FormField
+                    control={form.control}
+                    name="storytellingFramework"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Storytelling Framework</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a framework" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {frameworks.map(fw => (
+                                <SelectItem key={fw.value} value={fw.value}>{fw.label}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                    <FormField
+                    control={form.control}
+                    name="researchProfileId"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>AI Research Profile (Optional)</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {researchProfiles?.map(profile => (
+                                <SelectItem key={profile.id} value={profile.id}>{profile.topic}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormDescription>
+                            Select a research profile to give the AI more context for generating the blueprint.
+                        </FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="styleProfileId"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>AI Style Profile (Optional)</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {styleProfiles?.map(profile => (
+                                <SelectItem key={profile.id} value={profile.id}>{profile.name}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormDescription>
+                            Select a style profile to guide the AI's writing voice.
+                        </FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+                <Button type="submit" disabled={loading} size="lg">
+                {loading ? (
+                    <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Blueprints...
+                    </>
+                ) : (
+                    'Generate Blueprints'
                 )}
-                />
-                <FormField
-                control={form.control}
-                name="storytellingFramework"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Storytelling Framework</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a framework" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        {frameworks.map(fw => (
-                            <SelectItem key={fw.value} value={fw.value}>{fw.label}</SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-            </div>
-            <div className="grid md:grid-cols-2 gap-6">
-                <FormField
-                control={form.control}
-                name="researchProfileId"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>AI Research Profile (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="None" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {researchProfiles?.map(profile => (
-                            <SelectItem key={profile.id} value={profile.id}>{profile.topic}</SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    <FormDescription>
-                        Select a research profile to give the AI more context for generating the blueprint.
-                    </FormDescription>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="styleProfileId"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>AI Style Profile (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="None" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {styleProfiles?.map(profile => (
-                            <SelectItem key={profile.id} value={profile.id}>{profile.name}</SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    <FormDescription>
-                        Select a style profile to guide the AI's writing voice.
-                    </FormDescription>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-            </div>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate Blueprint'
-              )}
-            </Button>
-          </form>
-        </Form>
-      </div>
-      {(loading || result || project.outline) && (
-      <div>
+                </Button>
+            </form>
+            </Form>
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex flex-col items-center justify-center h-full p-16">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Generating three distinct blueprints...</p>
+        </div>
+      )}
+
+      {/* View 2: Outline Selection */}
+      {result && !isEditing && (
         <Card>
-          <CardHeader className="flex flex-row items-start justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 font-headline">
-                <Bot className="w-5 h-5" />
-                Generated Blueprint
-              </CardTitle>
-              <CardDescription>Your AI-generated book blueprint will appear here. Save it to your project.</CardDescription>
-            </div>
-             {result && (
+            <CardHeader>
+                <CardTitle className="font-headline">Select Your Blueprint</CardTitle>
+                <CardDescription>Review the three AI-generated outlines below. Choose the one that best fits your vision to proceed.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Tabs defaultValue="outlineA" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="outlineA">Outline A</TabsTrigger>
+                        <TabsTrigger value="outlineB">Outline B</TabsTrigger>
+                        <TabsTrigger value="outlineC">Outline C</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="outlineA">
+                        <BlueprintDisplay outline={result.outlineA} onSelect={() => handleSelectOutline(result.outlineA)} />
+                    </TabsContent>
+                    <TabsContent value="outlineB">
+                        <BlueprintDisplay outline={result.outlineB} onSelect={() => handleSelectOutline(result.outlineB)} />
+                    </TabsContent>
+                    <TabsContent value="outlineC">
+                        <BlueprintDisplay outline={result.outlineC} onSelect={() => handleSelectOutline(result.outlineC)} />
+                    </TabsContent>
+                </Tabs>
+            </CardContent>
+        </Card>
+      )}
+
+      {/* View 3: Blueprint Editor */}
+      {(isEditing || showEditor) && (
+        <Card>
+            <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                <CardTitle className="flex items-center gap-2 font-headline">
+                    <Bot className="w-5 h-5" />
+                    Finalize Your Master Blueprint
+                </CardTitle>
+                <CardDescription>Make any final edits to your chosen outline, then save it to lock it in.</CardDescription>
+                </div>
                 <Button onClick={handleSaveBlueprint} disabled={saving}>
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Save Blueprint
+                    Save Master Blueprint
                 </Button>
-             )}
-          </CardHeader>
-          <CardContent className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-headline whitespace-pre-wrap h-[60vh] overflow-y-auto">
-            {loading && <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
-            {result ? (
-              <p>{result.outline}</p>
-            ) : project.outline ? (
-              <p>{project.outline}</p>
-            ) : (
-              !loading && <p className="text-muted-foreground">Your blueprint is waiting to be created...</p>
-            )}
-          </CardContent>
+            </CardHeader>
+            <CardContent>
+                <Textarea
+                    value={selectedOutline || project.outline}
+                    onChange={(e) => setSelectedOutline(e.target.value)}
+                    className="h-[60vh] font-mono text-sm"
+                />
+            </CardContent>
         </Card>
-      </div>
       )}
+
+       {/* View 4: Locked Master Blueprint */}
+       {showMasterBlueprint && (
+         <Card>
+            <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                <CardTitle className="flex items-center gap-2 font-headline">
+                    Master Blueprint for "{project.title}"
+                </CardTitle>
+                <CardDescription>Your book's structure is locked in. You can now proceed to title generation and chapter writing.</CardDescription>
+                </div>
+                <Button onClick={() => {
+                  setSelectedOutline(project.outline || '');
+                  setIsEditing(true);
+                }}>
+                    Edit Blueprint
+                </Button>
+            </CardHeader>
+            <CardContent className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
+              <p>{project.outline}</p>
+            </CardContent>
+        </Card>
+       )}
+
     </div>
   );
+}
+
+function BlueprintDisplay({ outline, onSelect }: { outline: string, onSelect: () => void }) {
+    return (
+        <div className="relative p-4 border rounded-lg h-[60vh] overflow-y-auto">
+             <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
+                <p>{outline}</p>
+             </div>
+             <div className="absolute bottom-4 right-4">
+                <Button onClick={onSelect}>Select & Edit This Outline</Button>
+             </div>
+        </div>
+    )
 }

@@ -23,7 +23,9 @@ export type GenerateBookBlueprintInput = z.infer<
 >;
 
 const GenerateBookBlueprintOutputSchema = z.object({
-  outline: z.string().describe('The detailed outline of the book.'),
+  outlineA: z.string().describe('The first detailed outline of the book, labeled "Outline A".'),
+  outlineB: z.string().describe('The second detailed outline of the book, labeled "Outline B".'),
+  outlineC: z.string().describe('The third detailed outline of the book, labeled "Outline C".'),
 });
 export type GenerateBookBlueprintOutput = z.infer<
   typeof GenerateBookBlueprintOutputSchema
@@ -39,7 +41,7 @@ const prompt = ai.definePrompt({
   name: 'generateBookBlueprintPrompt',
   input: {schema: GenerateBookBlueprintInputSchema},
   output: {schema: GenerateBookBlueprintOutputSchema},
-  prompt: `You are an expert book outline generator. Your task is to create a detailed but concise, structural book outline based on the user's inputs.
+  prompt: `You are an expert book outline generator. Your task is to create THREE (3) distinct, detailed, and structural book outlines based on the user's inputs. Label them "Outline A", "Outline B", and "Outline C".
 
 **Contextual Information:**
 Core Idea: {{{topic}}}
@@ -58,10 +60,10 @@ Use this style profile to influence the tone of the chapter titles and descripti
 {{{styleProfile}}}
 {{/if}}
 
-**CRITICAL INSTRUCTIONS:**
+**CRITICAL INSTRUCTIONS FOR EACH OUTLINE:**
 1.  **Structure Requirements:**
-    *   The outline must contain **13 to 15 chapters**.
-    *   Each chapter must contain **4 to 6 sub-topics**.
+    *   Each outline must contain **12 to 15 chapters**.
+    *   Each chapter must contain **4 to 6 detailed sub-topics** (talking points).
 
 2.  **Be an Outliner, Not a Writer:** Your job is to create the skeleton of the book. The output must be a structural outline only.
 
@@ -70,11 +72,13 @@ Use this style profile to influence the tone of the chapter titles and descripti
     *   Each sub-topic should be a short phrase or a question, without a description.
 
 4.  **Strict Formatting:**
-    *   Use indentation and bullet points (hyphens or asterisks) to create a clear hierarchy (e.g., Parts, Chapters, sub-topics).
+    *   Use indentation and bullet points (hyphens or asterisks) to create a clear hierarchy.
     *   Do NOT number the sub-topics (e.g., 1.1, 1.2).
-    *   The final output should be ONLY the formatted outline and nothing else.
+    *   The final output should be ONLY the formatted outlines and nothing else.
 
-**Example Structure:**
+5. **Distinct Outlines**: Ensure each of the three outlines (A, B, and C) offers a genuinely different angle or structure for the book.
+
+**Example Structure for ONE outline:**
 
 Part 1: The Call to Adventure
   - Chapter 1: The Ordinary World
@@ -92,7 +96,8 @@ Part 1: The Call to Adventure
     - Sub-topic four
     - Sub-topic five
 
-Return only the formatted, concise outline, following all rules precisely.`,
+Return only the three formatted, concise outlines, following all rules precisely.
+`,
 });
 
 const generateBookBlueprintFlow = ai.defineFlow(
