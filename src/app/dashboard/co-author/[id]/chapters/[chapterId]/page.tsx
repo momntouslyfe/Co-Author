@@ -140,7 +140,7 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
         });
     };
 
-    return <div className="prose prose-lg max-w-none dark:prose-invert">{renderContent()}</div>;
+    return <div className="prose max-w-none dark:prose-invert">{renderContent()}</div>;
 };
 
 const frameworks = [
@@ -161,21 +161,21 @@ export default function ChapterPage() {
 
   const { user } = useAuthUser();
   const firestore = useFirestore();
-
-  const [pageState, setPageState] = useState<PageState>('overview');
-  const [chapterContent, setChapterContent] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [selectedStyleId, setSelectedStyleId] = useState<string>('default');
-  const [selectedResearchId, setSelectedResearchId] = useState<string>('none');
-  const [selectedFramework, setSelectedFramework] = useState<string>('');
-
-
+  
   const projectDocRef = useMemoFirebase(() => {
     if (!user || !projectId) return null;
     return doc(firestore, 'users', user.uid, 'projects', projectId);
   }, [user, firestore, projectId]);
 
   const { data: project, isLoading: isProjectLoading } = useDoc<Project>(projectDocRef);
+
+  const [pageState, setPageState] = useState<PageState>('overview');
+  const [chapterContent, setChapterContent] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedStyleId, setSelectedStyleId] = useState<string>('default');
+  const [selectedResearchId, setSelectedResearchId] = useState<string>(project?.researchProfileId || 'none');
+  const [selectedFramework, setSelectedFramework] = useState<string>(project?.storytellingFramework || '');
+
 
   const styleProfilesQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -537,4 +537,3 @@ export default function ChapterPage() {
     </div>
   );
 }
-
