@@ -173,18 +173,10 @@ export default function CoAuthorWorkspacePage() {
     );
   }
 
-  if (!isProjectLoading && !project) {
+  if (!project) {
     return notFound();
   }
   
-  if (!project) {
-    return (
-        <div className="flex h-screen items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-    );
-  }
-
   // Determine which view to show
   const showBlueprintGenerator = !project.outline;
   const showMasterBlueprint = !!project.outline && !isEditing;
@@ -438,3 +430,5 @@ function BlueprintDisplay({ outline, onSelect }: { outline: string, onSelect: ()
         </div>
     )
 }
+
+    
