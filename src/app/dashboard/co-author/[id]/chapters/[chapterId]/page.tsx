@@ -276,7 +276,51 @@ const ChapterEditor = ({
                         <div key={`p-container-intro-${pIndex}`} className="mb-4 group/paragraph">
                              <p className="text-base leading-relaxed">{paragraph}</p>
                              <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
-                                {/* Extend popover would go here, same as below */}
+                                <Popover open={openExtendPopoverIndex === (introSectionIndex * 100 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (introSectionIndex * 100 + pIndex) : null)}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === (introSectionIndex * 100 + pIndex)}>
+                                                {isExtending === (introSectionIndex * 100 + pIndex) ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
+                                                Extend With AI
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80">
+                                            <div className="grid gap-4">
+                                                <div className="space-y-2">
+                                                    <h4 className="font-medium leading-none">Guided Extend</h4>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Give the AI specific instructions.
+                                                    </p>
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor={`instruction-intro-${pIndex}`} className="sr-only">Instruction</Label>
+                                                    <Input
+                                                        id={`instruction-intro-${pIndex}`}
+                                                        placeholder="e.g., Add a historical example"
+                                                        value={extendInstruction}
+                                                        onChange={(e) => setExtendInstruction(e.target.value)}
+                                                    />
+                                                    <Button size="sm" onClick={() => handleExtendClick(paragraph, (introSectionIndex * 100 + pIndex), extendInstruction)} disabled={!extendInstruction || isExtending === (introSectionIndex * 100 + pIndex)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Write More With My instruction
+                                                    </Button>
+                                                </div>
+                                                <div className="relative">
+                                                    <div className="absolute inset-0 flex items-center">
+                                                        <span className="w-full border-t" />
+                                                    </div>
+                                                    <div className="relative flex justify-center text-xs uppercase">
+                                                        <span className="bg-popover px-2 text-muted-foreground">
+                                                        Or
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <Button size="sm" variant="secondary" onClick={() => handleExtendClick(paragraph, (introSectionIndex * 100 + pIndex))} disabled={isExtending === (introSectionIndex * 100 + pIndex)}>
+                                                    <Wand2 className="mr-2 h-4 w-4" />
+                                                    Just Write More
+                                                </Button>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
                              </div>
                         </div>
                     ))
@@ -869,6 +913,7 @@ export default function ChapterPage() {
     
 
     
+
 
 
 
