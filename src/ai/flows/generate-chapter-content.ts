@@ -173,10 +173,10 @@ const generateChapterContentFlow = ai.defineFlow(
         chapterTitle: input.chapterTitle,
         fullOutline: input.fullOutline,
     });
-    if (!introData) {
+    if (!introData || !introData.intro) {
         throw new Error("Failed to generate chapter intro.");
     }
-    const { intro } = introData;
+    const intro = introData.intro;
 
     // 2. Iterate over sub-topics and generate content for each
     const sectionContents = await Promise.all(
@@ -207,10 +207,10 @@ const generateChapterContentFlow = ai.defineFlow(
         bookLanguage: input.bookLanguage,
         chapterContent: chapterBody,
     });
-     if (!actionStepData) {
+     if (!actionStepData || !actionStepData.actionStep) {
         throw new Error("Failed to generate action step.");
     }
-    const { actionStep } = actionStepData;
+    const actionStep = actionStepData.actionStep;
 
     // 4. Generate the Teaser for the next chapter
     const { output: teaserData } = await writeTeaserPrompt({
@@ -218,10 +218,10 @@ const generateChapterContentFlow = ai.defineFlow(
         fullOutline: input.fullOutline,
         currentChapterTitle: input.chapterTitle,
     });
-    if (!teaserData) {
+    if (!teaserData || !teaserData.teaser) {
         throw new Error("Failed to generate teaser.");
     }
-    const { teaser } = teaserData;
+    const teaser = teaserData.teaser;
 
     // 5. Assemble the full chapter content
     const assembledContent = [
@@ -236,3 +236,5 @@ const generateChapterContentFlow = ai.defineFlow(
     };
   }
 );
+
+    
