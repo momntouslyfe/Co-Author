@@ -186,14 +186,14 @@ export default function CoAuthorWorkspacePage() {
     return notFound();
   }
   
-  const showBlueprintGenerator = !project?.outline;
+  const showBlueprintGenerator = !project?.outline && !isEditing;
   const showMasterBlueprint = !!project?.outline && !isEditing;
-  const showEditor = !!project?.outline && isEditing;
+  const showEditor = isEditing;
 
 
   return (
     <div className="space-y-8">
-      {(showBlueprintGenerator && !result && !isEditing) && (
+      {(showBlueprintGenerator && !result) && (
         <div className="space-y-6">
             <header>
                 <h1 className="text-3xl font-bold font-headline tracking-tighter">Co-Author Workspace: {project?.title}</h1>
