@@ -22,7 +22,7 @@ import type { GenerateBookBlueprintOutput } from '@/ai/flows/generate-book-bluep
 import { Bot, Loader2, Save } from 'lucide-react';
 import { useAuthUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import type { ResearchProfile, StyleProfile, Project } from '@/lib/definitions';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { notFound } from 'next/navigation';
 
@@ -59,11 +59,12 @@ export default function CoAuthorWorkspacePage({ params }: { params: { id: string
   const [saving, setSaving] = useState(false);
   const { user } = useAuthUser();
   const firestore = useFirestore();
+  const { id: projectId } = params;
 
   const projectDocRef = useMemoFirebase(() => {
     if (!user) return null;
-    return doc(firestore, 'users', user.uid, 'projects', params.id);
-  }, [user, firestore, params.id]);
+    return doc(firestore, 'users', user.uid, 'projects', projectId);
+  }, [user, firestore, projectId]);
 
   const { data: project, isLoading: isProjectLoading } = useDoc<Project>(projectDocRef);
   const [result, setResult] = useState<GenerateBookBlueprintOutput | null>(null);
@@ -131,6 +132,7 @@ export default function CoAuthorWorkspacePage({ params }: { params: { id: string
       if (!projectDocRef) throw new Error("Project reference not found.");
       await updateDoc(projectDocRef, {
         outline: result.outline,
+        lastUpdated: serverTimestamp(),
       });
       toast({ title: 'Success', description: 'Blueprint saved successfully.' });
     } catch (error) {
@@ -172,7 +174,12 @@ export default function CoAuthorWorkspacePage({ params }: { params: { id: string
                 <FormItem>
                   <FormLabel>Your Core Idea</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="e.g., 'A book about street food in Dhaka' or 'A mini-course on the basics of investing.'" {...field} rows={3} />
+                    <Textarea 
+                        placeholder={project.description || "e.g., 'A book about street food in Dhaka' or 'A mini-course on the basics of investing.'"}
+                        {...field}
+                        defaultValue={project.description}
+                        rows={3} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
