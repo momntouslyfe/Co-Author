@@ -44,20 +44,19 @@ export function useDoc<T = any>(
   type StateDataType = WithId<T> | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Start with loading true
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
     if (!memoizedDocRef) {
       setData(null);
-      setIsLoading(false);
+      setIsLoading(false); // Not loading if there's no ref
       setError(null);
       return;
     }
 
-    setIsLoading(true);
+    setIsLoading(true); // Explicitly set loading when a valid ref is provided
     setError(null);
-    // Optional: setData(null); // Clear previous data instantly
 
     const unsubscribe = onSnapshot(
       memoizedDocRef,
