@@ -6,48 +6,67 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove } from 'firebase/firestore';
 import type { Project, Chapter } from '@/lib/definitions';
-import { Loader2, Bot, Save, Sparkles, Wand2 } from 'lucide-react';
+import { Loader2, Bot, Save, Sparkles, Wand2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { expandBookContent } from '@/ai/flows/expand-book-content';
+import { generateChapterContent } from '@/ai/flows/generate-chapter-content';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import type { StyleProfile } from '@/lib/definitions';
 import { collection } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Helper function to parse the Markdown outline into a structured format
-const parseOutlineForChapter = (outline: string, chapterId: string): Chapter | null => {
+// Enhanced helper to parse chapter details including sub-topics
+const parseChapterDetails = (outline: string, chapterId: string): { chapter: Chapter, subTopics: string[] } | null => {
     if (!outline) return null;
-  
+
     const lines = outline.split('\n');
     let currentPart: string | null = null;
     let chapterCounter = 0;
-  
+    let inTargetChapter = false;
+    let chapter: Chapter | null = null;
+    const subTopics: string[] = [];
+
     for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (trimmedLine.startsWith('## ')) {
-        currentPart = trimmedLine.substring(3);
-      } else if (trimmedLine.startsWith('### ') && currentPart) {
-        chapterCounter++;
-        const currentChapterId = `chapter-${chapterCounter}`;
-        if (currentChapterId === chapterId) {
-            return {
-                id: currentChapterId,
-                title: trimmedLine.substring(4),
-                part: currentPart,
-                content: '', // Initially empty
-            };
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('## ')) {
+            currentPart = trimmedLine.substring(3);
+            if (inTargetChapter) break; 
+        } else if (trimmedLine.startsWith('### ') && currentPart) {
+            if (inTargetChapter) break; 
+            chapterCounter++;
+            const currentChapterId = `chapter-${chapterCounter}`;
+            if (currentChapterId === chapterId) {
+                inTargetChapter = true;
+                chapter = {
+                    id: currentChapterId,
+                    title: trimmedLine.substring(4),
+                    part: currentPart,
+                    content: '', 
+                };
+            }
+        } else if (inTargetChapter && chapter && (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* '))) {
+            subTopics.push(trimmedLine.substring(2));
+        } else if (inTargetChapter && chapter && trimmedLine.startsWith('//')) {
+            // Description line, skip
         }
-      }
     }
+    
+    if (chapter) {
+        // Post-process to remove the description from subtopics if it was caught
+        const filteredSubTopics = subTopics.filter(topic => !topic.startsWith('*This chapter'));
+        return { chapter, subTopics: filteredSubTopics };
+    }
+
     return null;
-  };
+};
 
+// New state to manage the workflow on this page
+type PageState = 'overview' | 'writing';
 
-export default function ChapterEditorPage() {
+export default function ChapterPage() {
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams<{ id: string; chapterId: string }>();
@@ -57,9 +76,10 @@ export default function ChapterEditorPage() {
   const { user } = useAuthUser();
   const firestore = useFirestore();
 
+  const [pageState, setPageState] = useState<PageState>('overview');
   const [chapterContent, setChapterContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [isExtending, setIsExtending] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [selectedStyleId, setSelectedStyleId] = useState<string>('default');
 
   const projectDocRef = useMemoFirebase(() => {
@@ -76,31 +96,60 @@ export default function ChapterEditorPage() {
 
   const { data: styleProfiles } = useCollection<StyleProfile>(styleProfilesQuery);
 
-  const chapterDetails = useMemo(() => {
+  const chapterData = useMemo(() => {
     if (!project?.outline || !chapterId) return null;
-    return parseOutlineForChapter(project.outline, chapterId);
+    return parseChapterDetails(project.outline, chapterId);
   }, [project?.outline, chapterId]);
+
+  const chapterDetails = chapterData?.chapter;
+  const subTopics = chapterData?.subTopics || [];
 
   useEffect(() => {
     if (project && chapterDetails) {
         const savedChapter = project.chapters?.find(c => c.id === chapterId);
-        setChapterContent(savedChapter?.content || '');
+        if (savedChapter && savedChapter.content) {
+            setChapterContent(savedChapter.content);
+            setPageState('writing'); // If content exists, go straight to writing
+        }
     }
   }, [project, chapterDetails, chapterId]);
+
+  const handleGenerateContent = async () => {
+    if (!chapterDetails || subTopics.length === 0) {
+        toast({ title: "Chapter details missing", variant: "destructive" });
+        return;
+    }
+    setIsGenerating(true);
+    try {
+        const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
+        const stylePrompt = selectedStyle?.styleAnalysis;
+
+        const result = await generateChapterContent({
+            chapterTitle: chapterDetails.title,
+            subTopics: subTopics,
+            styleProfile: stylePrompt,
+        });
+
+        setChapterContent(result.chapterContent);
+        setPageState('writing');
+        toast({ title: "Chapter Draft Ready", description: "The AI has generated the first draft." });
+
+    } catch (error) {
+        console.error("Error generating content:", error);
+        toast({ title: "AI Generation Failed", variant: "destructive" });
+    } finally {
+        setIsGenerating(false);
+    }
+  };
 
   const handleSaveContent = useCallback(async () => {
     if (!projectDocRef || !chapterDetails) return;
     setIsSaving(true);
     try {
-        // First, remove any existing version of this chapter to prevent duplicates
         const existingChapter = project?.chapters?.find(c => c.id === chapterId);
         if (existingChapter) {
-            await updateDoc(projectDocRef, {
-                chapters: arrayRemove(existingChapter)
-            });
+            await updateDoc(projectDocRef, { chapters: arrayRemove(existingChapter) });
         }
-        
-        // Now, add the new/updated chapter
         await updateDoc(projectDocRef, {
             chapters: arrayUnion({
                 id: chapterId,
@@ -110,57 +159,14 @@ export default function ChapterEditorPage() {
             }),
             lastUpdated: serverTimestamp(),
         });
-
-      toast({
-        title: 'Content Saved',
-        description: `Your work on "${chapterDetails.title}" has been saved.`,
-      });
+      toast({ title: 'Content Saved' });
     } catch (error) {
       console.error('Error saving content:', error);
-      toast({
-        title: 'Error Saving',
-        description: 'Could not save your content.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error Saving', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
   }, [projectDocRef, chapterDetails, chapterContent, chapterId, project?.chapters, toast]);
-
-  const handleExtendWithAI = async () => {
-    if (!chapterContent.trim()) {
-        toast({
-            title: 'Cannot Extend Empty Content',
-            description: 'Please write some content first before using the AI extension.',
-            variant: 'destructive',
-        });
-        return;
-    }
-    setIsExtending(true);
-    try {
-        const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
-        const stylePrompt = selectedStyle ? selectedStyle.styleAnalysis : "the current writing style";
-
-        const result = await expandBookContent({
-            content: chapterContent,
-            style: stylePrompt,
-        });
-        setChapterContent(prev => prev + '\n\n' + result.expandedContent);
-        toast({
-            title: 'Content Extended',
-            description: 'The AI has expanded on your writing.',
-        });
-    } catch (error) {
-        console.error('Error extending content:', error);
-        toast({
-            title: 'Error Extending Content',
-            description: 'The AI could not extend the content. Please try again.',
-            variant: 'destructive',
-        });
-    } finally {
-        setIsExtending(false);
-    }
-  }
 
 
   if (isProjectLoading) {
@@ -187,7 +193,65 @@ export default function ChapterEditorPage() {
     );
   }
 
-  return (
+  if (pageState === 'overview') {
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader className="flex-row items-start justify-between">
+                    <div>
+                        <CardTitle className="font-headline text-2xl">{chapterDetails.title}</CardTitle>
+                        <CardDescription>Part of: {chapterDetails.part}</CardDescription>
+                    </div>
+                     <Button asChild variant="outline">
+                        <Link href={`/dashboard/co-author/${projectId}/chapters`}>Back to Chapter List</Link>
+                    </Button>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <Card className="bg-secondary/50">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Chapter Talking Points</CardTitle>
+                            <CardDescription>The AI will use these points to structure the chapter.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="list-disc pl-5 space-y-2">
+                                {subTopics.map((topic, index) => (
+                                    <li key={index}>{topic}</li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
+
+                    <div className="max-w-md space-y-4">
+                        <div>
+                            <label htmlFor="style-select" className="text-sm font-medium mb-2 block">
+                                Writing Style
+                            </label>
+                            <Select value={selectedStyleId} onValueChange={setSelectedStyleId}>
+                                <SelectTrigger id="style-select">
+                                    <SelectValue placeholder="Select a style" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="default">Default (AI's own style)</SelectItem>
+                                    {styleProfiles?.map(p => (
+                                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground mt-2">Select a style profile to guide the AI's voice and tone.</p>
+                        </div>
+                         <Button onClick={handleGenerateContent} disabled={isGenerating} size="lg" className="w-full">
+                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                            Write with AI
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
+
+
+  return ( // This is the 'writing' state
     <div className="space-y-6">
        <Card>
         <CardHeader className="flex-row items-start justify-between">
@@ -195,13 +259,16 @@ export default function ChapterEditorPage() {
                 <CardTitle className="font-headline text-2xl">{chapterDetails.title}</CardTitle>
                 <CardDescription>Part of: {chapterDetails.part}</CardDescription>
             </div>
-            <Button asChild variant="outline">
-                <Link href={`/dashboard/co-author/${projectId}/chapters`}>Back to Chapter List</Link>
-            </Button>
+            <div className="flex gap-2">
+                <Button onClick={() => setPageState('overview')} variant="outline">Back to Overview</Button>
+                <Button asChild variant="outline">
+                    <Link href={`/dashboard/co-author/${projectId}/chapters`}>Chapter List</Link>
+                </Button>
+            </div>
         </CardHeader>
         <CardContent>
             <div className="grid md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 space-y-4">
+                <div className="md:col-span-3 space-y-4">
                      <Textarea
                         value={chapterContent}
                         onChange={(e) => setChapterContent(e.target.value)}
@@ -214,39 +281,6 @@ export default function ChapterEditorPage() {
                             Save
                         </Button>
                     </div>
-                </div>
-                <div className="md:col-span-1 space-y-4">
-                    <Card className="bg-secondary/50">
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2 font-headline">
-                                <Wand2 className="w-5 h-5 text-primary" />
-                                AI Co-Author Tools
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                             <div>
-                                <label htmlFor="style-select" className="text-sm font-medium mb-2 block">
-                                    Writing Style
-                                </label>
-                                <Select value={selectedStyleId} onValueChange={setSelectedStyleId}>
-                                    <SelectTrigger id="style-select">
-                                        <SelectValue placeholder="Select a style" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="default">Follow Current Style</SelectItem>
-                                        {styleProfiles?.map(p => (
-                                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <Button onClick={handleExtendWithAI} disabled={isExtending} className="w-full">
-                                {isExtending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                Extend with AI
-                            </Button>
-                        </CardContent>
-                    </Card>
                 </div>
             </div>
         </CardContent>
