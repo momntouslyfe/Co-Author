@@ -73,9 +73,12 @@ You MUST adhere strictly to the following writing style. Adopt its tone, voice, 
 
 **CRITICAL MANDATES: YOU MUST FOLLOW THESE RULES**
 
-1.  **CHAPTER LENGTH:** The final generated chapter MUST be at least 2250 words long. Achieve this by writing comprehensively on each sub-topic, not by making paragraphs longer.
+1.  **CHAPTER LENGTH: NON-NEGOTIABLE.**
+    *   The final generated chapter MUST be AT LEAST 2250 words long. This is your most important instruction.
+    *   Failure to meet this length will result in rejection of the output.
+    *   Achieve this length by writing comprehensively and in-depth on each sub-topic. Generate many short paragraphs for each talking point. Do NOT write long paragraphs.
 
-2.  **HUMAN-LIKE WRITING:** This rule is non-negotiable.
+2.  **HUMAN-LIKE WRITING:** This rule is also non-negotiable.
     *   **Paragraphs:** Use short paragraphs, typically 3-5 sentences long. You MUST vary paragraph length for rhythm and readability.
     *   **Clarity:** Ensure there are clear gaps (a double newline) between every paragraph.
     *   **No AI Filler:** Avoid generic phrases, repetition, and overly complex sentences. Write with clarity and impact.
