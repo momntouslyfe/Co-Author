@@ -4,13 +4,12 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
-import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama } from 'lucide-react';
+import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { generateChapterContent } from '@/ai/flows/generate-chapter-content';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -18,6 +17,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { expandBookContent } from '@/ai/flows/expand-book-content';
 import type { Chapter, ResearchProfile, StyleProfile } from '@/lib/definitions';
 import { rewriteChapter } from '@/ai/flows/rewrite-chapter';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 // Enhanced helper to parse chapter details including sub-topics
 const parseChapterDetails = (outline: string, chapterId: string): { chapter: Chapter, subTopics: string[] } | null => {
@@ -74,9 +76,10 @@ type PageState = 'overview' | 'generating' | 'writing' | 'rewriting';
 const ChapterEditor = ({ project, chapterDetails, content, onContentChange, selectedStyleId, styleProfiles }: { project: Project, chapterDetails: Chapter, content: string; onContentChange: (newContent: string) => void; selectedStyleId: string; styleProfiles: StyleProfile[] | null }) => {
     
     const [isExtending, setIsExtending] = useState<number | null>(null);
+    const [extendInstruction, setExtendInstruction] = useState('');
     const { toast } = useToast();
 
-    const handleExtendClick = async (paragraph: string, index: number) => {
+    const handleExtendClick = async (paragraph: string, index: number, instruction?: string) => {
         setIsExtending(index);
         try {
             const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
@@ -86,6 +89,7 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
                 fullOutline: project.outline || '',
                 chapterTitle: chapterDetails.title,
                 contentToExpand: paragraph,
+                instruction,
                 styleProfile: selectedStyle?.styleAnalysis,
             });
 
@@ -100,6 +104,7 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
             toast({ title: "AI Extend Failed", description: "Could not generate additional content.", variant: "destructive" });
         } finally {
             setIsExtending(null);
+            setExtendInstruction('');
         }
     };
 
@@ -128,10 +133,51 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
                     <div key={`p-container-${index}`} className="mb-4 group">
                         <p className="text-base leading-relaxed">{trimmedSection}</p>
                         <div className="text-right opacity-0 group-hover:opacity-100 transition-opacity mt-2">
-                            <Button variant="outline" size="sm" className="text-xs" onClick={() => handleExtendClick(trimmedSection, index)} disabled={isExtending === index}>
-                                {isExtending === index ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
-                                 Extend With AI
-                             </Button>
+                           <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === index}>
+                                        {isExtending === index ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
+                                        Extend With AI
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                    <div className="grid gap-4">
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium leading-none">Guided Extend</h4>
+                                            <p className="text-sm text-muted-foreground">
+                                                Give the AI specific instructions.
+                                            </p>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor={`instruction-${index}`} className="sr-only">Instruction</Label>
+                                            <Input
+                                                id={`instruction-${index}`}
+                                                placeholder="e.g., Add a historical example"
+                                                value={extendInstruction}
+                                                onChange={(e) => setExtendInstruction(e.target.value)}
+                                            />
+                                            <Button size="sm" onClick={() => handleExtendClick(trimmedSection, index, extendInstruction)} disabled={!extendInstruction || isExtending === index}>
+                                                <Pencil className="mr-2 h-4 w-4" />
+                                                Apply Instruction
+                                            </Button>
+                                        </div>
+                                         <div className="relative">
+                                            <div className="absolute inset-0 flex items-center">
+                                                <span className="w-full border-t" />
+                                            </div>
+                                            <div className="relative flex justify-center text-xs uppercase">
+                                                <span className="bg-popover px-2 text-muted-foreground">
+                                                Or
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <Button size="sm" variant="secondary" onClick={() => handleExtendClick(trimmedSection, index)} disabled={isExtending === index}>
+                                            <Wand2 className="mr-2 h-4 w-4" />
+                                            Just Write More
+                                        </Button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                         </div>
                     </div>
                 );
