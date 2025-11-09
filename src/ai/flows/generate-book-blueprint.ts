@@ -41,7 +41,7 @@ const prompt = ai.definePrompt({
   name: 'generateBookBlueprintPrompt',
   input: {schema: GenerateBookBlueprintInputSchema},
   output: {schema: GenerateBookBlueprintOutputSchema},
-  prompt: `You are an expert book outline generator. Your task is to create THREE (3) distinct, detailed, and structural book outlines based on the user's inputs. Label them "Outline A", "Outline B", and "Outline C".
+  prompt: `You are an expert book outline generator. Your task is to create THREE (3) distinct, detailed, and professional book outlines based on the user's inputs. Label them "Outline A", "Outline B", and "Outline C".
 
 **Contextual Information:**
 Core Idea: {{{topic}}}
@@ -61,42 +61,40 @@ Use this style profile to influence the tone of the chapter titles and descripti
 {{/if}}
 
 **CRITICAL INSTRUCTIONS FOR EACH OUTLINE:**
-1.  **Structure Requirements:**
-    *   Each outline must contain **12 to 15 chapters**.
-    *   Each chapter must contain **4 to 6 detailed sub-topics** (talking points).
+1.  **Strict Markdown Formatting:** You MUST use Markdown for structuring the outlines.
+    *   **Parts:** Use \`##\` for Part titles (e.g., \`## Part 1: The Setup\`).
+    *   **Chapters:** Use \`###\` for Chapter titles (e.g., \`### Chapter 1: The Ordinary World\`).
+    *   **Chapter Description:** After the chapter title, provide a single, concise, italicized sentence describing the chapter's purpose (e.g., *This chapter introduces the protagonist's normal life before the adventure begins.*).
+    *   **Sub-topics:** Use a hyphen-based unordered list (\`-\`) for the sub-topics within each chapter.
 
-2.  **Be an Outliner, Not a Writer:** Your job is to create the skeleton of the book. The output must be a structural outline only.
+2.  **Structure Requirements:**
+    *   Each outline MUST be divided into 3 to 5 "Parts".
+    *   Each outline MUST contain a total of 12 to 15 "Chapters".
+    *   Each Chapter MUST contain 4 to 6 detailed sub-topics (talking points).
 
-3.  **Concise Descriptions:**
-    *   Each chapter title should be followed by a very brief, one-sentence description.
-    *   Each sub-topic should be a short phrase or a question, without a description.
-
-4.  **Strict Formatting:**
-    *   Use indentation and bullet points (hyphens or asterisks) to create a clear hierarchy.
-    *   Do NOT number the sub-topics (e.g., 1.1, 1.2).
-    *   The final output should be ONLY the formatted outlines and nothing else.
-
-5. **Distinct Outlines**: Ensure each of the three outlines (A, B, and C) offers a genuinely different angle or structure for the book.
+3.  **Content Rules:**
+    *   Be an outliner, not a writer. The output must be a structural outline only.
+    *   Sub-topics should be short phrases or questions. Do NOT write paragraphs for sub-topics.
+    *   Ensure each of the three outlines (A, B, and C) offers a genuinely different angle or structure for the book.
 
 **Example Structure for ONE outline:**
 
-Part 1: The Call to Adventure
-  - Chapter 1: The Ordinary World
-    - A brief, one-sentence description of the chapter's focus.
-    - Sub-topic one
-    - Sub-topic two
-    - Sub-topic three
-    - Sub-topic four
+## Part 1: The Call to Adventure
+### Chapter 1: The Ordinary World
+*This chapter establishes the hero's mundane life and introduces their defining characteristics.*
+- The hero's daily routine
+- A glimpse of the hero's core desire or dissatisfaction
+- Introduction of a key relationship (family, friend, mentor)
+- Foreshadowing of the coming conflict
 
-  - Chapter 2: The Inciting Incident
-    - A brief, one-sentence description of the chapter's focus.
-    - Sub-topic one
-    - Sub-topic two
-    - Sub-topic three
-    - Sub-topic four
-    - Sub-topic five
+### Chapter 2: The Inciting Incident
+*A specific event that disrupts the hero's world and sets the story in motion.*
+- The arrival of a messenger or a discovery
+- The hero's initial reaction: disbelief or fear
+- The stakes of the conflict are revealed
+- The hero is faced with a choice
 
-Return only the three formatted, concise outlines, following all rules precisely.
+Return ONLY the three formatted, concise outlines, following all rules precisely.
 `,
 });
 
