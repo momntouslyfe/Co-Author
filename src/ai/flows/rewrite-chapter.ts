@@ -4,9 +4,9 @@
 /**
  * @fileOverview This file defines a Genkit flow for rewriting an entire book chapter.
  *
- * This flow now uses a more robust, iterative approach. It breaks the chapter
- * into sections, rewrites each one individually, and then reassembles them.
- * This ensures the entire chapter is rewritten reliably, even for long content.
+ * This flow now uses a robust, single-call approach. It passes the entire chapter
+ * content to the AI at once and instructs it to rewrite the whole text while preserving
+ * the structural $$...$$ markers. This is more reliable and efficient.
  *
  * @exported rewriteChapter - A function that rewrites the provided chapter content using AI.
  * @exported RewriteChapterInput - The input type for the rewriteChapter function.
@@ -32,24 +32,11 @@ const RewriteChapterOutputSchema = z.object({
 export type RewriteChapterOutput = z.infer<typeof RewriteChapterOutputSchema>;
 
 
-const rewriteSectionPrompt = ai.definePrompt({
-    name: 'rewriteSectionPrompt',
-    input: {
-      schema: z.object({
-        sectionContent: z.string(),
-        styleProfile: z.string().optional(),
-        researchProfile: z.string().optional(),
-        storytellingFramework: z.string().optional(),
-        language: z.string(),
-        instruction: z.string().optional(),
-      }),
-    },
-    output: {
-      schema: z.object({
-        rewrittenSection: z.string(),
-      }),
-    },
-    prompt: `You are an expert editor and ghostwriter. Your task is to rewrite the provided text section in the specified language, using the provided context and instructions.
+const rewriteChapterPrompt = ai.definePrompt({
+    name: 'rewriteChapterPrompt',
+    input: { schema: RewriteChapterInputSchema },
+    output: { schema: RewriteChapterOutputSchema },
+    prompt: `You are an expert editor and ghostwriter. Your task is to rewrite the provided book chapter in its entirety, in the specified language, using the provided context and instructions.
 
 **CONTEXT:**
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
@@ -66,31 +53,33 @@ const rewriteSectionPrompt = ai.definePrompt({
     {{#if instruction}}
     {{{instruction}}}
     {{else}}
-    Rewrite the section to improve clarity, flow, and impact.
+    Rewrite the chapter to improve clarity, flow, and impact.
     {{/if}}
 
 2.  **LANGUAGE:** You MUST write the entire response in **{{{language}}}**.
 
-3.  **REWRITE, DON'T JUST EDIT:** Do not simply make minor edits. Rewrite sentences, rephrase ideas, and improve the flow and impact of the entire section while preserving the original meaning and core concepts.
+3.  **PRESERVE STRUCTURE:** The chapter is divided into sections with titles like \`$$Section Title$$\`. You MUST preserve these section titles and their surrounding double dollar signs exactly as they are. Rewrite the content *within* each section, but do not alter the titles or remove the \`$$\` markers.
 
-4.  **HUMAN-LIKE PARAGRAPHING:**
+4.  **REWRITE, DON'T JUST EDIT:** Do not simply make minor edits. Substantially rewrite sentences, rephrase ideas, and improve the flow and impact of the entire chapter while preserving the original meaning and core concepts.
+
+5.  **HUMAN-LIKE PARAGRAPHING:**
     *   Use short paragraphs, typically 3-5 sentences long.
     *   You MUST vary paragraph length for rhythm and readability.
-    *   Ensure there are clear gaps (a double newline) between every paragraph.
+    *   Ensure there are clear gaps (a double newline) between every paragraph and section.
 
 {{#if styleProfile}}
-5.  **ADHERE TO WRITING STYLE:** You MUST adopt the following writing style:
+6.  **ADHERE TO WRITING STYLE:** You MUST adopt the following writing style:
     ---
     **Writing Style Profile:**
     {{{styleProfile}}}
     ---
 {{/if}}
 
-6.  **RETURN ONLY THE REWRITTEN CONTENT:** Your output should be only the rewritten section text. Do not add any titles or extra formatting.
+7.  **RETURN ONLY THE REWRITTEN CONTENT:** Your output should be only the rewritten chapter text. Do not add any extra commentary.
 
-**Original Section Content to Rewrite:**
+**Original Chapter Content to Rewrite:**
 \`\`\`
-{{{sectionContent}}}
+{{{chapterContent}}}
 \`\`\`
 `,
 });
@@ -106,43 +95,16 @@ const rewriteChapterFlow = ai.defineFlow(
     inputSchema: RewriteChapterInputSchema,
     outputSchema: RewriteChapterOutputSchema,
   },
-  async ({ chapterContent, styleProfile, language, researchProfile, storytellingFramework, instruction }) => {
-    // Split the chapter into sections based on the $$...$$ titles, keeping the delimiters
-    const sections = chapterContent.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
-    
-    const rewrittenSections = await Promise.all(
-        sections.map(async (section) => {
-            const trimmedSection = section.trim();
-            // If the section is a title (e.g., $$...$$), keep it as is.
-            if (trimmedSection.startsWith('$$') && trimmedSection.endsWith('$$')) {
-                return trimmedSection;
-            }
-            
-            // If the section is actual content, rewrite it.
-            if (trimmedSection.length > 0) {
-                 const { output } = await rewriteSectionPrompt({
-                    sectionContent: trimmedSection,
-                    styleProfile: styleProfile,
-                    language: language,
-                    researchProfile,
-                    storytellingFramework,
-                    instruction, // Pass the same instruction to each section
-                });
-                if (!output || !output.rewrittenSection) {
-                    console.warn(`Warning: AI failed to rewrite section. Returning original.`);
-                    return trimmedSection; // Return original trimmed section on failure
-                }
-                return output.rewrittenSection;
-            }
-            
-            // This case should ideally not be hit due to the filter, but as a fallback:
-            return section;
-        })
-    );
+  async (input) => {
+    // Call the single, powerful prompt to rewrite the entire chapter at once.
+    const { output } = await rewriteChapterPrompt(input);
 
-    // Reassemble the chapter, ensuring double newlines between parts
+    if (!output || !output.rewrittenContent) {
+        throw new Error("AI failed to rewrite the chapter content.");
+    }
+    
     return {
-      rewrittenContent: rewrittenSections.join('\n\n'),
+        rewrittenContent: output.rewrittenContent,
     };
   }
 );
