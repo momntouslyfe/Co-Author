@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { generateChapterContent } from '@/ai/flows/generate-chapter-content';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { expandBookContent } from '@/ai/flows/expand-book-content';
 
 // Enhanced helper to parse chapter details including sub-topics
 const parseChapterDetails = (outline: string, chapterId: string): { chapter: Chapter, subTopics: string[] } | null => {
@@ -65,40 +66,80 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
 type PageState = 'overview' | 'generating' | 'writing';
 
 // New Component for the interactive editor
-const ChapterEditor = ({ content }: { content: string; }) => {
+const ChapterEditor = ({ content, onContentChange, onExtend }: { content: string; onContentChange: (newContent: string) => void; onExtend: (paragraph: string) => void; }) => {
+    
+    const [isExtending, setIsExtending] = useState<number | null>(null);
+
+    const handleExtendClick = async (paragraph: string, index: number) => {
+        setIsExtending(index);
+        try {
+            const selectedStyle = "Same as the provided content"; // Or pass a specific style
+            const result = await expandBookContent({
+                content: paragraph,
+                style: selectedStyle,
+            });
+
+            const lines = content.split('\n\n');
+            const targetLineIndex = lines.findIndex(line => line.includes(paragraph));
+
+            if (targetLineIndex !== -1) {
+                const newContent = [...lines];
+                newContent[targetLineIndex] = `${paragraph}\n\n${result.expandedContent}`;
+                onContentChange(newContent.join('\n\n'));
+            }
+
+        } catch (error) {
+            console.error("Failed to extend content", error);
+        } finally {
+            setIsExtending(null);
+        }
+    };
+
     const renderContent = () => {
-        return content.split('\n').map((line, index) => {
+        const elements: React.ReactNode[] = [];
+        const lines = content.split('\n');
+        let isFirstTitle = true;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
             const trimmedLine = line.trim();
 
             if (trimmedLine.startsWith('$$') && trimmedLine.endsWith('$$')) {
                 const title = trimmedLine.replaceAll('$$', '');
-                return <h3 key={index} className="text-3xl font-bold font-headline mt-10 mb-6">{title}</h3>;
-            }
-            
-            if (trimmedLine.startsWith('Your Action Step:') || trimmedLine.startsWith('Coming Up Next:')) {
-                return <h4 key={index} className="text-2xl font-bold font-headline mt-8 mb-4">{trimmedLine}</h4>;
-            }
-
-            if (trimmedLine === '') {
-                return null; // Don't render empty lines as paragraphs
-            }
-
-            return (
-                <div key={index} className="mb-4 group">
-                    <p className="text-base leading-relaxed">{line}</p>
-                    <div className="text-right opacity-0 group-hover:opacity-100 transition-opacity mt-2">
-                        <Button variant="outline" size="sm" className="text-xs">
-                             <Sparkles className="mr-2 h-3 w-3" />
-                             Extend With AI
-                         </Button>
+                if (isFirstTitle) {
+                    elements.push(<h2 key={`title-${i}`} className="text-4xl font-bold font-headline mt-10 mb-6">{title}</h2>);
+                    isFirstTitle = false;
+                } else {
+                    elements.push(<h3 key={`title-${i}`} className="text-2xl font-bold font-headline mt-10 mb-6">{title}</h3>);
+                }
+            } else if (trimmedLine.startsWith('Your Action Step:') || trimmedLine.startsWith('Coming Up Next:')) {
+                elements.push(<h4 key={`heading-${i}`} className="text-xl font-bold font-headline mt-8 mb-4">{trimmedLine}</h4>);
+            } else if (trimmedLine !== '') {
+                const paragraphIndex = elements.length;
+                elements.push(
+                    <div key={`p-container-${i}`} className="mb-4 group">
+                        <p className="text-base leading-relaxed">{line}</p>
+                        <div className="text-right opacity-0 group-hover:opacity-100 transition-opacity mt-2">
+                            <Button variant="outline" size="sm" className="text-xs" onClick={() => handleExtendClick(line, paragraphIndex)} disabled={isExtending === paragraphIndex}>
+                                {isExtending === paragraphIndex ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
+                                 Extend With AI
+                             </Button>
+                        </div>
                     </div>
-                </div>
-            );
-        });
+                );
+            } else {
+                // This preserves intentional blank lines for spacing if any exist, but not as paragraphs
+                if (elements.length > 0 && i > 0 && lines[i-1].trim() !== '') {
+                    elements.push(<div key={`space-${i}`} className="h-4" />);
+                }
+            }
+        }
+        return elements;
     };
 
     return <div className="prose prose-lg max-w-none dark:prose-invert">{renderContent()}</div>;
 };
+
 
 
 export default function ChapterPage() {
@@ -229,6 +270,25 @@ export default function ChapterPage() {
     toast({ title: 'Content Copied', description: 'The chapter content has been copied to your clipboard.' });
   }
 
+  const handleExtendContent = async (paragraph: string) => {
+    const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId)?.styleAnalysis || "the same style as the provided content";
+    try {
+        const result = await expandBookContent({
+            content: paragraph,
+            style: selectedStyle,
+        });
+        
+        // This is a simplified approach; a real implementation would need
+        // to find the exact paragraph in the state and append the new content.
+        setChapterContent(prev => `${prev}\n\n${result.expandedContent}`);
+        
+        toast({ title: "Content Extended", description: "AI has added more to the selected paragraph." });
+    } catch (error) {
+        console.error("Error extending content:", error);
+        toast({ title: "AI Extension Failed", variant: "destructive" });
+    }
+  };
+
 
   if (isProjectLoading) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -347,7 +407,11 @@ export default function ChapterPage() {
                         </Button>
                     </div>
                     <div className="relative">
-                        <ChapterEditor content={chapterContent} />
+                        <ChapterEditor
+                          content={chapterContent}
+                          onContentChange={setChapterContent}
+                          onExtend={handleExtendContent}
+                        />
                     </div>
                     <div className="flex justify-end">
                         <Button onClick={handleSaveContent} disabled={isSaving}>
@@ -362,3 +426,5 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
