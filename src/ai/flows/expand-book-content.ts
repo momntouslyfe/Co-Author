@@ -14,13 +14,13 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExpandBookContentInputSchema = z.object({
-  content: z.string().describe('The book content to be expanded.'),
+  content: z.string().describe('The paragraph of book content to be rewritten and expanded.'),
   style: z.string().describe('The desired writing style for the content.'),
 });
 export type ExpandBookContentInput = z.infer<typeof ExpandBookContentInputSchema>;
 
 const ExpandBookContentOutputSchema = z.object({
-  expandedContent: z.string().describe('The expanded book content.'),
+  expandedContent: z.string().describe('The rewritten and expanded paragraph.'),
 });
 export type ExpandBookContentOutput = z.infer<typeof ExpandBookContentOutputSchema>;
 
@@ -32,7 +32,21 @@ const prompt = ai.definePrompt({
   name: 'expandBookContentPrompt',
   input: {schema: ExpandBookContentInputSchema},
   output: {schema: ExpandBookContentOutputSchema},
-  prompt: `You are an AI co-author assisting a writer in expanding their book content.\n\n  The writer has provided the following content:\n  {{{content}}}\n\n  The writer wants the content to be expanded while maintaining the following writing style:\n  {{{style}}}\n\n  Expand the content, ensuring high quality and adherence to the specified style. Return only the expanded content.\n  Do not include any introductory or concluding remarks, just the expanded content.`,
+  prompt: `You are an AI co-author. Your task is to rewrite and expand a given paragraph, weaving new information naturally into the existing text.
+
+**CRITICAL INSTRUCTIONS:**
+1.  Take the original paragraph and enrich it by adding more detail, examples, or depth.
+2.  Do NOT simply add a new paragraph. You must integrate the new content into the original paragraph.
+3.  The final output must be a single, cohesive, rewritten paragraph.
+4.  Maintain the writing style specified.
+5.  Return ONLY the rewritten paragraph. Do not include any introductory or concluding remarks.
+
+**Original Paragraph:**
+{{{content}}}
+
+**Writing Style:**
+{{{style}}}
+`,
 });
 
 const expandBookContentFlow = ai.defineFlow(
