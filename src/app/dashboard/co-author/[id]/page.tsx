@@ -173,8 +173,24 @@ export default function CoAuthorWorkspacePage() {
     );
   }
 
-  if (!project) {
+  if (!isProjectLoading && !project) {
     return notFound();
+  }
+  
+  // This check is now safe because isProjectLoading is false
+  if (!project) {
+    // This case should ideally not be reached if the above notFound() is triggered,
+    // but it's a good safeguard.
+    return (
+        <div className="flex h-screen items-center justify-center">
+             <Card>
+                <CardHeader>
+                    <CardTitle>Project Not Found</CardTitle>
+                    <CardDescription>The project you are looking for does not exist or you do not have permission to view it.</CardDescription>
+                </CardHeader>
+            </Card>
+        </div>
+    );
   }
   
   // Determine which view to show
