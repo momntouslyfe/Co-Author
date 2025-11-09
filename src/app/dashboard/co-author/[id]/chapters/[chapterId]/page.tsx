@@ -107,13 +107,13 @@ const ChapterEditor = ({ content, onContentChange, onExtend }: { content: string
             if (trimmedLine.startsWith('$$') && trimmedLine.endsWith('$$')) {
                 const title = trimmedLine.replaceAll('$$', '');
                 if (isFirstTitle) {
-                    elements.push(<h2 key={`title-${i}`} className="text-2xl font-bold font-headline mt-10 mb-6">{title}</h2>);
+                    elements.push(<h2 key={`title-${i}`} className="text-xl font-bold font-headline mt-10 mb-6">{title}</h2>);
                     isFirstTitle = false;
                 } else {
-                    elements.push(<h3 key={`title-${i}`} className="text-lg font-bold font-headline mt-10 mb-6">{title}</h3>);
+                    elements.push(<h3 key={`title-${i}`} className="text-base font-bold font-headline mt-10 mb-6">{title}</h3>);
                 }
             } else if (trimmedLine.startsWith('Your Action Step:') || trimmedLine.startsWith('Coming Up Next:')) {
-                elements.push(<h4 key={`heading-${i}`} className="text-xl font-bold font-headline mt-8 mb-4">{trimmedLine}</h4>);
+                elements.push(<h4 key={`heading-${i}`} className="text-lg font-bold font-headline mt-8 mb-4">{trimmedLine}</h4>);
             } else if (trimmedLine !== '') {
                 const paragraphIndex = elements.length;
                 elements.push(
@@ -426,5 +426,7 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
 
     
