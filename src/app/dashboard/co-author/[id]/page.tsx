@@ -24,7 +24,7 @@ import { useAuthUser, useFirestore, useCollection, useMemoFirebase, useDoc } fro
 import type { ResearchProfile, StyleProfile, Project } from '@/lib/definitions';
 import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 
 const formSchema = z.object({
   topic: z.string().min(10, 'Please describe your core idea in at least 10 characters.'),
@@ -53,13 +53,14 @@ const frameworks = [
     { value: 'Save the Cat', label: 'Save the Cat' },
 ];
 
-export default function CoAuthorWorkspacePage({ params }: { params: { id: string } }) {
+export default function CoAuthorWorkspacePage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { user } = useAuthUser();
   const firestore = useFirestore();
-  const { id: projectId } = params;
+  const params = useParams<{ id: string }>();
+  const projectId = params.id;
 
   const projectDocRef = useMemoFirebase(() => {
     if (!user) return null;
