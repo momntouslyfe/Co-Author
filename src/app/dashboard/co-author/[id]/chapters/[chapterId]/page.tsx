@@ -226,6 +226,7 @@ export default function ChapterPage() {
             fullOutline: project.outline || '',
             chapterTitle: chapterDetails.title,
             subTopics: subTopics,
+            storytellingFramework: project.storytellingFramework,
             styleProfile: stylePrompt,
             researchProfile: researchPrompt,
         });
@@ -292,9 +293,15 @@ export default function ChapterPage() {
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
         const stylePrompt = selectedStyle?.styleAnalysis;
 
+        const researchPrompt = relevantResearchProfile
+            ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
+            : undefined;
+
         const result = await rewriteChapter({
             chapterContent: chapterContent,
             styleProfile: stylePrompt,
+            researchProfile: researchPrompt,
+            storytellingFramework: project.storytellingFramework,
             language: project.language,
         });
 
@@ -310,7 +317,7 @@ export default function ChapterPage() {
     } finally {
         setPageState('writing');
     }
-  }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language]);
+  }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, project?.storytellingFramework, relevantResearchProfile]);
 
 
   if (isProjectLoading) {

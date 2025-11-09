@@ -23,6 +23,7 @@ const GenerateChapterContentInputSchema = z.object({
   fullOutline: z.string().describe('The entire book outline to provide context for the current chapter.'),
   chapterTitle: z.string().describe('The title of the chapter to be written.'),
   subTopics: z.array(z.string()).describe('A list of key points or sub-topics to be covered in the chapter.'),
+  storytellingFramework: z.string().optional().describe('The storytelling framework for the book (e.g., The Hero\'s Journey).'),
   researchProfile: z.string().optional().describe('An optional, pre-existing AI research profile providing context on the target audience and their pain points.'),
   styleProfile: z.string().optional().describe('An optional, pre-existing writing style profile to guide the tone and voice.'),
 });
@@ -43,6 +44,7 @@ const writeSectionPrompt = ai.definePrompt(
         chapterTitle: z.string(),
         subTopic: z.string(),
         fullOutline: z.string(),
+        storytellingFramework: z.string().optional(),
         researchProfile: z.string().optional(),
         styleProfile: z.string().optional(),
       }),
@@ -58,6 +60,7 @@ const writeSectionPrompt = ai.definePrompt(
 - Language: {{{bookLanguage}}}
 - Chapter: {{{chapterTitle}}}
 - Full Book Outline: {{{fullOutline}}}
+{{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
 
 **YOUR TASK: Write content for this sub-topic:**
 "{{{subTopic}}}"
@@ -186,6 +189,7 @@ const generateChapterContentFlow = ai.defineFlow(
           chapterTitle: input.chapterTitle,
           subTopic: subTopic,
           fullOutline: input.fullOutline,
+          storytellingFramework: input.storytellingFramework,
           researchProfile: input.researchProfile,
           styleProfile: input.styleProfile,
         });

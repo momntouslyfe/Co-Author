@@ -21,6 +21,7 @@ export type Project = {
   imageUrl?: string;
   imageHint?: string;
   language?: string;
+  storytellingFramework?: string;
   chapters?: Chapter[];
   outline?: string;
   status: 'Draft' | 'In Progress' | 'Completed';

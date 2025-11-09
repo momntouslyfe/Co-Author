@@ -19,6 +19,8 @@ import {z} from 'genkit';
 const RewriteChapterInputSchema = z.object({
   chapterContent: z.string().describe('The full content of the chapter to be rewritten.'),
   styleProfile: z.string().optional().describe('An optional, pre-existing writing style profile to guide the tone and voice.'),
+  researchProfile: z.string().optional().describe('An optional, pre-existing AI research profile providing context on the target audience and their pain points.'),
+  storytellingFramework: z.string().optional().describe('The storytelling framework for the book (e.g., The Hero\'s Journey).'),
   language: z.string().describe('The language the chapter should be rewritten in.'),
 });
 export type RewriteChapterInput = z.infer<typeof RewriteChapterInputSchema>;
@@ -35,6 +37,8 @@ const rewriteSectionPrompt = ai.definePrompt({
       schema: z.object({
         sectionContent: z.string(),
         styleProfile: z.string().optional(),
+        researchProfile: z.string().optional(),
+        storytellingFramework: z.string().optional(),
         language: z.string(),
       }),
     },
@@ -43,7 +47,16 @@ const rewriteSectionPrompt = ai.definePrompt({
         rewrittenSection: z.string(),
       }),
     },
-    prompt: `You are an expert editor and ghostwriter. Your task is to rewrite the provided text section in the specified language.
+    prompt: `You are an expert editor and ghostwriter. Your task is to rewrite the provided text section in the specified language, using the provided context.
+
+**CONTEXT:**
+{{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
+{{#if researchProfile}}
+- Research Profile: Tailor the content to the audience's pain points and interests based on this research:
+  ---
+  {{{researchProfile}}}
+  ---
+{{/if}}
 
 **CRITICAL INSTRUCTIONS:**
 
@@ -84,7 +97,7 @@ const rewriteChapterFlow = ai.defineFlow(
     inputSchema: RewriteChapterInputSchema,
     outputSchema: RewriteChapterOutputSchema,
   },
-  async ({ chapterContent, styleProfile, language }) => {
+  async ({ chapterContent, styleProfile, language, researchProfile, storytellingFramework }) => {
     // Split the chapter into sections based on the $$...$$ titles, keeping the delimiters
     const sections = chapterContent.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
     
@@ -102,6 +115,8 @@ const rewriteChapterFlow = ai.defineFlow(
                     sectionContent: trimmedSection,
                     styleProfile: styleProfile,
                     language: language,
+                    researchProfile,
+                    storytellingFramework,
                 });
                 if (!output || !output.rewrittenSection) {
                     console.warn(`Warning: AI failed to rewrite section. Returning original.`);

@@ -103,7 +103,7 @@ export default function CoAuthorWorkspacePage() {
         form.reset({ 
             topic: project.description || '',
             language: project.language || undefined,
-            // storytellingFramework is not saved in the project, so we don't load it.
+            storytellingFramework: project.storytellingFramework || undefined,
         });
     }
   }, [project, form]);
@@ -162,6 +162,7 @@ export default function CoAuthorWorkspacePage() {
         outline: selectedOutline,
         language: currentFormValues.language,
         description: currentFormValues.topic,
+        storytellingFramework: currentFormValues.storytellingFramework,
         lastUpdated: serverTimestamp(),
       });
       toast({ title: 'Success', description: 'Master Blueprint saved successfully.' });
@@ -250,7 +251,7 @@ export default function CoAuthorWorkspacePage() {
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Storytelling Framework</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a framework" />
