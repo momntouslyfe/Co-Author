@@ -75,6 +75,7 @@ export default function CoAuthorPage() {
         setIsCreating(true);
         try {
             const projectCollection = collection(firestore, 'users', user.uid, 'projects');
+            // Await the addDoc to ensure the write is complete before redirecting
             const newProjectDoc = await addDoc(projectCollection, {
                 userId: user.uid,
                 title: newProjectName,
