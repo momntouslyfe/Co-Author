@@ -28,7 +28,6 @@ export type RewriteSectionOutput = z.infer<typeof RewriteSectionOutputSchema>;
 
 export const rewriteSectionPrompt = ai.definePrompt({
     name: 'rewriteSectionPrompt',
-    model: 'gemini-1.5-pro-latest',
     input: { schema: RewriteSectionInputSchema },
     output: { schema: RewriteSectionOutputSchema },
     prompt: `You are an expert editor and ghostwriter. Your task is to rewrite the provided text section in the specified language, using the provided context.
