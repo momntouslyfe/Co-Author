@@ -160,7 +160,7 @@ const ChapterEditor = ({ project, chapterDetails, content, onContentChange, sele
                                             />
                                             <Button size="sm" onClick={() => handleExtendClick(trimmedSection, index, extendInstruction)} disabled={!extendInstruction || isExtending === index}>
                                                 <Pencil className="mr-2 h-4 w-4" />
-                                                Write More With Your Instruction
+                                                Write More With My instruction
                                             </Button>
                                         </div>
                                          <div className="relative">
@@ -586,4 +586,5 @@ export default function ChapterPage() {
   );
 }
 
+    
     
