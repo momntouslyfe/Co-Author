@@ -74,7 +74,7 @@ export default function CoAuthorWorkspacePage() {
     return doc(firestore, 'users', user.uid, 'projects', projectId);
   }, [user, firestore, projectId]);
 
-  const { data: project, isLoading: isProjectLoading } = useDoc<Project>(projectDocRef);
+  const { data: project, isLoading: isProjectLoading, error } = useDoc<Project>(projectDocRef);
 
   const researchProfilesQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -164,16 +164,28 @@ export default function CoAuthorWorkspacePage() {
     }
   }
 
-  if (isProjectLoading) {
+  // If there's an error (like permission denied), show an error message.
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Card>
+          <CardHeader>
+            <CardTitle>Error</CardTitle>
+            <CardDescription>Could not load project. Please check permissions or try again later.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show a loading screen while the project document is being fetched.
+  // This is the key fix: we wait until `project` is available.
+  if (isProjectLoading || !project) {
     return (
         <div className="flex h-screen items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
-  }
-
-  if (!project) {
-    return notFound();
   }
   
   // Determine which view to show
