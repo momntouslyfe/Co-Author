@@ -49,14 +49,14 @@ const rewriteChapterPrompt = ai.definePrompt({
 
 **CRITICAL INSTRUCTIONS:**
 
-1.  **SINGLE, COMPLETE OUTPUT:** You MUST rewrite and return the entire chapter in one single operation. Do not stop prematurely. Partial responses are a failure.
-
-2.  **USER'S INSTRUCTION:**
+1.  **USER'S INSTRUCTION:** Your primary goal is to follow this instruction.
     {{#if instruction}}
     {{{instruction}}}
     {{else}}
-    Rewrite the chapter to improve clarity, flow, and impact.
+    Your instruction is to rewrite the chapter to improve clarity, flow, and impact.
     {{/if}}
+
+2.  **SINGLE, COMPLETE OUTPUT:** You MUST rewrite and return the entire chapter in one single operation. Do not stop prematurely. Partial responses are a failure.
 
 3.  **LANGUAGE:** You MUST write the entire response in **{{{language}}}**.
 
@@ -112,5 +112,7 @@ const rewriteChapterFlow = ai.defineFlow(
     };
   }
 );
+
+    
 
     

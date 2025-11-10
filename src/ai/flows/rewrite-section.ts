@@ -53,16 +53,16 @@ export const rewriteSectionPrompt = ai.definePrompt({
 
 **CRITICAL INSTRUCTIONS:**
 
-1.  **USER'S INSTRUCTION:**
+1.  **USER'S INSTRUCTION:** Your primary goal is to follow the user's instruction.
     {{#if instruction}}
     {{{instruction}}}
     {{else}}
-    Rewrite the section to improve clarity, flow, and impact.
+    Your instruction is to rewrite the section to improve clarity, flow, and impact.
     {{/if}}
 
 2.  **LANGUAGE:** You MUST write the entire response in **{{{language}}}**.
 
-3.  **REWRITE, DON'T JUST EDIT:** Do not simply make minor edits. Rewrite sentences, rephrase ideas, and improve the flow and impact of the entire section while preserving the original meaning and core concepts.
+3.  **REWRITE, DON'T JUST EDIT:** Do not simply make minor edits. Substantially rewrite sentences, rephrase ideas, and improve the flow and impact of the entire section while preserving the original meaning and core concepts.
 
 4.  **HUMAN-LIKE PARAGRAPHING:**
     *   Use short paragraphs, typically 3-5 sentences long.
@@ -106,3 +106,6 @@ const rewriteSectionFlow = ai.defineFlow(
   }
 );
 
+
+
+    
