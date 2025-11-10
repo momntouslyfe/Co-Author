@@ -177,9 +177,10 @@ const ChapterEditor = ({
             const isIntro = sectionIndex === introSectionIndex;
     
             // Determine the title of the section being rewritten
+            const titlePartIndex = hasChapterTitle ? sectionIndex * 2 : (sectionIndex * 2);
             const title = isIntro
                 ? 'Introduction'
-                : allSections[(sectionIndex * 2) + (hasChapterTitle ? 0 : -1)]?.replaceAll('$$', '').trim() ?? 'Unknown Section';
+                : allSections[titlePartIndex]?.replaceAll('$$', '').trim() ?? 'Unknown Section';
     
             const needsFullContext = title === 'Your Action Step' || title === 'Coming Up Next';
     
@@ -200,7 +201,7 @@ const ChapterEditor = ({
                     allSections[introContentIndex] = `\n\n${result.rewrittenSection.trim()}\n\n`;
                 } else {
                     // Content part is after the title part
-                    const contentIndex = (sectionIndex * 2) + (hasChapterTitle ? 1 : 0);
+                    const contentIndex = (sectionIndex * 2) + (hasChapterTitle ? 1 : 1);
                     allSections[contentIndex] = `\n\n${result.rewrittenSection.trim()}\n\n`;
                 }
                 onContentChange(allSections.join(''));
@@ -927,5 +928,7 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
 
     
