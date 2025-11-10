@@ -22,6 +22,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
+
+// Allow up to 5 minutes for AI chapter generation
+export const maxDuration = 300;
+
 // Enhanced helper to parse chapter details including sub-topics
 const parseChapterDetails = (outline: string, chapterId: string): { chapter: Chapter, subTopics: string[] } | null => {
     if (!outline) return null;
@@ -597,7 +601,7 @@ export default function ChapterPage() {
 
     } catch (error) {
         console.error("Error generating content:", error);
-        toast({ title: "AI Generation Failed", variant: "destructive", description: "Could not generate chapter content. Please check the AI configuration and try again." });
+        toast({ title: "AI Generation Failed", variant: "destructive", description: "Could not generate chapter content. The process may have timed out. Please try again." });
         setPageState('overview');
     }
   }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, researchProfiles, selectedResearchId, selectedFramework, toast]);
@@ -672,7 +676,7 @@ export default function ChapterPage() {
         }
     } catch (error) {
         console.error("Error rewriting chapter:", error);
-        toast({ title: "AI Rewrite Failed", variant: "destructive", description: "Could not rewrite the chapter. Please try again." });
+        toast({ title: "AI Rewrite Failed", variant: "destructive", description: "Could not rewrite the chapter. The process may have timed out. Please try again." });
     } finally {
         setPageState('writing');
         setRewriteChapterInstruction('');
@@ -839,7 +843,7 @@ export default function ChapterPage() {
                             {pageState === 'rewriting' && 'AI is rewriting the chapter...'}
                         </p>
                         <p className="text-muted-foreground">
-                            {pageState === 'generating' ? 'Please wait a moment while the first draft is being created.' : 'This may take a moment. Please wait.'}
+                            {pageState === 'generating' ? 'This can take up to 5 minutes. Please wait.' : 'This may take a moment. Please wait.'}
                         </p>
                     </div>
                 </div>
@@ -923,14 +927,5 @@ export default function ChapterPage() {
     </div>
   );
 }
-
-    
-
-    
-
-
-
-
-
 
     

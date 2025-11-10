@@ -48,7 +48,7 @@ const generateFullChapterPrompt = ai.definePrompt({
 - Chapter to Write: {{{chapterTitle}}}
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
 {{#if styleProfile}}
-- **Writing Style Profile (CRITICAL):** You MUST strictly adhere to the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages) described.
+- **Writing Style Profile (CRITICAL):** You MUST strictly adhere to the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages) described. For example, a Bangla-English mix like 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট' should be replicated if the style profile indicates it.
   ---
   {{{styleProfile}}}
   ---
@@ -64,16 +64,17 @@ const generateFullChapterPrompt = ai.definePrompt({
 Write the **ENTIRE chapter content from start to finish as a single, complete block of text**. You MUST follow all instructions below precisely. Any deviation or incomplete response is a failure.
 
 **CRITICAL STRUCTURE & FORMATTING RULES:**
-1.  **Single Output:** You MUST generate the entire chapter in one single response. Do not stop. Do not output anything other than the chapter content.
-2.  **Chapter Title:** Start with the chapter title, enclosed in double dollar signs. Example: \`$$My Chapter Title$$\`
-3.  **Introduction:** After the title, write a short, engaging introduction (2-3 sentences) for the chapter.
-4.  **Sub-Topic Sections:**
+1.  **WORD COUNT (NON-NEGOTIABLE):** The total word count for the entire chapter MUST be **AT LEAST 2250 words**. To achieve this, you MUST write a comprehensive section for each sub-topic. Failure to meet this word count is a failure of the entire task.
+2.  **SINGLE OUTPUT:** You MUST generate the entire chapter in one single response. Do not stop. Do not output anything other than the chapter content.
+3.  **Chapter Title:** Start with the chapter title, enclosed in double dollar signs. Example: \`$$My Chapter Title$$\`
+4.  **Introduction:** After the title, write a short, engaging introduction (2-3 sentences) for the chapter.
+5.  **Sub-Topic Sections:**
     *   For EACH sub-topic in the list below, you MUST create a section.
     *   Start each section with the sub-topic title enclosed in double dollar signs. Example: \`$$My Sub-Topic Title$$\`
-    *   Write AT LEAST 400-600 words of comprehensive content for that sub-topic. All content must be directly related to its sub-topic.
-5.  **Action Step:** After all sub-topic sections, create a section titled \`$$Your Action Step$$\`. Write a single, practical action step (2-3 sentences) for the reader based on the chapter's content.
-6.  **Teaser:** After the action step, create a section titled \`$$Coming Up Next$$\`. Based on the "Full Book Outline", identify the chapter immediately following "{{{chapterTitle}}}" and write a compelling 1-2 sentence teaser that creates anticipation for that specific next chapter's content.
-7.  **Paragraphs & Spacing:**
+    *   Write a substantial and comprehensive amount of content for each sub-topic to ensure the total chapter length reaches at least 2250 words.
+6.  **Action Step:** After all sub-topic sections, create a section titled \`$$Your Action Step$$\`. Write a single, practical action step (2-3 sentences) for the reader based on the chapter's content.
+7.  **Teaser:** After the action step, create a section titled \`$$Coming Up Next$$\`. Based on the "Full Book Outline", identify the chapter immediately following "{{{chapterTitle}}}" and write a compelling 1-2 sentence teaser that creates anticipation for that specific next chapter's content.
+8.  **Paragraphs & Spacing:**
     *   Use short, human-like paragraphs (3-5 sentences), but VARY their length for rhythm.
     *   Crucially, there MUST be a double newline (a blank line) between every paragraph and between every \`$$...$$\` section.
     *   After each \`$$...$$\` title (including Action Step and Coming Up Next), you MUST write the corresponding content on a new line after a double newline.
@@ -84,7 +85,7 @@ Write the **ENTIRE chapter content from start to finish as a single, complete bl
 - {{{this}}}
 {{/each}}
 
-Proceed to write the full chapter now. You must not stop until all sections are complete.
+Proceed to write the full chapter now. You must not stop until all sections are complete and the word count of at least 2250 words is met.
 `,
 });
 
@@ -113,3 +114,5 @@ const generateChapterContentFlow = ai.defineFlow(
     };
   }
 );
+
+    

@@ -70,7 +70,7 @@ const rewriteChapterPrompt = ai.definePrompt({
     *   Ensure there are clear gaps (a double newline) between every paragraph and section.
 
 {{#if styleProfile}}
-7.  **ADHERE TO WRITING STYLE:** You MUST adopt the following writing style:
+7.  **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
     ---
     **Writing Style Profile:**
     {{{styleProfile}}}
@@ -112,3 +112,5 @@ const rewriteChapterFlow = ai.defineFlow(
     };
   }
 );
+
+    
