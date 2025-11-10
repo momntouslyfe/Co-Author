@@ -178,19 +178,26 @@ const ChapterEditor = ({
             const hasChapterTitle = allSections.length > 0 && allSections[0].startsWith('$$');
     
             const isIntro = sectionIndex === -1;
-            const contentIndex = isIntro 
-                ? (hasChapterTitle ? 1 : 0)
-                : (hasChapterTitle ? 2 : 1) + (sectionIndex * 2);
-
+            
+            // Simplified and corrected index calculation
+            let contentIndex;
+            if (isIntro) {
+                contentIndex = hasChapterTitle ? 1 : 0;
+            } else {
+                const baseIndex = hasChapterTitle ? 2 : 0;
+                contentIndex = baseIndex + (sectionIndex * 2) + 1;
+            }
+            
             if (contentIndex < 0 || contentIndex >= allSections.length) {
                 throw new Error("Calculated invalid index for section content.");
             }
-
+    
             // Determine if full chapter context is needed for summary sections
-            const titlePartIndex = isIntro ? -1 : contentIndex - 1;
-            const title = titlePartIndex >= 0 ? allSections[titlePartIndex]?.replaceAll('$$', '').trim() : 'Introduction';
-            const needsFullContext = title === 'Your Action Step' || title === 'Coming Up Next';
+            const titlePartIndex = isIntro ? (hasChapterTitle ? 0 : -1) : contentIndex -1;
 
+            const title = titlePartIndex !== -1 ? allSections[titlePartIndex]?.replaceAll('$$', '').trim() : 'Introduction';
+            const needsFullContext = title === 'Your Action Step' || title === 'Coming Up Next';
+    
             const result = await rewriteSection({
                 sectionContent: sectionContentToRewrite,
                 chapterContent: needsFullContext ? content : undefined,
@@ -228,14 +235,19 @@ const ChapterEditor = ({
         const renderedSections: JSX.Element[] = [];
 
         // Identify if the first block is the chapter title.
-        const hasChapterTitle = sections[0].startsWith('$$');
+        const hasChapterTitle = sections.length > 0 && sections[0].startsWith('$$');
         const chapterTitle = hasChapterTitle ? sections[0].replaceAll('$$', '') : chapterDetails.title;
-        const introContent = hasChapterTitle ? (sections[1] || '') : (sections[0] || '');
-        const contentStartIndex = hasChapterTitle ? 2 : 0;
+        
+        // Correctly identify intro content, which might be the first or second element.
+        const introContentIndex = hasChapterTitle ? 1 : 0;
+        const introContent = sections[introContentIndex] || '';
+
+        // The actual sub-topic content starts after the title (if present) and intro.
+        const contentStartIndex = hasChapterTitle ? 2 : 1;
         const introSectionIndex = -1; // Special index for intro
 
-        if (hasChapterTitle || sections.length > 0) {
-            // Render Chapter Title and Intro
+        // Check if there is anything to render as introduction
+        if (introContent || hasChapterTitle) {
             renderedSections.push(
                 <div key="section-container-intro" className="group/section relative">
                     <div className="flex items-center justify-between">
@@ -352,7 +364,7 @@ const ChapterEditor = ({
         for (let i = contentStartIndex; i < sections.length; i += 2) {
             const titlePart = sections[i];
             const contentPart = sections[i + 1] || '';
-            // Adjust sectionIndex to account for the intro
+            // Adjust sectionIndex to account for the intro and chapter title
             const sectionIndex = (i - contentStartIndex) / 2;
             
             const title = titlePart.replaceAll('$$', '');
