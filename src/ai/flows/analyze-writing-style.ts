@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -55,9 +56,9 @@ const prompt = ai.definePrompt({
 
   5.  **Pacing:** Describe the flow of information (e.g., Fast, Slow, Deliberate).
 
-  6.  **Code-Mixing Analysis:** Identify and analyze the use of mixed-language phrases (e.g., 'ইমোশনাল ব্ল্যাক হোল', 'ইনফিরিটি কমপ্লেক্স', 'কগনিটিভ বিহেভিয়ারল থেরাপি'). Comment on its frequency and purpose.
+  6.  **Code-Mixing Analysis:** Identify and analyze the use of mixed-language phrases (e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট'). Comment on its frequency, purpose, and the specific languages being mixed. This is a critical component of the author's voice.
 
-  7.  **Overall Summary:** Conclude with a brief summary of the author's unique stylistic signature.
+  7.  **Overall Summary:** Conclude with a brief summary of the author's unique stylistic signature, placing special emphasis on how all the above elements, including code-mixing, create a cohesive voice.
 
   Return only the detailed analysis, following all formatting rules.`,
 });

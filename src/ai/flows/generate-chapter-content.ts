@@ -48,7 +48,7 @@ const generateFullChapterPrompt = ai.definePrompt({
 - Chapter to Write: {{{chapterTitle}}}
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
 {{#if styleProfile}}
-- **Writing Style Profile (CRITICAL):**
+- **Writing Style Profile (CRITICAL):** You MUST strictly adhere to the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages) described.
   ---
   {{{styleProfile}}}
   ---
