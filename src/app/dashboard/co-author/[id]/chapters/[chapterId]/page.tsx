@@ -172,12 +172,11 @@ const ChapterEditor = ({
                 : undefined;
     
             const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+            const isIntro = sectionIndex === -1;
             const hasChapterTitle = allSections.length > 0 && allSections[0].startsWith('$$');
-            const introSectionIndex = -1; // special index for intro
-            const isIntro = sectionIndex === introSectionIndex;
     
             // Determine the title of the section being rewritten
-            const titlePartIndex = hasChapterTitle ? sectionIndex * 2 : (sectionIndex * 2);
+            const titlePartIndex = hasChapterTitle ? sectionIndex * 2 : sectionIndex * 2;
             const title = isIntro
                 ? 'Introduction'
                 : allSections[titlePartIndex]?.replaceAll('$$', '').trim() ?? 'Unknown Section';
@@ -201,7 +200,7 @@ const ChapterEditor = ({
                     allSections[introContentIndex] = `\n\n${result.rewrittenSection.trim()}\n\n`;
                 } else {
                     // Content part is after the title part
-                    const contentIndex = (sectionIndex * 2) + (hasChapterTitle ? 1 : 1);
+                    const contentIndex = (hasChapterTitle ? 2 : 1) + sectionIndex * 2;
                     allSections[contentIndex] = `\n\n${result.rewrittenSection.trim()}\n\n`;
                 }
                 onContentChange(allSections.join(''));
