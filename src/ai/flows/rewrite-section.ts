@@ -45,7 +45,7 @@ export const rewriteSectionPrompt = ai.definePrompt({
 {{/if}}
 
 {{#if chapterContent}}
-- **Full Chapter Content for Context:** When rewriting a summary section (like an action step), use the full chapter content below to inform your response.
+- **Full Chapter Content for Context:** When rewriting a summary section (like an action step or "coming up next"), you MUST use the full chapter content below to inform your response. Your goal is to accurately summarize or tease the content of the provided chapter.
   ---
   {{{chapterContent}}}
   ---
@@ -105,3 +105,4 @@ const rewriteSectionFlow = ai.defineFlow(
     return output;
   }
 );
+

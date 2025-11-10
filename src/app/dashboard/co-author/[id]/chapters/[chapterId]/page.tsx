@@ -137,10 +137,13 @@ const ChapterEditor = ({
                 introParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
                 sections[introContentIndex] = `\n\n${introParagraphs.join('\n\n')}\n\n`;
             } else { // Sub-topic sections
+                // The content part is always at index 1 relative to the title part
                 const contentPartIndex = contentStartIndex + (sectionIndex * 2) + 1;
-                const sectionParagraphs = (sections[contentPartIndex] || '').trim().split('\n\n');
-                sectionParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
-                sections[contentPartIndex] = `\n\n${sectionParagraphs.join('\n\n')}\n\n`;
+                if (contentPartIndex < sections.length) {
+                    const sectionParagraphs = (sections[contentPartIndex] || '').trim().split('\n\n');
+                    sectionParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
+                    sections[contentPartIndex] = `\n\n${sectionParagraphs.join('\n\n')}\n\n`;
+                }
             }
 
             onContentChange(sections.join(''));
@@ -172,11 +175,11 @@ const ChapterEditor = ({
                 : undefined;
     
             const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
-            const isIntro = sectionIndex === -1;
             const hasChapterTitle = allSections.length > 0 && allSections[0].startsWith('$$');
     
             // Determine the title of the section being rewritten
-            const titlePartIndex = hasChapterTitle ? sectionIndex * 2 : sectionIndex * 2;
+            const titlePartIndex = hasChapterTitle ? (sectionIndex * 2) : (sectionIndex * 2);
+            const isIntro = sectionIndex === -1;
             const title = isIntro
                 ? 'Introduction'
                 : allSections[titlePartIndex]?.replaceAll('$$', '').trim() ?? 'Unknown Section';
@@ -195,13 +198,13 @@ const ChapterEditor = ({
     
             if (result && result.rewrittenSection) {
                 if (isIntro) {
-                    // Intro content is either at index 0 (no chapter title) or 1 (with chapter title)
                     const introContentIndex = hasChapterTitle ? 1 : 0;
                     allSections[introContentIndex] = `\n\n${result.rewrittenSection.trim()}\n\n`;
                 } else {
-                    // Content part is after the title part
-                    const contentIndex = (hasChapterTitle ? 2 : 1) + sectionIndex * 2;
-                    allSections[contentIndex] = `\n\n${result.rewrittenSection.trim()}\n\n`;
+                    // Content part is after the title part. The index is relative to the start of content sections.
+                    const contentIndex = (hasChapterTitle ? 2 : 1) + (sectionIndex * 2);
+                    // The content itself is the next item in the array
+                    allSections[contentIndex + 1] = `\n\n${result.rewrittenSection.trim()}\n\n`;
                 }
                 onContentChange(allSections.join(''));
                 toast({ title: "Section Rewritten", description: "The AI has rewritten the section." });
@@ -267,7 +270,7 @@ const ChapterEditor = ({
                                         value={rewriteSectionInstruction}
                                         onChange={(e) => setRewriteSectionInstruction(e.target.value)}
                                     />
-                                    <Button size="sm" onClick={() => handleRewriteSection(introSectionIndex, introContent, rewriteSectionInstruction)} disabled={!rewriteSectionInstruction || isRewritingSection === introSectionIndex}>
+                                    <Button size="sm" onClick={() => handleRewriteSection(introSectionIndex, introContent.trim(), rewriteSectionInstruction)} disabled={!rewriteSectionInstruction || isRewritingSection === introSectionIndex}>
                                         <Pencil className="mr-2 h-4 w-4" />
                                         Rewrite with My Instruction
                                     </Button>
@@ -276,7 +279,7 @@ const ChapterEditor = ({
                                     <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
                                     <div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div>
                                 </div>
-                                <Button size="sm" variant="secondary" onClick={() => handleRewriteSection(introSectionIndex, introContent)} disabled={isRewritingSection === introSectionIndex}>
+                                <Button size="sm" variant="secondary" onClick={() => handleRewriteSection(introSectionIndex, introContent.trim())} disabled={isRewritingSection === introSectionIndex}>
                                     <RefreshCw className="mr-2 h-4 w-4" />
                                     Just Rewrite
                                 </Button>
@@ -388,7 +391,7 @@ const ChapterEditor = ({
                                             value={rewriteSectionInstruction}
                                             onChange={(e) => setRewriteSectionInstruction(e.target.value)}
                                         />
-                                        <Button size="sm" onClick={() => handleRewriteSection(sectionIndex, contentPart, rewriteSectionInstruction)} disabled={!rewriteSectionInstruction || isRewritingSection === sectionIndex}>
+                                        <Button size="sm" onClick={() => handleRewriteSection(sectionIndex, contentPart.trim(), rewriteSectionInstruction)} disabled={!rewriteSectionInstruction || isRewritingSection === sectionIndex}>
                                             <Pencil className="mr-2 h-4 w-4" />
                                             Rewrite with My Instruction
                                         </Button>
@@ -403,7 +406,7 @@ const ChapterEditor = ({
                                             </span>
                                         </div>
                                     </div>
-                                    <Button size="sm" variant="secondary" onClick={() => handleRewriteSection(sectionIndex, contentPart)} disabled={isRewritingSection === sectionIndex}>
+                                    <Button size="sm" variant="secondary" onClick={() => handleRewriteSection(sectionIndex, contentPart.trim())} disabled={isRewritingSection === sectionIndex}>
                                         <RefreshCw className="mr-2 h-4 w-4" />
                                         Just Rewrite
                                     </Button>
@@ -931,3 +934,4 @@ export default function ChapterPage() {
     
 
     
+
