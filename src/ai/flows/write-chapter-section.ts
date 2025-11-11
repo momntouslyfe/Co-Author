@@ -37,8 +37,9 @@ const WriteChapterSectionOutputSchema = z.object({
 });
 export type WriteChapterSectionOutput = z.infer<typeof WriteChapterSectionOutputSchema>;
 
+// Main prompt for standard chapter sections
 const writeSectionPrompt = ai.definePrompt({
-    name: 'writeSectionPrompt',
+    name: 'writeStandardSectionPrompt',
     input: { schema: WriteChapterSectionInputSchema },
     output: { schema: WriteChapterSectionOutputSchema },
     prompt: `You are an expert ghostwriter. Your task is to write a complete, high-quality section for a book chapter in {{{language}}}.
@@ -79,20 +80,67 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
 3.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the text for the new section. Do not add the section title or any other formatting; return only the paragraphs.
 
-4.  **SECTION-SPECIFIC INSTRUCTIONS:**
-    {{#if (eq sectionTitle "Your Action Step")}}
-    -   **ACTION STEP FORMAT:** You are writing the "Action Step" section. Based on the "Previous Chapter Content" provided, you MUST follow this format:
-        1.  Start with a single, concise paragraph that summarizes the core lesson or takeaway of the entire chapter.
-        2.  After the paragraph, create a bulleted or numbered list containing 5 to 7 single-sentence action items that the reader can implement. These action items must be direct, clear, and derived from the chapter's main points.
-    {{else if (eq sectionTitle "Coming Up Next")}}
-    -   **COMING UP NEXT FORMAT:** You are writing the "Coming Up Next" section. Based on the "Full Book Outline" provided, you MUST write one or two short paragraphs that act as a summary or teaser for the *next* chapter. Keep it brief and intriguing. Do not write more than two paragraphs.
-    {{else}}
-    -   **SUBSTANTIAL CONTENT (STRICT REQUIREMENT):** You MUST write at least 400 words for this section. This is a non-negotiable instruction. Generate multiple, well-developed, and insightful paragraphs to meet this word count.
-    {{/if}}
+4.  **SUBSTANTIAL CONTENT (STRICT REQUIREMENT):** You MUST write at least 400 words for this section. This is a non-negotiable instruction. Generate multiple, well-developed, and insightful paragraphs to meet this word count.
 
 Proceed to write the section content now.
 `,
 });
+
+// Specialized prompt for the "Your Action Step" section
+const writeActionStepPrompt = ai.definePrompt({
+    name: 'writeActionStepPrompt',
+    input: { schema: WriteChapterSectionInputSchema },
+    output: { schema: WriteChapterSectionOutputSchema },
+    prompt: `You are an expert ghostwriter. Your task is to write the "Your Action Step" section for a book chapter in {{{language}}}.
+
+**CONTEXT:**
+- You MUST use the "Previous Chapter Content" to understand what the chapter was about.
+  ---
+  {{{previousContent}}}
+  ---
+
+**YOUR TASK:**
+Write the content for the section titled: **"{{{sectionTitle}}}"**.
+
+**CRITICAL INSTRUCTIONS (Read Carefully):**
+
+1.  **LANGUAGE:** You MUST write in **{{{language}}}**.
+2.  **ACTION STEP FORMAT (NON-NEGOTIABLE):** You are writing the "Action Step" section. You MUST follow this format precisely:
+    1.  Start with a single, concise paragraph that summarizes the core lesson or takeaway of the entire chapter based on the provided content.
+    2.  After the summary paragraph, create a bulleted or numbered list containing 5 to 7 single-sentence action items that the reader can implement. These action items must be direct, clear, and derived from the chapter's main points.
+3.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the summary paragraph followed by the list. Do not add the section title.
+
+Proceed to write the "Your Action Step" section now.
+`,
+});
+
+// Specialized prompt for the "Coming Up Next" section
+const writeComingUpNextPrompt = ai.definePrompt({
+    name: 'writeComingUpNextPrompt',
+    input: { schema: WriteChapterSectionInputSchema },
+    output: { schema: WriteChapterSectionOutputSchema },
+    prompt: `You are an expert ghostwriter. Your task is to write the "Coming Up Next" section for a book chapter in {{{language}}}.
+
+**CONTEXT:**
+- You MUST use the "Full Book Outline" to understand what the next chapter is about.
+  ---
+  {{{fullOutline}}}
+  ---
+- You are currently finishing the chapter titled: **{{{chapterTitle}}}**
+
+**YOUR TASK:**
+Write the content for the section titled: **"{{{sectionTitle}}}"**.
+
+**CRITICAL INSTRUCTIONS (Read Carefully):**
+
+1.  **LANGUAGE:** You MUST write in **{{{language}}}**.
+2.  **"COMING UP NEXT" FORMAT (NON-NEGOTIABLE):** You are writing the "Coming Up Next" section. You MUST write one or two short paragraphs that act as a summary or teaser for the *next* chapter in the outline. Keep it brief and intriguing. Do not write more than two paragraphs.
+3.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the teaser paragraphs. Do not add the section title.
+
+Proceed to write the "Coming Up Next" section now.
+`,
+});
+
 
 export async function writeChapterSection(input: WriteChapterSectionInput): Promise<WriteChapterSectionOutput> {
   return writeChapterSectionFlow(input);
@@ -106,7 +154,17 @@ const writeChapterSectionFlow = ai.defineFlow(
     outputSchema: WriteChapterSectionOutputSchema,
   },
   async (input) => {
-    const { output } = await writeSectionPrompt(input, { apiKey: input.apiKey, model: input.model });
+    let chosenPrompt;
+
+    if (input.sectionTitle === "Your Action Step") {
+        chosenPrompt = writeActionStepPrompt;
+    } else if (input.sectionTitle === "Coming Up Next") {
+        chosenPrompt = writeComingUpNextPrompt;
+    } else {
+        chosenPrompt = writeSectionPrompt;
+    }
+    
+    const { output } = await chosenPrompt(input, { apiKey: input.apiKey, model: input.model });
 
     if (!output || !output.sectionContent) {
         throw new Error("AI failed to generate the section content.");
@@ -117,3 +175,5 @@ const writeChapterSectionFlow = ai.defineFlow(
     };
   }
 );
+
+    
