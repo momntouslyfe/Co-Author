@@ -258,9 +258,10 @@ const ChapterEditor = ({
                 if (titleIndex !== -1) {
                     const contentIndex = titleIndex + 1;
                     if (contentIndex >= allSections.length) {
-                        throw new Error("Calculated invalid index for section content.");
+                         allSections.push(`\n\n${result.sectionContent.trim()}\n\n`);
+                    } else {
+                         allSections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
                     }
-                    allSections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
                     onContentChange(allSections.join(''));
                     toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
                 } else {
@@ -397,21 +398,23 @@ const ChapterEditor = ({
     };
 
     const renderContent = () => {
-        const sections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
-        if (sections.length === 0) return null;
-
+        const parts = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+        if (parts.length === 0) return null;
+    
         const renderedSections: JSX.Element[] = [];
-        
         let sectionIndexCounter = 0;
-
-        for (let i = 0; i < sections.length; i++) {
-            const part = sections[i];
+    
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
             if (part.startsWith('$$') && part.endsWith('$$')) {
                 const title = part.replaceAll('$$', '');
-                const contentPart = sections[i + 1] || '';
+                // The content is the next element in the array, if it's not another title
+                const contentPart = (i + 1 < parts.length && !parts[i + 1].startsWith('$$')) ? parts[i + 1] : '';
                 renderedSections.push(renderSection(sectionIndexCounter, title, contentPart));
                 sectionIndexCounter++;
-                i++; // Skip the content part as it's handled
+                 if (contentPart) {
+                    i++; // Skip the content part as it's been handled
+                }
             }
         }
         
