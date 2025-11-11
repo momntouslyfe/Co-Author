@@ -73,7 +73,7 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
 **CRITICAL INSTRUCTIONS:**
 1.  **FOCUSED CONTENT:** All content must be directly related to the provided section title.
-2.  **SUBSTANTIAL CONTENT:** Write between 2 to 4 detailed and insightful paragraphs.
+2.  **SUBSTANTIAL CONTENT (STRICT REQUIREMENT):** You MUST write at least 400 words for this section. This is a non-negotiable instruction. Generate multiple, well-developed, and insightful paragraphs to meet this word count.
 3.  **HUMAN-LIKE PARAGRAPHING:** Use short, readable paragraphs (3-5 sentences), but VARY their length for good rhythm. Ensure a double newline (a blank line) exists between paragraphs.
 4.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the text for the new section. Do not add the section title or any other formatting; return only the paragraphs.
 
