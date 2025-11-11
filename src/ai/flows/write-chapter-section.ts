@@ -23,6 +23,7 @@ const WriteChapterSectionInputSchema = z.object({
   chapterTitle: z.string().describe('The title of the chapter this section belongs to.'),
   sectionTitle: z.string().describe('The specific title of the section to be written.'),
   language: z.string().describe('The language the section should be written in.'),
+  previousContent: z.string().optional().describe('The content of the chapter written so far, for context.'),
   storytellingFramework: z.string().optional().describe('The storytelling framework for the book.'),
   researchProfile: z.string().optional().describe('An AI research profile with audience context.'),
   styleProfile: z.string().optional().describe('An AI style profile to guide the tone and voice.'),
@@ -47,6 +48,12 @@ const writeSectionPrompt = ai.definePrompt({
 - Chapter: {{{chapterTitle}}}
 - Full Book Outline: {{{fullOutline}}}
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
+{{#if previousContent}}
+- **Previous Chapter Content (for context):** Use the following text to ensure your new section connects seamlessly and logically with what has come before. Do not repeat this content.
+  ---
+  {{{previousContent}}}
+  ---
+{{/if}}
 {{#if styleProfile}}
 - **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
   ---

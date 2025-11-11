@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection } from 'firebase/firestore';
@@ -334,12 +334,20 @@ const ChapterEditor = ({
         for (const [index, sectionTitle] of allSectionTitles.entries()) {
           setIsWritingSection(index);
           try {
+            const currentContentForContext = await new Promise<string>(resolve => {
+                onContentChange(prev => {
+                    resolve(prev);
+                    return prev;
+                });
+            });
+
             const result = await writeChapterSection({
               bookTitle: project.title,
               fullOutline: project.outline || '',
               chapterTitle: chapterDetails.title,
               sectionTitle: sectionTitle,
               language: project.language,
+              previousContent: currentContentForContext,
               styleProfile: selectedStyle?.styleAnalysis,
               researchProfile: researchPrompt,
               storytellingFramework: selectedFramework,
