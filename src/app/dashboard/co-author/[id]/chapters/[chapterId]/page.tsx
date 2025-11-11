@@ -357,8 +357,8 @@ const ChapterEditor = ({
                             <Popover open={openRewritePopoverIndex === sectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? sectionIndex : null)}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" size="sm" disabled={isProcessing}>
-                                        <RefreshCw className="mr-2 h-4 w-4" />
-                                        Rewrite
+                                        {isRewriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                        {isRewriting ? 'Rewriting...' : 'Rewrite'}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-80">
@@ -371,7 +371,7 @@ const ChapterEditor = ({
                                         <Label htmlFor={`rewrite-instruction-${sectionIndex}`} className="sr-only">Instruction</Label>
                                         <Input id={`rewrite-instruction-${sectionIndex}`} placeholder="e.g., Make it more concise" value={rewriteSectionInstruction} onChange={(e) => setRewriteSectionInstruction(e.target.value)} />
                                         <Button size="sm" onClick={() => handleRewriteSection(sectionIndex, sectionContent.trim(), rewriteSectionInstruction)} disabled={!rewriteSectionInstruction || isProcessing}>
-                                            <Pencil className="mr-2 h-4 w-4" /> Rewrite with Instruction
+                                            <Pencil className="mr-2 h-4 w-4" /> Rewrite with My Instruction
                                         </Button>
                                     </div>
                                     <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
@@ -381,9 +381,6 @@ const ChapterEditor = ({
                                 </div>
                                 </PopoverContent>
                             </Popover>
-                             <Button variant="ghost" size="icon" onClick={() => handleClearSection(sectionIndex)}>
-                                <Eraser className="h-4 w-4" />
-                            </Button>
                             </>
                         )}
                      </div>
@@ -415,7 +412,7 @@ const ChapterEditor = ({
                                                 <Label htmlFor={`instruction-${sectionIndex}-${pIndex}`} className="sr-only">Instruction</Label>
                                                 <Input id={`instruction-${sectionIndex}-${pIndex}`} placeholder="e.g., Add a historical example" value={extendInstruction} onChange={(e) => setExtendInstruction(e.target.value)} />
                                                 <Button size="sm" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex, extendInstruction)} disabled={!extendInstruction || isExtending === (sectionIndex * 1000 + pIndex)}>
-                                                    <Pencil className="mr-2 h-4 w-4" /> Write with Instruction
+                                                    <Pencil className="mr-2 h-4 w-4" /> Write With My Instruction
                                                 </Button>
                                             </div>
                                             <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
@@ -468,17 +465,6 @@ const ChapterEditor = ({
                     {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
                     {isGenerating ? 'Writing...' : 'Write Full Chapter'}
                 </Button>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" disabled={isGenerating}>
-                            <RefreshCw className="mr-2 h-4 w-4" /> Rewrite Chapter
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                        {/* Popover content for rewriting chapter can be added here */}
-                        <p>Rewrite options will be here.</p>
-                    </PopoverContent>
-                </Popover>
                 <Button variant="outline" size="sm" onClick={onCopyContent}>
                     <Copy className="mr-2 h-4 w-4" /> Copy Text
                 </Button>
@@ -861,3 +847,5 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
