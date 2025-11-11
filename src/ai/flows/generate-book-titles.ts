@@ -16,7 +16,6 @@ import { ModelReference } from 'genkit/ai';
 const GenerateBookTitlesInputSchema = z.object({
   outline: z.string().describe('The complete and finalized book outline (Master Blueprint).'),
   language: z.string().describe('The language for the titles.'),
-  apiKey: z.string().optional().describe('The API key for the generative AI model.'),
   model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
 });
 export type GenerateBookTitlesInput = z.infer<
@@ -60,7 +59,7 @@ const generateBookTitlesFlow = ai.defineFlow(
     outputSchema: GenerateBookTitlesOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input, { apiKey: input.apiKey, ...(input.model && { model: input.model }) });
+    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
     return output!;
   }
 );

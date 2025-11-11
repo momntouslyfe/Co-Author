@@ -17,7 +17,6 @@ const ResearchBookTopicInputSchema = z.object({
   topic: z.string().describe('The topic to research.'),
   language: z.string().describe('The language for the research results (e.g., "English", "Bangla").'),
   targetMarket: z.string().optional().describe('The specific target market for the research (e.g., "USA", "Global Tech Industry").'),
-  apiKey: z.string().optional().describe('The API key for the generative AI model.'),
   model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
 });
 export type ResearchBookTopicInput = z.infer<typeof ResearchBookTopicInputSchema>;
@@ -65,7 +64,7 @@ const researchBookTopicFlow = ai.defineFlow(
     outputSchema: ResearchBookTopicOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input, { apiKey: input.apiKey, ...(input.model && { model: input.model }) });
+    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
     return output!;
   }
 );

@@ -110,8 +110,6 @@ export default function CoAuthorWorkspacePage() {
     }
   }, [project, form]);
 
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-
   async function onSubmit(values: FormValues) {
     setLoading(true);
     setResult(null);
@@ -133,7 +131,6 @@ export default function CoAuthorWorkspacePage() {
         storytellingFramework: values.storytellingFramework,
         researchProfile: researchProfileContent,
         styleProfile: styleProfileContent,
-        apiKey: apiKey,
       });
       setResult(blueprint);
     } catch (error) {

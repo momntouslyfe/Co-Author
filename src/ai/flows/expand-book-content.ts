@@ -25,7 +25,6 @@ const ExpandBookContentInputSchema = z.object({
   styleProfile: z.string().optional().describe('The desired writing style for the content.'),
   researchProfile: z.string().optional().describe('An AI research profile with audience context.'),
   storytellingFramework: z.string().optional().describe('The storytelling framework for the book.'),
-  apiKey: z.string().optional().describe('The API key for the generative AI model.'),
   model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
 });
 export type ExpandBookContentInput = z.infer<typeof ExpandBookContentInputSchema>;
@@ -90,7 +89,7 @@ const expandBookContentFlow = ai.defineFlow(
     outputSchema: ExpandBookContentOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input, { apiKey: input.apiKey, ...(input.model && { model: input.model }) });
+    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
     return output!;
   }
 );

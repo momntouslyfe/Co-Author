@@ -6,7 +6,7 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
-import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, Eraser, FileText, Palette } from 'lucide-react';
+import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, FileText, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -20,8 +20,8 @@ import { rewriteSection } from '@/ai/flows/rewrite-section';
 import { writeChapterSection } from '@/ai/flows/write-chapter-section';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 
 
 // Allow up to 5 minutes for AI chapter generation
@@ -140,8 +140,6 @@ const ChapterEditor = ({
     const researchPrompt = relevantResearchProfile
         ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
         : undefined;
-    
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
     const handleExtendClick = async (paragraph: string, sectionIndex: number, paragraphIndex: number, instruction?: string) => {
         const uniqueIndex = sectionIndex * 1000 + paragraphIndex;
@@ -157,7 +155,6 @@ const ChapterEditor = ({
                 styleProfile: selectedStyle?.styleAnalysis,
                 researchProfile: researchPrompt,
                 storytellingFramework: selectedFramework,
-                apiKey: apiKey,
             });
 
             onContentChange(prevContent => {
@@ -231,7 +228,6 @@ const ChapterEditor = ({
                 storytellingFramework: selectedFramework,
                 language: project.language,
                 instruction,
-                apiKey: apiKey,
             });
     
             if (result && result.rewrittenSection) {
@@ -295,7 +291,6 @@ const ChapterEditor = ({
               styleProfile: selectedStyle?.styleAnalysis,
               researchProfile: researchPrompt,
               storytellingFramework: selectedFramework,
-              apiKey: apiKey,
             });
     
             if (result && result.sectionContent) {
@@ -328,7 +323,7 @@ const ChapterEditor = ({
         setIsGenerating(false);
       }, [
         project, chapterDetails, subTopics, buildChapterSkeleton, 
-        selectedStyle, researchPrompt, selectedFramework, apiKey, 
+        selectedStyle, researchPrompt, selectedFramework, 
         onContentChange, setIsGenerating, toast
     ]);
 
@@ -623,8 +618,6 @@ export default function ChapterPage() {
     toast({ title: 'Content Copied', description: 'The chapter text has been copied to your clipboard.' });
   }, [chapterContent, toast]);
 
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-
   const handleRewriteChapter = useCallback(async (instruction?: string) => {
     if (!chapterContent) {
         toast({ title: "No Content", description: "There is no content to rewrite.", variant: "destructive" });
@@ -652,7 +645,6 @@ export default function ChapterPage() {
             storytellingFramework: selectedFramework,
             language: project.language,
             instruction,
-            apiKey: apiKey,
             model: undefined
         });
 
@@ -668,7 +660,7 @@ export default function ChapterPage() {
     } finally {
         setPageState('writing');
     }
-  }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, selectedFramework, researchProfiles, selectedResearchId, apiKey]);
+  }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, selectedFramework, researchProfiles, selectedResearchId]);
 
 
   if (isProjectLoading) {

@@ -27,7 +27,6 @@ const WriteChapterSectionInputSchema = z.object({
   storytellingFramework: z.string().optional().describe('The storytelling framework for the book.'),
   researchProfile: z.string().optional().describe('An AI research profile with audience context.'),
   styleProfile: z.string().optional().describe('An AI style profile to guide the tone and voice.'),
-  apiKey: z.string().optional().describe('The API key for the generative AI model.'),
   model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
 });
 export type WriteChapterSectionInput = z.infer<typeof WriteChapterSectionInputSchema>;
@@ -166,7 +165,7 @@ const writeChapterSectionFlow = ai.defineFlow(
         chosenPrompt = writeSectionPrompt;
     }
     
-    const { output } = await chosenPrompt(input, { apiKey: input.apiKey, ...(input.model && { model: input.model }) });
+    const { output } = await chosenPrompt(input, { ...(input.model && { model: input.model }) });
 
     if (!output || !output.sectionContent) {
         throw new Error("AI failed to generate the section content.");

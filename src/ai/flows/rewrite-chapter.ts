@@ -24,7 +24,6 @@ const RewriteChapterInputSchema = z.object({
   storytellingFramework: z.string().optional().describe('The storytelling framework for the book (e.g., The Hero\'s Journey).'),
   language: z.string().describe('The language the chapter should be rewritten in.'),
   instruction: z.string().optional().describe('A specific instruction from the user on how to rewrite the chapter.'),
-  apiKey: z.string().optional().describe('The API key for the generative AI model.'),
   model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
 });
 export type RewriteChapterInput = z.infer<typeof RewriteChapterInputSchema>;
@@ -101,7 +100,7 @@ const rewriteChapterFlow = ai.defineFlow(
   },
   async (input) => {
     // Call the single, powerful prompt to rewrite the entire chapter at once.
-    const { output } = await rewriteChapterPrompt(input, { apiKey: input.apiKey, ...(input.model && { model: input.model }) });
+    const { output } = await rewriteChapterPrompt(input, { ...(input.model && { model: input.model }) });
 
     if (!output || !output.rewrittenContent) {
         throw new Error("AI failed to rewrite the chapter content.");
