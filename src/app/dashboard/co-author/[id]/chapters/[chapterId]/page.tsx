@@ -6,7 +6,7 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
-import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, Eraser, Palette, FileText } from 'lucide-react';
+import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, Eraser, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,7 @@ import { writeChapterSection } from '@/ai/flows/write-chapter-section';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Palette } from 'lucide-react';
 
 
 // Allow up to 5 minutes for AI chapter generation
@@ -209,19 +210,19 @@ const ChapterEditor = ({
             });
     
             if (result && result.rewrittenSection) {
-                const titleIndex = allSections.findIndex(s => s === titleToFind);
-                if (titleIndex !== -1) {
-                     // The content is the element AFTER the title.
-                     // Ensure there is a space for content, even if it was empty.
-                    if (titleIndex + 1 >= allSections.length || allSections[titleIndex + 1].startsWith('$$')) {
-                        allSections.splice(titleIndex + 1, 0, ''); // Insert an empty content slot
+                 onContentChange(prevContent => {
+                    const currentSections = prevContent.split(/(\$\$[^$]+\$\$)/g);
+                    const titleIndex = currentSections.findIndex(s => s.trim() === titleToFind);
+                    if (titleIndex !== -1) {
+                         if (titleIndex + 1 >= currentSections.length || currentSections[titleIndex + 1].startsWith('$$')) {
+                            currentSections.splice(titleIndex + 1, 0, ''); 
+                        }
+                        currentSections[titleIndex + 1] = `\n\n${result.rewrittenSection.trim()}\n\n`;
+                        return currentSections.join('');
                     }
-                    allSections[titleIndex + 1] = `\n\n${result.rewrittenSection.trim()}\n\n`;
-                    onContentChange(allSections.join(''));
-                    toast({ title: "Section Rewritten", description: "The AI has rewritten the section." });
-                } else {
-                    throw new Error("Could not find section to insert rewritten content.");
-                }
+                    return prevContent;
+                });
+                toast({ title: "Section Rewritten", description: "The AI has rewritten the section." });
             } else {
                 throw new Error("AI returned empty content during section rewrite.");
             }
@@ -262,14 +263,12 @@ const ChapterEditor = ({
                     const titleIndex = allSections.findIndex(s => s.trim() === titleToFind);
     
                     if (titleIndex !== -1) {
-                        // Ensure there is a space for content, even if it was empty.
                         if (titleIndex + 1 >= allSections.length || allSections[titleIndex + 1].startsWith('$$')) {
-                            allSections.splice(titleIndex + 1, 0, ''); // Insert an empty content slot
+                            allSections.splice(titleIndex + 1, 0, '');
                         }
                         allSections[titleIndex + 1] = `\n\n${result.sectionContent.trim()}\n\n`;
                         return allSections.join('');
                     }
-                    // If title not found, which is unlikely but safe to handle, return previous content.
                     return prevContent;
                 });
                 toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
@@ -286,21 +285,22 @@ const ChapterEditor = ({
     };
 
     const handleClearSection = (sectionIndex: number) => {
-        const allSections = content.split(/(\$\$[^$]+\$\$)/g);
-        const titleToFind = findTitleForSection(allSections, sectionIndex);
-
-        const titleIndex = allSections.findIndex(s => s.trim() === titleToFind);
-        if (titleIndex !== -1) {
-            // Ensure there is a content part to clear
-            if (titleIndex + 1 < allSections.length && !allSections[titleIndex + 1].startsWith('$$')) {
-                 allSections[titleIndex + 1] = '\n\n\n\n'; // Set to empty with newlines for structure
-            } else {
-                // If there's no content part, insert one
-                 allSections.splice(titleIndex + 1, 0, '\n\n\n\n');
+        onContentChange(prevContent => {
+            const allSections = prevContent.split(/(\$\$[^$]+\$\$)/g);
+            const titleToFind = findTitleForSection(allSections, sectionIndex);
+    
+            const titleIndex = allSections.findIndex(s => s.trim() === titleToFind);
+            if (titleIndex !== -1) {
+                if (titleIndex + 1 < allSections.length && !allSections[titleIndex + 1].startsWith('$$')) {
+                     allSections[titleIndex + 1] = '\n\n\n\n'; 
+                } else {
+                     allSections.splice(titleIndex + 1, 0, '\n\n\n\n');
+                }
+                return allSections.join('');
             }
-            onContentChange(allSections.join(''));
-            toast({ title: 'Section Cleared' });
-        }
+            return prevContent;
+        });
+        toast({ title: 'Section Cleared' });
     };
 
     const renderSection = (sectionIndex: number, title: string, sectionContent: string) => {
@@ -361,7 +361,7 @@ const ChapterEditor = ({
                 </div>
 
                 <div className="mt-4">
-                    {isProcessing ? (
+                    {isWriting ? (
                         <div className="space-y-2">
                             <div className="h-6 w-full rounded-md bg-muted animate-pulse"></div>
                             <div className="h-6 w-5/6 rounded-md bg-muted animate-pulse"></div>
@@ -410,7 +410,6 @@ const ChapterEditor = ({
     };
 
     const renderContent = () => {
-        // This regex splits by the $$...$$ delimiter and keeps the delimiter in the result array.
         const parts = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
         if (parts.length === 0) return null;
     
@@ -421,11 +420,9 @@ const ChapterEditor = ({
             const part = parts[i];
             if (part.startsWith('$$') && part.endsWith('$$')) {
                 const title = part.replaceAll('$$', '');
-                // The content is the next element in the array, if it's not another title
                 const contentPart = (i + 1 < parts.length && !parts[i + 1].startsWith('$$')) ? parts[i + 1] : '';
                 renderedSections.push(renderSection(sectionIndexCounter, title, contentPart));
                 sectionIndexCounter++;
-                // If we used the content part, we need to skip the next iteration of the loop
                  if (contentPart) {
                     i++; 
                 }
@@ -620,11 +617,9 @@ export default function ChapterPage() {
         toast({ title: "Missing Information", description: "Project language and chapter details are required.", variant: "destructive" });
         return;
     }
-    setPageState('generating'); // Set a general "generating" state for the whole process
+    setPageState('generating');
 
     const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
-    
-    // Start with the clean skeleton and update the state immediately
     const initialContent = buildChapterSkeleton();
     setChapterContent(initialContent);
 
@@ -635,7 +630,6 @@ export default function ChapterPage() {
             ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
             : undefined;
         
-        let currentContent = initialContent;
         for (const sectionTitle of allSectionTitles) {
             try {
                 const result = await writeChapterSection({
@@ -651,20 +645,18 @@ export default function ChapterPage() {
                 });
                 
                 if (result && result.sectionContent) {
-                    // Update the local content string
-                    currentContent = currentContent.replace(
-                        `$$${sectionTitle}$$`, 
-                        `$$${sectionTitle}$$` + `\n\n${result.sectionContent.trim()}\n\n`
-                    );
-                    // Update the React state to make the new section visible immediately
-                    setChapterContent(currentContent);
+                    setChapterContent(prevContent => {
+                        return prevContent.replace(
+                            `$$${sectionTitle}$$`, 
+                            `$$${sectionTitle}$$` + `\n\n${result.sectionContent.trim()}\n\n`
+                        );
+                    });
                 } else {
                     toast({ title: "AI Warning", description: `The AI returned no content for section: "${sectionTitle}".`, variant: "destructive" });
                 }
             } catch (sectionError) {
                 console.error(`Error generating section "${sectionTitle}":`, sectionError);
                 toast({ title: "AI Section Failed", description: `Could not generate content for section: "${sectionTitle}".`, variant: "destructive" });
-                // We continue to the next section even if one fails
             }
         }
         toast({ title: "Chapter Generation Complete", description: "The full chapter draft has been written." });
@@ -672,7 +664,7 @@ export default function ChapterPage() {
         console.error("Error during full chapter generation:", error);
         toast({ title: "AI Chapter Generation Failed", variant: "destructive", description: `A critical error occurred. ${error}` });
     } finally {
-        setPageState('writing'); // Transition to editor view when done or on error
+        setPageState('writing');
     }
   }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, researchProfiles, selectedResearchId, selectedFramework, apiKey, toast, buildChapterSkeleton]);
 
@@ -832,12 +824,12 @@ export default function ChapterPage() {
             </div>
         </CardHeader>
         <CardContent>
-            {pageState === 'rewriting' ? (
+            {(pageState === 'rewriting' || pageState === 'generating') ? (
                 <div className="flex h-[65vh] flex-col items-center justify-center space-y-4 rounded-md border border-dashed">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                     <div className="text-center">
-                        <p className="text-lg font-semibold">AI is rewriting the chapter...</p>
-                        <p className="text-muted-foreground">This may take a moment. Please wait.</p>
+                        <p className="text-lg font-semibold">AI is working...</p>
+                        <p className="text-muted-foreground">{pageState === 'generating' ? 'Writing full chapter section by section...' : 'Rewriting chapter...'}</p>
                     </div>
                 </div>
             ) : (
@@ -906,4 +898,6 @@ export default function ChapterPage() {
 }
 
     
+    
+
     
