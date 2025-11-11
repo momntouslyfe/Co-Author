@@ -332,6 +332,7 @@ const ChapterEditor = ({
         onContentChange(buildChapterSkeleton());
     
         for (const [index, sectionTitle] of allSectionTitles.entries()) {
+          setIsWritingSection(index);
           try {
             const result = await writeChapterSection({
               bookTitle: project.title,
@@ -370,6 +371,7 @@ const ChapterEditor = ({
           }
         }
         
+        setIsWritingSection(null);
         toast({ title: "Chapter Generation Complete", description: "The full chapter draft has been written." });
         setIsGenerating(false);
       }, [
@@ -906,5 +908,7 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
 
     
