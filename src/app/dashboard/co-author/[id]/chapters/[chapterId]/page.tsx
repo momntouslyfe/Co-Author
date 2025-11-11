@@ -80,7 +80,8 @@ type PageState = 'overview' | 'writing' | 'rewriting' | 'generating';
 // New Component for the interactive editor
 const ChapterEditor = ({ 
     project, 
-    chapterDetails, 
+    chapterDetails,
+    subTopics,
     content, 
     onContentChange, 
     selectedStyleId, 
@@ -89,9 +90,11 @@ const ChapterEditor = ({
     researchProfiles,
     selectedFramework,
     isGenerating,
+    setIsGenerating,
 }: { 
     project: Project, 
     chapterDetails: Chapter, 
+    subTopics: string[],
     content: string; 
     onContentChange: (newContent: string | ((prev: string) => string)) => void;
     selectedStyleId: string; 
@@ -100,6 +103,7 @@ const ChapterEditor = ({
     researchProfiles: ResearchProfile[] | null;
     selectedFramework: string;
     isGenerating: boolean;
+    setIsGenerating: (isGenerating: boolean) => void;
 }) => {
     
     const [isExtending, setIsExtending] = useState<number | null>(null);
@@ -112,6 +116,16 @@ const ChapterEditor = ({
     const [openRewritePopoverIndex, setOpenRewritePopoverIndex] = useState<number | null>(null);
     
     const { toast } = useToast();
+
+    const buildChapterSkeleton = useCallback(() => {
+        let skeleton = `$$Introduction$$\n\n\n\n`;
+        subTopics.forEach(topic => {
+          skeleton += `$$${topic}$$\n\n\n\n`;
+        });
+        skeleton += `$$Your Action Step$$\n\n\n\n`;
+        skeleton += `$$Coming Up Next$$\n\n\n\n`;
+        return skeleton;
+    }, [subTopics]);
 
     // Helper to get selected profiles
     const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
@@ -307,6 +321,63 @@ const ChapterEditor = ({
         toast({ title: 'Section Cleared' });
     };
 
+    const handleWriteFullChapter = useCallback(async () => {
+        if (!project.language) {
+          toast({ title: "Missing Information", description: "Project language is required.", variant: "destructive" });
+          return;
+        }
+        setIsGenerating(true);
+    
+        const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
+        onContentChange(buildChapterSkeleton());
+    
+        for (const [index, sectionTitle] of allSectionTitles.entries()) {
+          try {
+            const result = await writeChapterSection({
+              bookTitle: project.title,
+              fullOutline: project.outline || '',
+              chapterTitle: chapterDetails.title,
+              sectionTitle: sectionTitle,
+              language: project.language,
+              styleProfile: selectedStyle?.styleAnalysis,
+              researchProfile: researchPrompt,
+              storytellingFramework: selectedFramework,
+              apiKey: apiKey,
+            });
+    
+            if (result && result.sectionContent) {
+                onContentChange(prevContent => {
+                    const sections = prevContent.split(/(\$\$[^$]+\$\$)/g);
+                    const titleToFind = `$$${sectionTitle}$$`;
+                    const titleIndex = sections.findIndex(s => s.trim() === titleToFind.trim());
+
+                    if (titleIndex !== -1) {
+                        const contentIndex = titleIndex + 1;
+                         if (contentIndex >= sections.length || sections[contentIndex].startsWith('$$')) {
+                            sections.splice(contentIndex, 0, ''); 
+                        }
+                        sections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
+                        return sections.join('');
+                    }
+                    return prevContent;
+                });
+            } else {
+              toast({ title: "AI Warning", description: `The AI returned no content for section: "${sectionTitle}".`, variant: "destructive" });
+            }
+          } catch (sectionError) {
+            console.error(`Error generating section "${sectionTitle}":`, sectionError);
+            toast({ title: "AI Section Failed", description: `Could not generate content for: "${sectionTitle}".`, variant: "destructive" });
+          }
+        }
+        
+        toast({ title: "Chapter Generation Complete", description: "The full chapter draft has been written." });
+        setIsGenerating(false);
+      }, [
+        project, chapterDetails, subTopics, buildChapterSkeleton, 
+        selectedStyle, researchPrompt, selectedFramework, apiKey, 
+        onContentChange, setIsGenerating, toast
+    ]);
+
     const renderSection = (sectionIndex: number, title: string, sectionContent: string) => {
         const hasContent = sectionContent.trim().length > 0;
         const isWriting = isWritingSection === sectionIndex;
@@ -436,7 +507,31 @@ const ChapterEditor = ({
         return renderedSections;
     };
 
-    return <div className="prose max-w-none dark:prose-invert space-y-8">{renderContent()}</div>;
+    return (
+        <div className="prose max-w-none dark:prose-invert space-y-8">
+            <div className="flex justify-end gap-2 mb-4 sticky top-0 bg-background py-2 z-10">
+                <Button variant="outline" size="sm" onClick={handleWriteFullChapter} disabled={isGenerating}>
+                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                    {isGenerating ? 'Writing...' : 'Write Full Chapter'}
+                </Button>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" disabled={isGenerating}>
+                            <RefreshCw className="mr-2 h-4 w-4" /> Rewrite Chapter
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                        {/* Popover content for rewriting chapter can be added here */}
+                        <p>Rewrite options will be here.</p>
+                    </PopoverContent>
+                </Popover>
+                <Button variant="outline" size="sm" onClick={() => {}}>
+                    <Copy className="mr-2 h-4 w-4" /> Copy Text
+                </Button>
+            </div>
+            {renderContent()}
+        </div>
+    );
 };
 
 
@@ -469,6 +564,7 @@ export default function ChapterPage() {
   const [pageState, setPageState] = useState<PageState>('overview');
   const [chapterContent, setChapterContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [selectedStyleId, setSelectedStyleId] = useState<string>('default');
   const [selectedResearchId, setSelectedResearchId] = useState<string>(project?.researchProfileId || 'none');
   const [selectedFramework, setSelectedFramework] = useState<string>(project?.storytellingFramework || '');
@@ -614,62 +710,6 @@ export default function ChapterPage() {
         setRewriteChapterInstruction('');
     }
   }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, selectedFramework, researchProfiles, selectedResearchId, apiKey]);
-
-  // This is the new, robust "Write Full Chapter" implementation
-  const handleWriteFullChapter = useCallback(async () => {
-    if (!project?.language || !chapterDetails) {
-        toast({ title: "Missing Information", description: "Project language and chapter details are required.", variant: "destructive" });
-        return;
-    }
-    setPageState('generating');
-    // Start with a clean skeleton
-    setChapterContent(buildChapterSkeleton());
-    
-    try {
-        const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
-        const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
-        const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
-        const researchPrompt = relevantResearchProfile
-            ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
-            : undefined;
-        
-        for (const sectionTitle of allSectionTitles) {
-            try {
-                const result = await writeChapterSection({
-                    bookTitle: project.title,
-                    fullOutline: project.outline || '',
-                    chapterTitle: chapterDetails.title,
-                    sectionTitle: sectionTitle,
-                    language: project.language,
-                    styleProfile: selectedStyle?.styleAnalysis,
-                    researchProfile: researchPrompt,
-                    storytellingFramework: selectedFramework,
-                    apiKey: apiKey,
-                });
-                
-                if (result && result.sectionContent) {
-                    setChapterContent(prevContent => {
-                        const placeholder = `$$${sectionTitle}$$`;
-                        const newContent = `$$${sectionTitle}$$\n\n${result.sectionContent.trim()}\n\n`;
-                        // Replace the placeholder section with the newly generated content
-                        return prevContent.replace(placeholder, newContent);
-                    });
-                } else {
-                    toast({ title: "AI Warning", description: `The AI returned no content for section: "${sectionTitle}".`, variant: "destructive" });
-                }
-            } catch (sectionError) {
-                console.error(`Error generating section "${sectionTitle}":`, sectionError);
-                toast({ title: "AI Section Failed", description: `Could not generate content for section: "${sectionTitle}".`, variant: "destructive" });
-            }
-        }
-        toast({ title: "Chapter Generation Complete", description: "The full chapter draft has been written." });
-    } catch (error) {
-        console.error("Error during full chapter generation:", error);
-        toast({ title: "AI Chapter Generation Failed", variant: "destructive", description: `A critical error occurred. ${error}` });
-    } finally {
-        setPageState('writing');
-    }
-  }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, researchProfiles, selectedResearchId, selectedFramework, apiKey, toast, buildChapterSkeleton]);
 
 
   if (isProjectLoading) {
@@ -827,55 +867,21 @@ export default function ChapterPage() {
             </div>
         </CardHeader>
         <CardContent>
-            {(pageState === 'rewriting' || pageState === 'generating') ? (
+            {pageState === 'rewriting' ? (
                 <div className="flex h-[65vh] flex-col items-center justify-center space-y-4 rounded-md border border-dashed">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                     <div className="text-center">
                         <p className="text-lg font-semibold">AI is working...</p>
-                        <p className="text-muted-foreground">{pageState === 'generating' ? 'Writing full chapter section by section...' : 'Rewriting chapter...'}</p>
+                        <p className="text-muted-foreground">Rewriting chapter...</p>
                     </div>
                 </div>
             ) : (
                 <div className="space-y-4">
-                    <div className="flex justify-end gap-2 mb-4 sticky top-0 bg-background py-2 z-10">
-                        <Button variant="outline" size="sm" onClick={handleWriteFullChapter} disabled={pageState === 'generating'}>
-                            {pageState === 'generating' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                             {pageState === 'generating' ? 'Writing...' : 'Write Full Chapter'}
-                        </Button>
-                        <Popover open={isRewriteChapterPopoverOpen} onOpenChange={setRewriteChapterPopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" size="sm" disabled={pageState === 'generating'}>
-                                    <RefreshCw className="mr-2 h-4 w-4" /> Rewrite Chapter
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80">
-                                <div className="grid gap-4">
-                                    <div className="space-y-2">
-                                        <h4 className="font-medium leading-none">Guided Rewrite</h4>
-                                        <p className="text-sm text-muted-foreground">Give the AI specific instructions on how to rewrite the entire chapter.</p>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="rewrite-chapter-instruction" className="sr-only">Instruction</Label>
-                                        <Input id="rewrite-chapter-instruction" placeholder="e.g., Make it more formal" value={rewriteChapterInstruction} onChange={(e) => setRewriteChapterInstruction(e.target.value)} />
-                                        <Button size="sm" onClick={() => handleRewriteChapter(rewriteChapterInstruction)} disabled={!rewriteChapterInstruction}>
-                                            <Pencil className="mr-2 h-4 w-4" /> Rewrite with Instruction
-                                        </Button>
-                                    </div>
-                                    <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
-                                    <Button size="sm" variant="secondary" onClick={() => handleRewriteChapter()}>
-                                        <RefreshCw className="mr-2 h-4 w-4" /> Just Rewrite
-                                    </Button>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                        <Button variant="outline" size="sm" onClick={handleCopyContent}>
-                            <Copy className="mr-2 h-4 w-4" /> Copy Text
-                        </Button>
-                    </div>
                     <div className="relative">
                         <ChapterEditor
                           project={project}
                           chapterDetails={chapterDetails}
+                          subTopics={subTopics}
                           content={chapterContent}
                           onContentChange={setChapterContent}
                           selectedStyleId={selectedStyleId}
@@ -883,11 +889,12 @@ export default function ChapterPage() {
                           selectedResearchId={selectedResearchId}
                           researchProfiles={researchProfiles}
                           selectedFramework={selectedFramework}
-                          isGenerating={pageState === 'generating'}
+                          isGenerating={isGenerating}
+                          setIsGenerating={setIsGenerating}
                         />
                     </div>
                     <div className="flex justify-end pt-4 border-t">
-                        <Button onClick={handleSaveContent} disabled={isSaving || pageState === 'generating'}>
+                        <Button onClick={handleSaveContent} disabled={isSaving || isGenerating}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Save
                         </Button>
@@ -899,3 +906,5 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
