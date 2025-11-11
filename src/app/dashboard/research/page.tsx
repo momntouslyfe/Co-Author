@@ -205,7 +205,7 @@ export default function ResearchPage() {
                     <CardTitle className="font-headline">Target Audience</CardTitle>
                     </CardHeader>
                     <CardContent className="prose prose-sm max-w-none dark:prose-invert">
-                        {result.targetAudienceSuggestion}
+                        <div className="whitespace-pre-wrap">{result.targetAudienceSuggestion}</div>
                     </CardContent>
                 </Card>
                 <Card className="lg:col-span-2">
@@ -213,7 +213,7 @@ export default function ResearchPage() {
                     <CardTitle className="font-headline">Pain Point Analysis</CardTitle>
                     </CardHeader>
                     <CardContent className="prose prose-sm max-w-none dark:prose-invert">
-                        {result.painPointAnalysis}
+                       <div className="whitespace-pre-wrap">{result.painPointAnalysis}</div>
                     </CardContent>
                 </Card>
             </div>
@@ -221,8 +221,8 @@ export default function ResearchPage() {
                 <CardHeader>
                 <CardTitle className="font-headline">Deep Topic Research</CardTitle>
                 </CardHeader>
-                <CardContent className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
-                    {result.deepTopicResearch}
+                <CardContent className="prose max-w-none dark:prose-invert">
+                    <div className="whitespace-pre-wrap">{result.deepTopicResearch}</div>
                 </CardContent>
             </Card>
         </div>
@@ -230,3 +230,4 @@ export default function ResearchPage() {
     </div>
   );
 }
+`
