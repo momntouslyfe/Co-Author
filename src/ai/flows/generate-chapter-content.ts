@@ -7,10 +7,10 @@
  * This flow now uses a robust, iterative approach. Instead of a single large prompt,
  * it breaks the task down:
  * 1.  It generates the introduction.
- * 2.  It loops through each sub-topic, generating content for one section at a time.
+ * 2.  It loops through each sub-topic, calling a section builder which itself loops to generate paragraphs, ensuring robust content generation.
  * 3.  It generates the final action step and teaser sections.
  * 4.  It assembles all the pieces into a single, complete chapter.
- * This method is more reliable and prevents incomplete outputs for long chapters.
+ * This method is highly reliable and prevents incomplete outputs.
  *
  * @exported generateChapterContent - A function that generates the chapter content.
  * @exported GenerateChapterContentInput - The input type for the function.
@@ -40,10 +40,8 @@ const GenerateChapterContentOutputSchema = z.object({
 export type GenerateChapterContentOutput = z.infer<typeof GenerateChapterContentOutputSchema>;
 
 
-// A new, focused prompt for generating a single, substantial section for a sub-topic.
-const generateSectionContentPrompt = ai.definePrompt({
-    name: 'generateSectionContentPrompt',
-    model: 'googleai/gemini-1.5-pro-latest',
+const generateParagraphsPrompt = ai.definePrompt({
+    name: 'generateParagraphsPrompt',
     input: { schema: z.object({
         bookTitle: z.string(),
         fullOutline: z.string(),
@@ -53,17 +51,19 @@ const generateSectionContentPrompt = ai.definePrompt({
         researchProfile: z.string().optional(),
         storytellingFramework: z.string().optional(),
         subTopic: z.string(),
+        existingContent: z.string().optional(),
     }) },
-    output: { schema: z.object({ sectionContent: z.string() }) },
-    prompt: `You are an expert ghostwriter. Your task is to write a single, comprehensive section for a book chapter in {{{bookLanguage}}}.
+    output: { schema: z.object({ paragraphs: z.string() }) },
+    prompt: `You are an expert ghostwriter. Your task is to write one or two new, insightful paragraphs in {{{bookLanguage}}} for a specific sub-topic within a book chapter.
 
 **CONTEXT:**
 - Book Title: {{{bookTitle}}}
 - Chapter: {{{chapterTitle}}}
+- Current Sub-Topic: {{{subTopic}}}
 - Full Book Outline: {{{fullOutline}}}
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
 {{#if styleProfile}}
-- **Writing Style Profile (CRITICAL):** You MUST strictly adhere to this writing style. Match the tone, voice, vocabulary, sentence structure, and any code-mixing described.
+- **Writing Style Profile (CRITICAL):** You MUST strictly adhere to this writing style.
   ---
   {{{styleProfile}}}
   ---
@@ -76,19 +76,22 @@ const generateSectionContentPrompt = ai.definePrompt({
 {{/if}}
 
 **YOUR TASK:**
-Write a substantial and insightful section for the sub-topic: **"{{{subTopic}}}"**.
+Based on the sub-topic "{{{subTopic}}}", write one or two new paragraphs that logically continue from the "Existing Content for this Section". If the existing content is empty, start the section.
 
 **CRITICAL INSTRUCTIONS:**
-1.  **WORD COUNT (NON-NEGOTIABLE):** You are commanded to write a section between **500 and 650 words**. This is a strict rule.
-2.  **FOCUSED CONTENT:** All content must be directly related to the sub-topic provided.
-3.  **HUMAN-LIKE PARAGRAPHING:** Use short, readable paragraphs (3-5 sentences), but VARY their length for good rhythm. Ensure a double newline (a blank line) exists between every paragraph.
-4.  **RETURN ONLY THE SECTION CONTENT:** Your output must ONLY be the text for this section. Do not add titles, headings, or any other formatting like \`$$...$$\`.
+1.  **FOCUSED CONTENT:** All content must be directly related to the sub-topic provided.
+2.  **HUMAN-LIKE PARAGRAPHING:** Use short, readable paragraphs (3-5 sentences), but VARY their length for good rhythm. Ensure a double newline (a blank line) exists between paragraphs.
+3.  **RETURN ONLY THE NEW PARAGRAPHS:** Your output must ONLY be the text for the new paragraph(s). Do not repeat the existing content. Do not add titles or headings.
 
-Proceed to write the section now.
+**Existing Content for this Section:**
+{{{existingContent}}}
+
+Proceed to write the new paragraph(s) now.
 `,
 });
 
-// A new, simpler prompt for generating introductions, action steps, and teasers.
+
+// A simpler prompt for generating introductions, action steps, and teasers.
 const generateSimpleSectionPrompt = ai.definePrompt({
     name: 'generateSimpleSectionPrompt',
     input: { schema: z.object({
@@ -162,18 +165,29 @@ const generateChapterContentFlow = ai.defineFlow(
         fullChapterContent += `${introResult.output.sectionContent}\n\n`;
     }
 
+    // A helper function to build up a section iteratively.
+    const generateSectionContent = async (subTopic: string): Promise<string> => {
+        let sectionContent = '';
+        // Loop 2-3 times to build up a substantial section from smaller paragraph chunks.
+        for (let i = 0; i < 3; i++) {
+            const result = await generateParagraphsPrompt({
+                bookTitle, fullOutline, chapterTitle, bookLanguage, styleProfile,
+                researchProfile, storytellingFramework, subTopic,
+                existingContent: sectionContent,
+            });
+            if (result.output?.paragraphs) {
+                sectionContent += `${result.output.paragraphs.trim()}\n\n`;
+            }
+        }
+        return sectionContent.trim();
+    };
+
     // 2. Loop through each sub-topic and generate its section content
     for (const subTopic of subTopics) {
         fullChapterContent += `$$${subTopic}$$\n\n`;
         
-        const sectionResult = await generateSectionContentPrompt({
-            bookTitle, fullOutline, chapterTitle, bookLanguage, styleProfile,
-            researchProfile, storytellingFramework, subTopic,
-        });
-
-        if (sectionResult.output) {
-            fullChapterContent += `${sectionResult.output.sectionContent.trim()}\n\n`;
-        }
+        const sectionResult = await generateSectionContent(subTopic);
+        fullChapterContent += `${sectionResult}\n\n`;
     }
 
     // 3. Generate the Action Step
