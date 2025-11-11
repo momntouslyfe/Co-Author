@@ -660,7 +660,7 @@ export default function ChapterPage() {
     } finally {
         setPageState('writing');
     }
-  }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, selectedFramework, researchProfiles, selectedResearchId]);
+  }, [chapterContent, styleProfiles, selectedStyleId, toast, project, selectedFramework, researchProfiles, selectedResearchId]);
 
 
   if (isProjectLoading) {
