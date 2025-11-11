@@ -20,7 +20,7 @@ import { rewriteSection } from '@/ai/flows/rewrite-section';
 import { writeChapterSection } from '@/ai/flows/write-chapter-section';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
@@ -217,6 +217,12 @@ const ChapterEditor = ({
             const title = titleToFind.replaceAll('$$', '').trim();
             const needsFullContext = title === 'Your Action Step' || title === 'Coming Up Next';
     
+            const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
+            const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
+            const researchPrompt = relevantResearchProfile
+                ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
+                : undefined;
+
             const result = await rewriteSection({
                 sectionContent: sectionContentToRewrite,
                 chapterContent: needsFullContext ? content : undefined,
@@ -861,7 +867,3 @@ export default function ChapterPage() {
     </div>
   );
 }
-
-    
-
-    
