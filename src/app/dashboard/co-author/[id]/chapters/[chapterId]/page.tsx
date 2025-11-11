@@ -137,26 +137,21 @@ const ChapterEditor = ({
             });
 
             // Split by the delimiter, but keep the delimiter in the array.
-            const sections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
-            const hasChapterTitle = sections[0].startsWith('$$');
-            const introContentIndex = hasChapterTitle ? 1 : 0;
-            const contentStartIndex = hasChapterTitle ? 2 : 1;
+            const sections = content.split(/(\$\$[^$]+\$\$)/g);
+            const titleToFind = findTitleForSection(sections, sectionIndex);
 
-            if (sectionIndex === -1) { // Intro section
-                const introParagraphs = (sections[introContentIndex] || '').trim().split('\n\n');
-                introParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
-                sections[introContentIndex] = `\n\n${introParagraphs.join('\n\n')}\n\n`;
-            } else { // Sub-topic sections
-                const contentPartIndex = contentStartIndex + (sectionIndex * 2) + 1;
-                if (contentPartIndex < sections.length) {
-                    const sectionParagraphs = (sections[contentPartIndex] || '').trim().split('\n\n');
-                    sectionParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
-                    sections[contentPartIndex] = `\n\n${sectionParagraphs.join('\n\n')}\n\n`;
-                }
+            const titleIndex = sections.findIndex(s => s === titleToFind);
+
+            if (titleIndex !== -1 && titleIndex + 1 < sections.length) {
+                const contentPartIndex = titleIndex + 1;
+                const sectionParagraphs = (sections[contentPartIndex] || '').trim().split('\n\n').filter(p => p.trim() !== '');
+                sectionParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
+                sections[contentPartIndex] = `\n\n${sectionParagraphs.join('\n\n')}\n\n`;
+                onContentChange(sections.join(''));
+                toast({ title: "Content Extended", description: "New content has been added." });
+            } else {
+                throw new Error("Could not find section to extend.");
             }
-
-            onContentChange(sections.join(''));
-            toast({ title: "Content Extended", description: "New content has been added." });
 
         } catch (error) {
             console.error("Failed to extend content", error);
@@ -167,6 +162,25 @@ const ChapterEditor = ({
         }
     };
     
+    const findTitleForSection = (sections: string[], sectionIndex: number): string => {
+        let titleIndex = -1;
+        if (sectionIndex === -1) { // Intro
+            titleIndex = sections.findIndex(s => s.startsWith('$$') && s.includes(chapterDetails.title));
+        } else {
+            let count = 0;
+            for (let i = 0; i < sections.length; i++) {
+                if (sections[i].startsWith('$$')) {
+                    if (count === sectionIndex + 1) { // +1 to skip main chapter title
+                        titleIndex = i;
+                        break;
+                    }
+                    count++;
+                }
+            }
+        }
+        return sections[titleIndex];
+    };
+
     const handleRewriteSection = async (sectionIndex: number, sectionContentToRewrite: string, instruction?: string) => {
         if (!project.language) {
             toast({ title: "Language not set", description: "Project language is required to rewrite.", variant: "destructive" });
@@ -177,26 +191,14 @@ const ChapterEditor = ({
         setOpenRewritePopoverIndex(null);
     
         try {
-            const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
-            const hasChapterTitle = allSections.length > 0 && allSections[0].startsWith('$$');
-    
-            const isIntro = sectionIndex === -1;
-            
-            let contentIndex;
-            if (isIntro) {
-                contentIndex = hasChapterTitle ? 1 : 0;
-            } else {
-                const baseIndex = hasChapterTitle ? 2 : 0;
-                contentIndex = baseIndex + (sectionIndex * 2) + 1;
-            }
-            
-            if (contentIndex < 0 || contentIndex >= allSections.length) {
-                throw new Error("Calculated invalid index for section content.");
-            }
-    
-            const titlePartIndex = isIntro ? (hasChapterTitle ? 0 : -1) : contentIndex -1;
+            const allSections = content.split(/(\$\$[^$]+\$\$)/g);
+            const titleToFind = findTitleForSection(allSections, sectionIndex);
 
-            const title = titlePartIndex !== -1 ? allSections[titlePartIndex]?.replaceAll('$$', '').trim() : 'Introduction';
+            if (!titleToFind) {
+                throw new Error("Could not find the section title to determine context needs.");
+            }
+            
+            const title = titleToFind.replaceAll('$$', '').trim();
             const needsFullContext = title === 'Your Action Step' || title === 'Coming Up Next';
     
             const result = await rewriteSection({
@@ -211,9 +213,14 @@ const ChapterEditor = ({
             });
     
             if (result && result.rewrittenSection) {
-                 allSections[contentIndex] = `\n\n${result.rewrittenSection.trim()}\n\n`;
-                 onContentChange(allSections.join(''));
-                 toast({ title: "Section Rewritten", description: "The AI has rewritten the section." });
+                const titleIndex = allSections.findIndex(s => s === titleToFind);
+                if (titleIndex !== -1 && titleIndex + 1 < allSections.length) {
+                    allSections[titleIndex + 1] = `\n\n${result.rewrittenSection.trim()}\n\n`;
+                    onContentChange(allSections.join(''));
+                    toast({ title: "Section Rewritten", description: "The AI has rewritten the section." });
+                } else {
+                    throw new Error("Could not find section to insert rewritten content.");
+                }
             } else {
                 throw new Error("AI returned empty content during section rewrite.");
             }
@@ -248,25 +255,28 @@ const ChapterEditor = ({
             });
 
             if (result && result.sectionContent) {
-                const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
-                const hasChapterTitle = allSections.length > 0 && allSections[0].startsWith('$$');
-                const isIntro = sectionIndex === -1;
-                
-                let contentIndex;
-                if (isIntro) {
-                    contentIndex = hasChapterTitle ? 1 : 0;
+                const allSections = content.split(/(\$\$[^$]+\$\$)/g);
+                const titleToFind = `$$${sectionTitle}$$`;
+                const titleIndex = allSections.findIndex(s => s === titleToFind);
+
+                if (titleIndex !== -1 && titleIndex + 1 < allSections.length) {
+                    allSections[titleIndex + 1] = `\n\n${result.sectionContent.trim()}\n\n`;
+                    onContentChange(allSections.join(''));
+                    toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
                 } else {
-                    const baseIndex = hasChapterTitle ? 2 : 0;
-                    contentIndex = baseIndex + (sectionIndex * 2) + 1;
+                    // This case might happen with the main title which might not be in the skeleton
+                     if (sectionIndex === -1) {
+                        const mainTitleIndex = allSections.findIndex(s => s.includes(chapterDetails.title));
+                        if(mainTitleIndex !== -1 && mainTitleIndex + 1 < allSections.length) {
+                            allSections[mainTitleIndex + 1] = `\n\n${result.sectionContent.trim()}\n\n`;
+                            onContentChange(allSections.join(''));
+                            toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
+                            setIsWritingSection(null);
+                            return;
+                        }
+                    }
+                    throw new Error("Could not find section to insert content.");
                 }
-
-                if (contentIndex < 0 || contentIndex >= allSections.length) {
-                    throw new Error("Calculated invalid index for section content.");
-                }
-
-                allSections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
-                onContentChange(allSections.join(''));
-                toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
 
             } else {
                 throw new Error("AI returned empty content for section writing.");
@@ -280,20 +290,12 @@ const ChapterEditor = ({
     };
 
     const handleClearSection = (sectionIndex: number) => {
-        const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
-        const hasChapterTitle = allSections.length > 0 && allSections[0].startsWith('$$');
-        const isIntro = sectionIndex === -1;
-        
-        let contentIndex;
-        if (isIntro) {
-            contentIndex = hasChapterTitle ? 1 : 0;
-        } else {
-            const baseIndex = hasChapterTitle ? 2 : 0;
-            contentIndex = baseIndex + (sectionIndex * 2) + 1;
-        }
-        
-        if (contentIndex >= 0 && contentIndex < allSections.length) {
-            allSections[contentIndex] = '\n\n'; // Set to empty with newlines for structure
+        const allSections = content.split(/(\$\$[^$]+\$\$)/g);
+        const titleToFind = findTitleForSection(allSections, sectionIndex);
+
+        const titleIndex = allSections.findIndex(s => s === titleToFind);
+        if (titleIndex !== -1 && titleIndex + 1 < allSections.length) {
+            allSections[titleIndex + 1] = '\n\n\n\n'; // Set to empty with newlines for structure
             onContentChange(allSections.join(''));
             toast({ title: 'Section Cleared' });
         }
@@ -364,7 +366,7 @@ const ChapterEditor = ({
                             <div className="h-6 w-3/4 rounded-md bg-muted animate-pulse"></div>
                         </div>
                     ) : hasContent ? (
-                        sectionContent.trim().split('\n\n').map((paragraph, pIndex) => (
+                        sectionContent.trim().split('\n\n').filter(p => p.trim()).map((paragraph, pIndex) => (
                             <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4 group/paragraph">
                                 <p className="text-base leading-relaxed">{paragraph}</p>
                                 <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
@@ -406,29 +408,22 @@ const ChapterEditor = ({
     };
 
     const renderContent = () => {
-        const sections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+        const sections = content.split(/(\$\$[^$]+\$\$)/g);
         if (sections.length === 0) return null;
 
         const renderedSections: JSX.Element[] = [];
-
-        const hasChapterTitle = sections.length > 0 && sections[0].startsWith('$$');
-        const chapterTitle = hasChapterTitle ? sections[0].replaceAll('$$', '') : chapterDetails.title;
         
-        const introContentIndex = hasChapterTitle ? 1 : 0;
-        const introContent = sections[introContentIndex] || '';
-        const contentStartIndex = hasChapterTitle ? 2 : 1;
-        const introSectionIndex = -1;
+        let sectionIndexCounter = -1;
 
-        if (introContent !== undefined) {
-             renderedSections.push(renderSection(introSectionIndex, chapterTitle, introContent));
-        }
-
-        for (let i = contentStartIndex; i < sections.length; i += 2) {
-            const titlePart = sections[i];
-            const contentPart = sections[i + 1] || '';
-            const sectionIndex = (i - contentStartIndex) / 2;
-            const title = titlePart.replaceAll('$$', '');
-            renderedSections.push(renderSection(sectionIndex, title, contentPart));
+        for (let i = 0; i < sections.length; i++) {
+            const part = sections[i];
+            if (part.startsWith('$$') && part.endsWith('$$')) {
+                const title = part.replaceAll('$$', '');
+                const contentPart = sections[i + 1] || '';
+                renderedSections.push(renderSection(sectionIndexCounter, title, contentPart));
+                sectionIndexCounter++;
+                i++; // Skip the content part as it's handled
+            }
         }
         
         return renderedSections;
@@ -595,6 +590,7 @@ export default function ChapterPage() {
             language: project.language,
             instruction,
             apiKey: apiKey,
+            model: undefined
         });
 
         if (result && result.rewrittenContent) {
