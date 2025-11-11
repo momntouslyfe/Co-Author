@@ -71,11 +71,24 @@ const writeSectionPrompt = ai.definePrompt({
 **YOUR TASK:**
 Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
-**CRITICAL INSTRUCTIONS:**
+**CRITICAL INSTRUCTIONS (Read Carefully):**
+
 1.  **FOCUSED CONTENT:** All content must be directly related to the provided section title.
-2.  **SUBSTANTIAL CONTENT (STRICT REQUIREMENT):** You MUST write at least 400 words for this section. This is a non-negotiable instruction. Generate multiple, well-developed, and insightful paragraphs to meet this word count.
-3.  **HUMAN-LIKE PARAGRAPHING:** Use short, readable paragraphs (3-5 sentences), but VARY their length for good rhythm. Ensure a double newline (a blank line) exists between paragraphs.
-4.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the text for the new section. Do not add the section title or any other formatting; return only the paragraphs.
+
+2.  **HUMAN-LIKE PARAGRAPHING:** Use short, readable paragraphs (3-5 sentences), but VARY their length for good rhythm. Ensure a double newline (a blank line) exists between paragraphs.
+
+3.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the text for the new section. Do not add the section title or any other formatting; return only the paragraphs.
+
+4.  **SECTION-SPECIFIC INSTRUCTIONS:**
+    {{#if (eq sectionTitle "Your Action Step")}}
+    -   **ACTION STEP FORMAT:** You are writing the "Action Step" section. Based on the "Previous Chapter Content" provided, you MUST follow this format:
+        1.  Start with a single, concise paragraph that summarizes the core lesson or takeaway of the entire chapter.
+        2.  After the paragraph, create a bulleted or numbered list containing 5 to 7 single-sentence action items that the reader can implement. These action items must be direct, clear, and derived from the chapter's main points.
+    {{else if (eq sectionTitle "Coming Up Next")}}
+    -   **COMING UP NEXT FORMAT:** You are writing the "Coming Up Next" section. Based on the "Full Book Outline" provided, you MUST write one or two short paragraphs that act as a summary or teaser for the *next* chapter. Keep it brief and intriguing. Do not write more than two paragraphs.
+    {{else}}
+    -   **SUBSTANTIAL CONTENT (STRICT REQUIREMENT):** You MUST write at least 400 words for this section. This is a non-negotiable instruction. Generate multiple, well-developed, and insightful paragraphs to meet this word count.
+    {{/if}}
 
 Proceed to write the section content now.
 `,
