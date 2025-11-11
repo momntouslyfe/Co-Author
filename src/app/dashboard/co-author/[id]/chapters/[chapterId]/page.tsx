@@ -133,6 +133,8 @@ const ChapterEditor = ({
                 contentToExpand: paragraph,
                 instruction,
                 styleProfile: selectedStyle?.styleAnalysis,
+                researchProfile: researchPrompt,
+                storytellingFramework: selectedFramework,
                 apiKey: apiKey,
             });
 
@@ -264,18 +266,7 @@ const ChapterEditor = ({
                     onContentChange(allSections.join(''));
                     toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
                 } else {
-                    // This case might happen with the main title which might not be in the skeleton
-                     if (sectionIndex === -1) {
-                        const mainTitleIndex = allSections.findIndex(s => s.includes(chapterDetails.title));
-                        if(mainTitleIndex !== -1 && mainTitleIndex + 1 < allSections.length) {
-                            allSections[mainTitleIndex + 1] = `\n\n${result.sectionContent.trim()}\n\n`;
-                            onContentChange(allSections.join(''));
-                            toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
-                            setIsWritingSection(null);
-                            return;
-                        }
-                    }
-                    throw new Error("Could not find section to insert content.");
+                    throw new Error(`Could not find section title "${titleToFind}" to insert content.`);
                 }
 
             } else {
@@ -408,7 +399,7 @@ const ChapterEditor = ({
     };
 
     const renderContent = () => {
-        const sections = content.split(/(\$\$[^$]+\$\$)/g);
+        const sections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');;
         if (sections.length === 0) return null;
 
         const renderedSections: JSX.Element[] = [];

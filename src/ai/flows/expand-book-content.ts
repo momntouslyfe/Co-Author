@@ -23,6 +23,8 @@ const ExpandBookContentInputSchema = z.object({
   contentToExpand: z.string().describe('The paragraph of book content to use as a starting point for expansion.'),
   instruction: z.string().optional().describe('A specific instruction from the user on how to expand the content.'),
   styleProfile: z.string().optional().describe('The desired writing style for the content.'),
+  researchProfile: z.string().optional().describe('An AI research profile with audience context.'),
+  storytellingFramework: z.string().optional().describe('The storytelling framework for the book.'),
   apiKey: z.string().optional().describe('The API key for the generative AI model.'),
   model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
 });
@@ -47,6 +49,13 @@ const prompt = ai.definePrompt({
 - Book Title: {{{bookTitle}}}
 - Chapter: {{{chapterTitle}}}
 - Full Outline: {{{fullOutline}}}
+{{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
+{{#if researchProfile}}
+- **Audience Research Profile (CRITICAL):** You MUST use this research to inform your writing.
+  ---
+  {{{researchProfile}}}
+  ---
+{{/if}}
 
 **CRITICAL INSTRUCTIONS:**
 1.  Use the "Starting Paragraph" below as the primary context.
