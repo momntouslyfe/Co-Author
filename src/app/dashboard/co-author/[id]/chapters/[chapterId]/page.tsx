@@ -84,6 +84,7 @@ const ChapterEditor = ({
     subTopics,
     content, 
     onContentChange, 
+    onCopyContent,
     selectedStyleId, 
     styleProfiles,
     selectedResearchId,
@@ -97,6 +98,7 @@ const ChapterEditor = ({
     subTopics: string[],
     content: string; 
     onContentChange: (newContent: string | ((prev: string) => string)) => void;
+    onCopyContent: () => void;
     selectedStyleId: string; 
     styleProfiles: StyleProfile[] | null;
     selectedResearchId: string;
@@ -259,12 +261,20 @@ const ChapterEditor = ({
         setIsWritingSection(sectionIndex);
 
         try {
+            const currentContentForContext = await new Promise<string>(resolve => {
+                onContentChange(prev => {
+                    resolve(prev);
+                    return prev;
+                });
+            });
+
             const result = await writeChapterSection({
                 bookTitle: project.title,
                 fullOutline: project.outline || '',
                 chapterTitle: chapterDetails.title,
                 sectionTitle: sectionTitle,
                 language: project.language,
+                previousContent: currentContentForContext,
                 styleProfile: selectedStyle?.styleAnalysis,
                 researchProfile: researchPrompt,
                 storytellingFramework: selectedFramework,
@@ -535,7 +545,7 @@ const ChapterEditor = ({
                         <p>Rewrite options will be here.</p>
                     </PopoverContent>
                 </Popover>
-                <Button variant="outline" size="sm" onClick={() => {}}>
+                <Button variant="outline" size="sm" onClick={onCopyContent}>
                     <Copy className="mr-2 h-4 w-4" /> Copy Text
                 </Button>
             </div>
@@ -665,12 +675,12 @@ export default function ChapterPage() {
     }
   }, [projectDocRef, chapterDetails, chapterContent, chapterId, project?.chapters, toast]);
   
-  const handleCopyContent = () => {
+  const handleCopyContent = useCallback(() => {
     // We need to strip the $$ markers for a clean copy
-    const cleanContent = chapterContent.replace(/\$\$[^$]+\$\$/g, '').trim();
+    const cleanContent = chapterContent.replace(/\$\$[^$]+\$\$/g, '\n\n').trim();
     navigator.clipboard.writeText(cleanContent);
     toast({ title: 'Content Copied', description: 'The chapter text has been copied to your clipboard.' });
-  }
+  }, [chapterContent, toast]);
 
   const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
@@ -894,6 +904,7 @@ export default function ChapterPage() {
                           subTopics={subTopics}
                           content={chapterContent}
                           onContentChange={setChapterContent}
+                          onCopyContent={handleCopyContent}
                           selectedStyleId={selectedStyleId}
                           styleProfiles={styleProfiles}
                           selectedResearchId={selectedResearchId}
@@ -920,3 +931,4 @@ export default function ChapterPage() {
     
 
     
+
