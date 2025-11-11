@@ -210,7 +210,12 @@ const ChapterEditor = ({
     
             if (result && result.rewrittenSection) {
                 const titleIndex = allSections.findIndex(s => s === titleToFind);
-                if (titleIndex !== -1 && titleIndex + 1 < allSections.length) {
+                if (titleIndex !== -1) {
+                     // The content is the element AFTER the title.
+                     // Ensure there is a space for content, even if it was empty.
+                    if (titleIndex + 1 >= allSections.length || allSections[titleIndex + 1].startsWith('$$')) {
+                        allSections.splice(titleIndex + 1, 0, ''); // Insert an empty content slot
+                    }
                     allSections[titleIndex + 1] = `\n\n${result.rewrittenSection.trim()}\n\n`;
                     onContentChange(allSections.join(''));
                     toast({ title: "Section Rewritten", description: "The AI has rewritten the section." });
@@ -256,12 +261,12 @@ const ChapterEditor = ({
                 const titleIndex = allSections.findIndex(s => s.trim() === titleToFind);
 
                 if (titleIndex !== -1) {
-                    const contentIndex = titleIndex + 1;
-                    if (contentIndex >= allSections.length) {
-                         allSections.push(`\n\n${result.sectionContent.trim()}\n\n`);
-                    } else {
-                         allSections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
+                    // The content is the element AFTER the title.
+                    // Ensure there is a space for content, even if it was empty.
+                    if (titleIndex + 1 >= allSections.length || allSections[titleIndex + 1].startsWith('$$')) {
+                        allSections.splice(titleIndex + 1, 0, ''); // Insert an empty content slot
                     }
+                    allSections[titleIndex + 1] = `\n\n${result.sectionContent.trim()}\n\n`;
                     onContentChange(allSections.join(''));
                     toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
                 } else {
@@ -284,8 +289,14 @@ const ChapterEditor = ({
         const titleToFind = findTitleForSection(allSections, sectionIndex);
 
         const titleIndex = allSections.findIndex(s => s.trim() === titleToFind);
-        if (titleIndex !== -1 && titleIndex + 1 < allSections.length) {
-            allSections[titleIndex + 1] = '\n\n\n\n'; // Set to empty with newlines for structure
+        if (titleIndex !== -1) {
+            // Ensure there is a content part to clear
+            if (titleIndex + 1 < allSections.length && !allSections[titleIndex + 1].startsWith('$$')) {
+                 allSections[titleIndex + 1] = '\n\n\n\n'; // Set to empty with newlines for structure
+            } else {
+                // If there's no content part, insert one
+                 allSections.splice(titleIndex + 1, 0, '\n\n\n\n');
+            }
             onContentChange(allSections.join(''));
             toast({ title: 'Section Cleared' });
         }
@@ -398,6 +409,7 @@ const ChapterEditor = ({
     };
 
     const renderContent = () => {
+        // This regex splits by the $$...$$ delimiter and keeps the delimiter in the result array.
         const parts = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
         if (parts.length === 0) return null;
     
@@ -412,8 +424,9 @@ const ChapterEditor = ({
                 const contentPart = (i + 1 < parts.length && !parts[i + 1].startsWith('$$')) ? parts[i + 1] : '';
                 renderedSections.push(renderSection(sectionIndexCounter, title, contentPart));
                 sectionIndexCounter++;
+                // If we used the content part, we need to skip the next iteration of the loop
                  if (contentPart) {
-                    i++; // Skip the content part as it's been handled
+                    i++; 
                 }
             }
         }
@@ -607,6 +620,9 @@ export default function ChapterPage() {
     }
     setPageState('generating');
 
+    // Construct the full list of section titles
+    const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
+
     try {
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
         const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
@@ -618,7 +634,7 @@ export default function ChapterPage() {
             bookTitle: project.title,
             fullOutline: project.outline || '',
             chapterTitle: chapterDetails.title,
-            subTopics: subTopics,
+            sectionTitles: allSectionTitles,
             language: project.language,
             styleProfile: selectedStyle?.styleAnalysis,
             researchProfile: researchPrompt,

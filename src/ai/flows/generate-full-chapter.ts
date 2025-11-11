@@ -20,7 +20,7 @@ const GenerateFullChapterInputSchema = z.object({
   bookTitle: z.string().describe('The main title of the book.'),
   fullOutline: z.string().describe('The entire book outline for context.'),
   chapterTitle: z.string().describe('The title of the chapter this section belongs to.'),
-  subTopics: z.array(z.string()).describe('An array of sub-topic titles for the chapter.'),
+  sectionTitles: z.array(z.string()).describe('A complete array of all section titles for the chapter, including Introduction, sub-topics, Action Step, etc.'),
   language: z.string().describe('The language the chapter should be written in.'),
   storytellingFramework: z.string().optional().describe('The storytelling framework for the book.'),
   researchProfile: z.string().optional().describe('An AI research profile with audience context.'),
@@ -70,33 +70,20 @@ You are commanded to write the entire chapter from start to finish. You MUST fol
 
 **NON-NEGOTIABLE STRUCTURE & WORD COUNT:**
 1.  **TOTAL WORD COUNT:** The final, complete chapter MUST be **at least 2250 words**.
-2.  **SECTION FORMATTING:** You MUST wrap every section title in double dollar signs (e.g., \`$$Section Title$$\`). This is a critical formatting requirement.
+2.  **SECTION FORMATTING:** You MUST wrap every section title in double dollar signs (e.g., \`$$Section Title$$\`). This is a critical formatting requirement. You MUST include ALL of the section titles provided.
 3.  **PARAGRAPHING:** Use short, readable paragraphs (3-5 sentences), and you MUST vary their length for good rhythm. Ensure a double newline (a blank line) exists between every paragraph.
 
-**CHAPTER SECTIONS TO WRITE:**
+**CHAPTER SECTIONS TO WRITE (ALL ARE REQUIRED):**
 
-1.  **Introduction (200-250 words):**
-    *   Write the introduction for the chapter titled: **"{{{chapterTitle}}}"**.
-    *   This section MUST be formatted with the title: \`$$Introduction$$\`
-    *   It should grab the reader's attention and introduce the chapter's main topic.
+{{#each sectionTitles}}
+*   **Write the section for: \`$$ {{{this}}} $$\`**
+    *   This section MUST be **at least 350-450 words**.
+    *   Ensure the content is detailed, insightful, and directly addresses the section title.
+{{/each}}
 
-2.  **Main Content Sections (400-450 words PER SECTION):**
-    *   For each of the following sub-topics, you will write a detailed section of 400-450 words.
-    *   You MUST format each section with its corresponding title wrapped in double dollar signs.
-    {{#each subTopics}}
-    *   Write the section for: \`$$ {{{this}}} $$\`
-    {{/each}}
-
-3.  **Action Step (150-200 words):**
-    *   Write a practical, actionable summary of the chapter's key takeaways.
-    *   This section MUST be formatted with the title: \`$$Your Action Step$$\`
-
-4.  **Coming Up Next (100-150 words):**
-    *   Write a teaser for the next chapter to keep the reader engaged.
-    *   This section MUST be formatted with the title: \`$$Coming Up Next$$\`
 
 **FINAL INSTRUCTION:**
-Return ONLY the complete, fully-formatted chapter content. Do not add any commentary or extra text. Begin with the Introduction section and end after the "Coming Up Next" section.
+Return ONLY the complete, fully-formatted chapter content. Do not add any commentary or extra text. You must write a section for every single title provided in the list above. Begin with the first section and end after the last one.
 `,
 });
 
