@@ -43,6 +43,7 @@ export type GenerateChapterContentOutput = z.infer<typeof GenerateChapterContent
 // A new, focused prompt for generating a single, substantial section for a sub-topic.
 const generateSectionContentPrompt = ai.definePrompt({
     name: 'generateSectionContentPrompt',
+    model: 'googleai/gemini-1.5-pro-latest',
     input: { schema: z.object({
         bookTitle: z.string(),
         fullOutline: z.string(),
