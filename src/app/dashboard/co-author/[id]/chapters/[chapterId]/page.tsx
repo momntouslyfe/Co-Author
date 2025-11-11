@@ -6,21 +6,22 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
-import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil } from 'lucide-react';
+import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, Eraser } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { generateChapterContent } from '@/ai/flows/generate-chapter-content';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { expandBookContent } from '@/ai/flows/expand-book-content';
 import type { Chapter, ResearchProfile, StyleProfile } from '@/lib/definitions';
 import { rewriteChapter } from '@/ai/flows/rewrite-chapter';
 import { rewriteSection } from '@/ai/flows/rewrite-section';
+import { writeChapterSection } from '@/ai/flows/write-chapter-section';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 
 // Allow up to 5 minutes for AI chapter generation
@@ -75,7 +76,7 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
 };
 
 // New state to manage the workflow on this page
-type PageState = 'overview' | 'generating' | 'writing' | 'rewriting';
+type PageState = 'overview' | 'writing' | 'rewriting';
 
 // New Component for the interactive editor
 const ChapterEditor = ({ 
@@ -104,19 +105,25 @@ const ChapterEditor = ({
     const [extendInstruction, setExtendInstruction] = useState('');
     const [openExtendPopoverIndex, setOpenExtendPopoverIndex] = useState<number | null>(null);
     
+    const [isWritingSection, setIsWritingSection] = useState<number | null>(null);
     const [isRewritingSection, setIsRewritingSection] = useState<number | null>(null);
     const [rewriteSectionInstruction, setRewriteSectionInstruction] = useState('');
     const [openRewritePopoverIndex, setOpenRewritePopoverIndex] = useState<number | null>(null);
     
     const { toast } = useToast();
 
+    // Helper to get selected profiles
+    const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
+    const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
+    const researchPrompt = relevantResearchProfile
+        ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
+        : undefined;
+
     const handleExtendClick = async (paragraph: string, sectionIndex: number, paragraphIndex: number, instruction?: string) => {
         const uniqueIndex = sectionIndex * 1000 + paragraphIndex;
         setIsExtending(uniqueIndex);
         setOpenExtendPopoverIndex(null); // Close the popover
         try {
-            const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
-
             const result = await expandBookContent({
                 bookTitle: project.title,
                 fullOutline: project.outline || '',
@@ -137,7 +144,6 @@ const ChapterEditor = ({
                 introParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
                 sections[introContentIndex] = `\n\n${introParagraphs.join('\n\n')}\n\n`;
             } else { // Sub-topic sections
-                // The content part is always at index 1 relative to the title part
                 const contentPartIndex = contentStartIndex + (sectionIndex * 2) + 1;
                 if (contentPartIndex < sections.length) {
                     const sectionParagraphs = (sections[contentPartIndex] || '').trim().split('\n\n');
@@ -168,18 +174,11 @@ const ChapterEditor = ({
         setOpenRewritePopoverIndex(null);
     
         try {
-            const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
-            const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
-            const researchPrompt = relevantResearchProfile
-                ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
-                : undefined;
-    
             const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
             const hasChapterTitle = allSections.length > 0 && allSections[0].startsWith('$$');
     
             const isIntro = sectionIndex === -1;
             
-            // Simplified and corrected index calculation
             let contentIndex;
             if (isIntro) {
                 contentIndex = hasChapterTitle ? 1 : 0;
@@ -192,7 +191,6 @@ const ChapterEditor = ({
                 throw new Error("Calculated invalid index for section content.");
             }
     
-            // Determine if full chapter context is needed for summary sections
             const titlePartIndex = isIntro ? (hasChapterTitle ? 0 : -1) : contentIndex -1;
 
             const title = titlePartIndex !== -1 ? allSections[titlePartIndex]?.replaceAll('$$', '').trim() : 'Introduction';
@@ -225,276 +223,215 @@ const ChapterEditor = ({
         }
     };
 
-
-    const renderContent = () => {
-        // Split by the delimiter, but keep the delimiter in the array.
-        const sections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
-        
-        if (sections.length === 0) return null;
-
-        const renderedSections: JSX.Element[] = [];
-
-        // Identify if the first block is the chapter title.
-        const hasChapterTitle = sections.length > 0 && sections[0].startsWith('$$');
-        const chapterTitle = hasChapterTitle ? sections[0].replaceAll('$$', '') : chapterDetails.title;
-        
-        // Correctly identify intro content, which might be the first or second element.
-        const introContentIndex = hasChapterTitle ? 1 : 0;
-        const introContent = sections[introContentIndex] || '';
-
-        // The actual sub-topic content starts after the title (if present) and intro.
-        const contentStartIndex = hasChapterTitle ? 2 : 1;
-        const introSectionIndex = -1; // Special index for intro
-
-        // Check if there is anything to render as introduction
-        if (introContent || hasChapterTitle) {
-            renderedSections.push(
-                <div key="section-container-intro" className="group/section relative">
-                    <div className="flex items-center justify-between">
-                        <h2 className="font-headline mt-8 mb-4 font-bold text-2xl">{chapterTitle}</h2>
-                        <Popover open={openRewritePopoverIndex === introSectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? introSectionIndex : null)}>
-                            <PopoverTrigger asChild>
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="opacity-0 group-hover/section:opacity-100 transition-opacity"
-                                    disabled={isRewritingSection === introSectionIndex}
-                                >
-                                    {isRewritingSection === introSectionIndex ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                                    Rewrite Introduction
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80">
-                                <div className="grid gap-4">
-                                    <div className="space-y-2">
-                                        <h4 className="font-medium leading-none">Guided Rewrite</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            Give the AI specific instructions.
-                                        </p>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor={`rewrite-instruction-intro`} className="sr-only">Instruction</Label>
-                                        <Input
-                                            id={`rewrite-instruction-intro`}
-                                            placeholder="e.g., Make it more engaging"
-                                            value={rewriteSectionInstruction}
-                                            onChange={(e) => setRewriteSectionInstruction(e.target.value)}
-                                        />
-                                        <Button size="sm" onClick={() => handleRewriteSection(introSectionIndex, introContent.trim(), rewriteSectionInstruction)} disabled={!rewriteSectionInstruction || isRewritingSection === introSectionIndex}>
-                                            <Pencil className="mr-2 h-4 w-4" />
-                                            Rewrite with My Instruction
-                                        </Button>
-                                    </div>
-                                    <div className="relative">
-                                        <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                                        <div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div>
-                                    </div>
-                                    <Button size="sm" variant="secondary" onClick={() => handleRewriteSection(introSectionIndex, introContent.trim())} disabled={isRewritingSection === introSectionIndex}>
-                                        <RefreshCw className="mr-2 h-4 w-4" />
-                                        Just Rewrite
-                                    </Button>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                    {isRewritingSection === introSectionIndex ? (
-                        <div className="space-y-2">
-                            <div className="h-6 w-full rounded-md bg-muted animate-pulse"></div>
-                            <div className="h-6 w-5/6 rounded-md bg-muted animate-pulse"></div>
-                        </div>
-                    ) : (
-                        introContent.trim().split('\n\n').map((paragraph, pIndex) => (
-                            <div key={`p-container-intro-${pIndex}`} className="mb-4 group/paragraph">
-                                <p className="text-base leading-relaxed">{paragraph}</p>
-                                <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
-                                <Popover open={openExtendPopoverIndex === (introSectionIndex * 1000 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (introSectionIndex * 1000 + pIndex) : null)}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === (introSectionIndex * 1000 + pIndex)}>
-                                                {isExtending === (introSectionIndex * 1000 + pIndex) ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
-                                                Extend With AI
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-80">
-                                            <div className="grid gap-4">
-                                                <div className="space-y-2">
-                                                    <h4 className="font-medium leading-none">Guided Extend</h4>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Give the AI specific instructions.
-                                                    </p>
-                                                </div>
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor={`instruction-intro-${pIndex}`} className="sr-only">Instruction</Label>
-                                                    <Input
-                                                        id={`instruction-intro-${pIndex}`}
-                                                        placeholder="e.g., Add a historical example"
-                                                        value={extendInstruction}
-                                                        onChange={(e) => setExtendInstruction(e.target.value)}
-                                                    />
-                                                    <Button size="sm" onClick={() => handleExtendClick(paragraph, introSectionIndex, pIndex, extendInstruction)} disabled={!extendInstruction || isExtending === (introSectionIndex * 1000 + pIndex)}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        Write More With My instruction
-                                                    </Button>
-                                                </div>
-                                                <div className="relative">
-                                                    <div className="absolute inset-0 flex items-center">
-                                                        <span className="w-full border-t" />
-                                                    </div>
-                                                    <div className="relative flex justify-center text-xs uppercase">
-                                                        <span className="bg-popover px-2 text-muted-foreground">
-                                                        Or
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <Button size="sm" variant="secondary" onClick={() => handleExtendClick(paragraph, introSectionIndex, pIndex)} disabled={isExtending === (introSectionIndex * 1000 + pIndex)}>
-                                                    <Wand2 className="mr-2 h-4 w-4" />
-                                                    Just Write More
-                                                </Button>
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-            );
+    const handleWriteSection = async (sectionIndex: number, sectionTitle: string) => {
+        if (!project.language) {
+            toast({ title: "Language not set", description: "Project language is required to write.", variant: "destructive" });
+            return;
         }
+        setIsWritingSection(sectionIndex);
 
-        // Loop through pairs of [Title, Content] for sub-topics and beyond
-        for (let i = contentStartIndex; i < sections.length; i += 2) {
-            const titlePart = sections[i];
-            const contentPart = sections[i + 1] || '';
-            // Adjust sectionIndex to account for the intro and chapter title
-            const sectionIndex = (i - contentStartIndex) / 2;
-            
-            const title = titlePart.replaceAll('$$', '');
-            
-            renderedSections.push(
-                <div key={`section-container-${sectionIndex}`} className="group/section relative">
-                    <div className="flex items-center justify-between">
-                         <h3 className={`font-headline mt-8 mb-4 font-bold text-xl`}>{title}</h3>
-                         <Popover open={openRewritePopoverIndex === sectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? sectionIndex : null)}>
-                             <PopoverTrigger asChild>
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="opacity-0 group-hover/section:opacity-100 transition-opacity"
-                                    disabled={isRewritingSection === sectionIndex}
-                                >
-                                    {isRewritingSection === sectionIndex ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                                    Rewrite Section
-                                </Button>
-                             </PopoverTrigger>
-                             <PopoverContent className="w-80">
+        try {
+            const result = await writeChapterSection({
+                bookTitle: project.title,
+                fullOutline: project.outline || '',
+                chapterTitle: chapterDetails.title,
+                sectionTitle: sectionTitle,
+                language: project.language,
+                styleProfile: selectedStyle?.styleAnalysis,
+                researchProfile: researchPrompt,
+                storytellingFramework: selectedFramework,
+            });
+
+            if (result && result.sectionContent) {
+                const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+                const hasChapterTitle = allSections.length > 0 && allSections[0].startsWith('$$');
+                const isIntro = sectionIndex === -1;
+                
+                let contentIndex;
+                if (isIntro) {
+                    contentIndex = hasChapterTitle ? 1 : 0;
+                } else {
+                    const baseIndex = hasChapterTitle ? 2 : 0;
+                    contentIndex = baseIndex + (sectionIndex * 2) + 1;
+                }
+
+                if (contentIndex < 0 || contentIndex >= allSections.length) {
+                    throw new Error("Calculated invalid index for section content.");
+                }
+
+                allSections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
+                onContentChange(allSections.join(''));
+                toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
+
+            } else {
+                throw new Error("AI returned empty content for section writing.");
+            }
+        } catch (error) {
+            console.error("Error writing section:", error);
+            toast({ title: "AI Writing Failed", variant: "destructive", description: `Could not write the section. ${error}` });
+        } finally {
+            setIsWritingSection(null);
+        }
+    };
+
+    const handleClearSection = (sectionIndex: number) => {
+        const allSections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+        const hasChapterTitle = allSections.length > 0 && allSections[0].startsWith('$$');
+        const isIntro = sectionIndex === -1;
+        
+        let contentIndex;
+        if (isIntro) {
+            contentIndex = hasChapterTitle ? 1 : 0;
+        } else {
+            const baseIndex = hasChapterTitle ? 2 : 0;
+            contentIndex = baseIndex + (sectionIndex * 2) + 1;
+        }
+        
+        if (contentIndex >= 0 && contentIndex < allSections.length) {
+            allSections[contentIndex] = '\n\n'; // Set to empty with newlines for structure
+            onContentChange(allSections.join(''));
+            toast({ title: 'Section Cleared' });
+        }
+    };
+
+    const renderSection = (sectionIndex: number, title: string, sectionContent: string) => {
+        const hasContent = sectionContent.trim().length > 0;
+        const isWriting = isWritingSection === sectionIndex;
+        const isRewriting = isRewritingSection === sectionIndex;
+        const isProcessing = isWriting || isRewriting;
+
+        return (
+            <div key={`section-container-${sectionIndex}`} className="group/section relative pt-4">
+                <div className="flex items-center justify-between gap-4 border-b pb-2">
+                     <h3 className={`font-headline font-bold ${sectionIndex === -1 ? 'text-2xl' : 'text-xl'}`}>{title}</h3>
+                     <div className="flex items-center gap-2 opacity-0 group-hover/section:opacity-100 transition-opacity">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleWriteSection(sectionIndex, title)}
+                            disabled={isProcessing}
+                        >
+                           {isWriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                           Write with AI
+                        </Button>
+                        {hasContent && (
+                            <>
+                            <Popover open={openRewritePopoverIndex === sectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? sectionIndex : null)}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" size="sm" disabled={isProcessing}>
+                                        {isRewriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                        Rewrite
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
                                 <div className="grid gap-4">
                                     <div className="space-y-2">
                                         <h4 className="font-medium leading-none">Guided Rewrite</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            Give the AI specific instructions on how to rewrite.
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Give the AI a specific instruction.</p>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor={`rewrite-instruction-${sectionIndex}`} className="sr-only">Instruction</Label>
-                                        <Input
-                                            id={`rewrite-instruction-${sectionIndex}`}
-                                            placeholder="e.g., Make it more concise"
-                                            value={rewriteSectionInstruction}
-                                            onChange={(e) => setRewriteSectionInstruction(e.target.value)}
-                                        />
-                                        <Button size="sm" onClick={() => handleRewriteSection(sectionIndex, contentPart.trim(), rewriteSectionInstruction)} disabled={!rewriteSectionInstruction || isRewritingSection === sectionIndex}>
-                                            <Pencil className="mr-2 h-4 w-4" />
-                                            Rewrite with My Instruction
+                                        <Input id={`rewrite-instruction-${sectionIndex}`} placeholder="e.g., Make it more concise" value={rewriteSectionInstruction} onChange={(e) => setRewriteSectionInstruction(e.target.value)} />
+                                        <Button size="sm" onClick={() => handleRewriteSection(sectionIndex, sectionContent.trim(), rewriteSectionInstruction)} disabled={!rewriteSectionInstruction || isProcessing}>
+                                            <Pencil className="mr-2 h-4 w-4" /> Rewrite with Instruction
                                         </Button>
                                     </div>
-                                    <div className="relative">
-                                        <div className="absolute inset-0 flex items-center">
-                                            <span className="w-full border-t" />
-                                        </div>
-                                        <div className="relative flex justify-center text-xs uppercase">
-                                            <span className="bg-popover px-2 text-muted-foreground">
-                                            Or
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <Button size="sm" variant="secondary" onClick={() => handleRewriteSection(sectionIndex, contentPart.trim())} disabled={isRewritingSection === sectionIndex}>
-                                        <RefreshCw className="mr-2 h-4 w-4" />
-                                        Just Rewrite
+                                    <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
+                                    <Button size="sm" variant="secondary" onClick={() => handleRewriteSection(sectionIndex, sectionContent.trim())} disabled={isProcessing}>
+                                        <RefreshCw className="mr-2 h-4 w-4" /> Just Rewrite
                                     </Button>
                                 </div>
-                             </PopoverContent>
-                         </Popover>
-                    </div>
-                   
-                    {isRewritingSection === sectionIndex ? (
+                                </PopoverContent>
+                            </Popover>
+                             <Button variant="ghost" size="icon" onClick={() => handleClearSection(sectionIndex)}>
+                                <Eraser className="h-4 w-4" />
+                            </Button>
+                            </>
+                        )}
+                     </div>
+                </div>
+
+                <div className="mt-4">
+                    {isProcessing ? (
                         <div className="space-y-2">
                             <div className="h-6 w-full rounded-md bg-muted animate-pulse"></div>
                             <div className="h-6 w-5/6 rounded-md bg-muted animate-pulse"></div>
                             <div className="h-6 w-3/4 rounded-md bg-muted animate-pulse"></div>
                         </div>
-                    ) : (
-                        contentPart.trim().split('\n\n').map((paragraph, pIndex) => (
+                    ) : hasContent ? (
+                        sectionContent.trim().split('\n\n').map((paragraph, pIndex) => (
                             <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4 group/paragraph">
                                 <p className="text-base leading-relaxed">{paragraph}</p>
                                 <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
                                 <Popover open={openExtendPopoverIndex === (sectionIndex * 1000 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (sectionIndex * 1000 + pIndex) : null)}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
-                                                {isExtending === (sectionIndex * 1000 + pIndex) ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
-                                                Extend With AI
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-80">
-                                            <div className="grid gap-4">
-                                                <div className="space-y-2">
-                                                    <h4 className="font-medium leading-none">Guided Extend</h4>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Give the AI specific instructions.
-                                                    </p>
-                                                </div>
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor={`instruction-${sectionIndex}-${pIndex}`} className="sr-only">Instruction</Label>
-                                                    <Input
-                                                        id={`instruction-${sectionIndex}-${pIndex}`}
-                                                        placeholder="e.g., Add a historical example"
-                                                        value={extendInstruction}
-                                                        onChange={(e) => setExtendInstruction(e.target.value)}
-                                                    />
-                                                    <Button size="sm" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex, extendInstruction)} disabled={!extendInstruction || isExtending === (sectionIndex * 1000 + pIndex)}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        Write More With My instruction
-                                                    </Button>
-                                                </div>
-                                                <div className="relative">
-                                                    <div className="absolute inset-0 flex items-center">
-                                                        <span className="w-full border-t" />
-                                                    </div>
-                                                    <div className="relative flex justify-center text-xs uppercase">
-                                                        <span className="bg-popover px-2 text-muted-foreground">
-                                                        Or
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <Button size="sm" variant="secondary" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex)} disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
-                                                    <Wand2 className="mr-2 h-4 w-4" />
-                                                    Just Write More
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
+                                            {isExtending === (sectionIndex * 1000 + pIndex) ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
+                                            Extend With AI
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80">
+                                        <div className="grid gap-4">
+                                            <div className="space-y-2"><h4 className="font-medium leading-none">Guided Extend</h4><p className="text-sm text-muted-foreground">Give the AI specific instructions.</p></div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor={`instruction-${sectionIndex}-${pIndex}`} className="sr-only">Instruction</Label>
+                                                <Input id={`instruction-${sectionIndex}-${pIndex}`} placeholder="e.g., Add a historical example" value={extendInstruction} onChange={(e) => setExtendInstruction(e.target.value)} />
+                                                <Button size="sm" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex, extendInstruction)} disabled={!extendInstruction || isExtending === (sectionIndex * 1000 + pIndex)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Write with Instruction
                                                 </Button>
                                             </div>
-                                        </PopoverContent>
-                                    </Popover>
+                                            <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
+                                            <Button size="sm" variant="secondary" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex)} disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
+                                                <Wand2 className="mr-2 h-4 w-4" /> Just Write More
+                                            </Button>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
                                 </div>
                             </div>
                         ))
+                    ) : (
+                        <div className="flex items-center justify-center h-24 text-sm text-muted-foreground border-2 border-dashed rounded-md">
+                           Click "Write with AI" to generate this section.
+                        </div>
                     )}
                 </div>
-            );
+            </div>
+        );
+    };
+
+    const renderContent = () => {
+        const sections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+        if (sections.length === 0) return null;
+
+        const renderedSections: JSX.Element[] = [];
+
+        const hasChapterTitle = sections.length > 0 && sections[0].startsWith('$$');
+        const chapterTitle = hasChapterTitle ? sections[0].replaceAll('$$', '') : chapterDetails.title;
+        
+        const introContentIndex = hasChapterTitle ? 1 : 0;
+        const introContent = sections[introContentIndex] || '';
+        const contentStartIndex = hasChapterTitle ? 2 : 1;
+        const introSectionIndex = -1;
+
+        if (introContent !== undefined) {
+             renderedSections.push(renderSection(introSectionIndex, chapterTitle, introContent));
+        }
+
+        for (let i = contentStartIndex; i < sections.length; i += 2) {
+            const titlePart = sections[i];
+            const contentPart = sections[i + 1] || '';
+            const sectionIndex = (i - contentStartIndex) / 2;
+            const title = titlePart.replaceAll('$$', '');
+            renderedSections.push(renderSection(sectionIndex, title, contentPart));
         }
         
         return renderedSections;
     };
 
-
-    return <div className="prose max-w-none dark:prose-invert">{renderContent()}</div>;
+    return <div className="prose max-w-none dark:prose-invert space-y-8">{renderContent()}</div>;
 };
+
 
 const frameworks = [
     { value: 'The Hero\'s Journey', label: 'The Hero\'s Journey' },
@@ -554,71 +491,40 @@ export default function ChapterPage() {
 
   const chapterDetails = chapterData?.chapter;
   const subTopics = chapterData?.subTopics || [];
+  
+  const buildChapterSkeleton = useCallback(() => {
+    if (!chapterDetails || !subTopics) return '';
+    let skeleton = `$$${chapterDetails.title}$$\n\n\n\n`; // Add space for intro content
+    subTopics.forEach(topic => {
+      skeleton += `$$${topic}$$\n\n\n\n`;
+    });
+    skeleton += `$$Your Action Step$$\n\n\n\n`;
+    skeleton += `$$Coming Up Next$$\n\n\n\n`;
+    return skeleton;
+  }, [chapterDetails, subTopics]);
 
   useEffect(() => {
     if (project) {
-        // Pre-select saved chapter content if available
         const savedChapter = project.chapters?.find(c => c.id === chapterId);
         if (savedChapter && savedChapter.content) {
             setChapterContent(savedChapter.content);
             setPageState('writing');
+        } else if (chapterDetails) {
+            // Only set skeleton if there's no saved content
+            setChapterContent(buildChapterSkeleton());
         }
 
-        // Pre-select storytelling framework from project
-        if (project.storytellingFramework) {
-            setSelectedFramework(project.storytellingFramework);
-        }
-        
-        // Pre-select research profile from project
-        if (project.researchProfileId) {
-            setSelectedResearchId(project.researchProfileId);
-        }
+        if (project.storytellingFramework) setSelectedFramework(project.storytellingFramework);
+        if (project.researchProfileId) setSelectedResearchId(project.researchProfileId);
+        if (project.styleProfileId) setSelectedStyleId(project.styleProfileId);
+
     }
-  }, [project, chapterId]);
+  }, [project, chapterId, chapterDetails, buildChapterSkeleton]);
+  
 
-  const generateChapter = useCallback(async () => {
-    if (!project || !chapterDetails || !subTopics || subTopics.length === 0) {
-        toast({ title: "Missing Information", description: "Cannot generate chapter without project details or sub-topics.", variant: "destructive" });
-        return;
-    }
-
-    setPageState('generating');
-    try {
-        const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
-        const stylePrompt = selectedStyle?.styleAnalysis;
-
-        const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
-        const researchPrompt = relevantResearchProfile 
-            ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
-            : undefined;
-
-        const result = await generateChapterContent({
-            bookTitle: project.title,
-            bookTopic: project.description || '',
-            bookLanguage: project.language || 'English',
-            fullOutline: project.outline || '',
-            chapterTitle: chapterDetails.title,
-            subTopics: subTopics,
-            storytellingFramework: selectedFramework,
-            styleProfile: stylePrompt,
-            researchProfile: researchPrompt,
-        });
-
-        if (result && result.chapterContent) {
-            setChapterContent(result.chapterContent);
-            setPageState('writing');
-            toast({ title: "Chapter Draft Ready", description: "The AI has generated the first draft." });
-        } else {
-            throw new Error("AI returned empty content.");
-        }
-
-    } catch (error) {
-        console.error("Error generating content:", error);
-        toast({ title: "AI Generation Failed", variant: "destructive", description: "Could not generate chapter content. The process may have timed out. Please try again." });
-        setPageState('overview');
-    }
-  }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, researchProfiles, selectedResearchId, selectedFramework, toast]);
-
+  const handleProceedToEditor = () => {
+    setPageState('writing');
+  }
 
   const handleSaveContent = useCallback(async () => {
     if (!projectDocRef || !chapterDetails) return;
@@ -647,8 +553,10 @@ export default function ChapterPage() {
   }, [projectDocRef, chapterDetails, chapterContent, chapterId, project?.chapters, toast]);
   
   const handleCopyContent = () => {
-    navigator.clipboard.writeText(chapterContent);
-    toast({ title: 'Content Copied', description: 'The chapter content has been copied to your clipboard.' });
+    // We need to strip the $$ markers for a clean copy
+    const cleanContent = chapterContent.replace(/\$\$[^$]+\$\$/g, '').trim();
+    navigator.clipboard.writeText(cleanContent);
+    toast({ title: 'Content Copied', description: 'The chapter text has been copied to your clipboard.' });
   }
 
   const handleRewriteChapter = useCallback(async (instruction?: string) => {
@@ -741,7 +649,7 @@ export default function ChapterPage() {
                                 <Bot className="w-5 h-5"/>
                                 AI Writing Context
                             </CardTitle>
-                            <CardDescription>The AI will use the following context to write this chapter. You can change these settings before generating.</CardDescription>
+                            <CardDescription>The AI will use the following context to write this chapter. You can change these settings before writing.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="p-4 border rounded-lg">
@@ -798,30 +706,35 @@ export default function ChapterPage() {
                                     </div>
                                 </div>
                             </div>
+                             <div className="p-4 border rounded-lg">
+                                <div className="flex items-start gap-3">
+                                    <Palette className="w-5 h-5 mt-1 text-primary" />
+                                    <div className='w-full'>
+                                        <label htmlFor="style-select" className="font-semibold">
+                                            Writing Style
+                                        </label>
+                                        <Select value={selectedStyleId} onValueChange={setSelectedStyleId}>
+                                            <SelectTrigger id="style-select" className="mt-2">
+                                                <SelectValue placeholder="Select a style" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="default">Default (AI's own style)</SelectItem>
+                                                {styleProfiles?.map(p => (
+                                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground mt-2">Select a style profile to guide the AI's voice and tone.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 
-                    <div className="max-w-md space-y-4">
-                        <div>
-                            <label htmlFor="style-select" className="text-sm font-medium mb-2 block">
-                                Writing Style
-                            </label>
-                            <Select value={selectedStyleId} onValueChange={setSelectedStyleId}>
-                                <SelectTrigger id="style-select">
-                                    <SelectValue placeholder="Select a style" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="default">Default (AI's own style)</SelectItem>
-                                    {styleProfiles?.map(p => (
-                                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground mt-2">Select a style profile to guide the AI's voice and tone.</p>
-                        </div>
-                         <Button onClick={generateChapter} size="lg" className="w-full" disabled={subTopics.length === 0}>
-                            <Wand2 className="mr-2 h-4 w-4" />
-                            Write with AI
+                    <div className="max-w-md">
+                         <Button onClick={handleProceedToEditor} size="lg" className="w-full">
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Proceed to Editor
                         </Button>
                     </div>
                 </CardContent>
@@ -834,7 +747,7 @@ export default function ChapterPage() {
   return ( 
     <div className="space-y-6">
        <Card>
-        <CardHeader className="flex-row items-start justify-between">
+        <CardHeader className="flex-row items-center justify-between">
             <div>
                 <CardTitle className="font-headline text-xl">{chapterDetails.title}</CardTitle>
                 <CardDescription>Part of: {chapterDetails.part}</CardDescription>
@@ -847,17 +760,12 @@ export default function ChapterPage() {
             </div>
         </CardHeader>
         <CardContent>
-            {pageState === 'generating' || pageState === 'rewriting' ? (
+            {pageState === 'rewriting' ? (
                 <div className="flex h-[65vh] flex-col items-center justify-center space-y-4 rounded-md border border-dashed">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                     <div className="text-center">
-                        <p className="text-lg font-semibold">
-                            {pageState === 'generating' && 'AI is writing your chapter...'}
-                            {pageState === 'rewriting' && 'AI is rewriting the chapter...'}
-                        </p>
-                        <p className="text-muted-foreground">
-                            {pageState === 'generating' ? 'This can take up to 5 minutes. Please wait.' : 'This may take a moment. Please wait.'}
-                        </p>
+                        <p className="text-lg font-semibold">AI is rewriting the chapter...</p>
+                        <p className="text-muted-foreground">This may take a moment. Please wait.</p>
                     </div>
                 </div>
             ) : (
@@ -876,42 +784,24 @@ export default function ChapterPage() {
                                 <div className="grid gap-4">
                                     <div className="space-y-2">
                                         <h4 className="font-medium leading-none">Guided Rewrite</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                            Give the AI specific instructions on how to rewrite the entire chapter.
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">Give the AI specific instructions on how to rewrite the entire chapter.</p>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="rewrite-chapter-instruction" className="sr-only">Instruction</Label>
-                                        <Input
-                                            id="rewrite-chapter-instruction"
-                                            placeholder="e.g., Make it more formal"
-                                            value={rewriteChapterInstruction}
-                                            onChange={(e) => setRewriteChapterInstruction(e.target.value)}
-                                        />
+                                        <Input id="rewrite-chapter-instruction" placeholder="e.g., Make it more formal" value={rewriteChapterInstruction} onChange={(e) => setRewriteChapterInstruction(e.target.value)} />
                                         <Button size="sm" onClick={() => handleRewriteChapter(rewriteChapterInstruction)} disabled={!rewriteChapterInstruction}>
-                                            <Pencil className="mr-2 h-4 w-4" />
-                                            Rewrite with My Instruction
+                                            <Pencil className="mr-2 h-4 w-4" /> Rewrite with Instruction
                                         </Button>
                                     </div>
-                                    <div className="relative">
-                                        <div className="absolute inset-0 flex items-center">
-                                            <span className="w-full border-t" />
-                                        </div>
-                                        <div className="relative flex justify-center text-xs uppercase">
-                                            <span className="bg-popover px-2 text-muted-foreground">
-                                            Or
-                                            </span>
-                                        </div>
-                                    </div>
+                                    <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
                                     <Button size="sm" variant="secondary" onClick={() => handleRewriteChapter()}>
-                                        <RefreshCw className="mr-2 h-4 w-4" />
-                                        Just Rewrite
+                                        <RefreshCw className="mr-2 h-4 w-4" /> Just Rewrite
                                     </Button>
                                 </div>
                             </PopoverContent>
                         </Popover>
                         <Button variant="outline" size="sm" onClick={handleCopyContent}>
-                            <Copy className="mr-2 h-4 w-4" /> Copy
+                            <Copy className="mr-2 h-4 w-4" /> Copy Text
                         </Button>
                     </div>
                     <div className="relative">
@@ -940,11 +830,3 @@ export default function ChapterPage() {
     </div>
   );
 }
-
-    
-
-    
-
-
-
-    
