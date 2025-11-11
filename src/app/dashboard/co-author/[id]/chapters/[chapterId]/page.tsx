@@ -18,11 +18,9 @@ import type { Chapter, ResearchProfile, StyleProfile } from '@/lib/definitions';
 import { rewriteChapter } from '@/ai/flows/rewrite-chapter';
 import { rewriteSection } from '@/ai/flows/rewrite-section';
 import { writeChapterSection } from '@/ai/flows/write-chapter-section';
-import { generateFullChapter } from '@/ai/flows/generate-full-chapter';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 
 
 // Allow up to 5 minutes for AI chapter generation
@@ -90,6 +88,7 @@ const ChapterEditor = ({
     selectedResearchId,
     researchProfiles,
     selectedFramework,
+    isGenerating,
 }: { 
     project: Project, 
     chapterDetails: Chapter, 
@@ -100,6 +99,7 @@ const ChapterEditor = ({
     selectedResearchId: string;
     researchProfiles: ResearchProfile[] | null;
     selectedFramework: string;
+    isGenerating: boolean;
 }) => {
     
     const [isExtending, setIsExtending] = useState<number | null>(null);
@@ -256,22 +256,23 @@ const ChapterEditor = ({
             });
 
             if (result && result.sectionContent) {
-                const allSections = content.split(/(\$\$[^$]+\$\$)/g);
-                const titleToFind = `$$${sectionTitle}$$`;
-                const titleIndex = allSections.findIndex(s => s.trim() === titleToFind);
-
-                if (titleIndex !== -1) {
-                    // The content is the element AFTER the title.
-                    // Ensure there is a space for content, even if it was empty.
-                    if (titleIndex + 1 >= allSections.length || allSections[titleIndex + 1].startsWith('$$')) {
-                        allSections.splice(titleIndex + 1, 0, ''); // Insert an empty content slot
+                onContentChange(prevContent => {
+                    const allSections = prevContent.split(/(\$\$[^$]+\$\$)/g);
+                    const titleToFind = `$$${sectionTitle}$$`;
+                    const titleIndex = allSections.findIndex(s => s.trim() === titleToFind);
+    
+                    if (titleIndex !== -1) {
+                        // Ensure there is a space for content, even if it was empty.
+                        if (titleIndex + 1 >= allSections.length || allSections[titleIndex + 1].startsWith('$$')) {
+                            allSections.splice(titleIndex + 1, 0, ''); // Insert an empty content slot
+                        }
+                        allSections[titleIndex + 1] = `\n\n${result.sectionContent.trim()}\n\n`;
+                        return allSections.join('');
                     }
-                    allSections[titleIndex + 1] = `\n\n${result.sectionContent.trim()}\n\n`;
-                    onContentChange(allSections.join(''));
-                    toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
-                } else {
-                    throw new Error(`Could not find section title "${titleToFind}" to insert content.`);
-                }
+                    // If title not found, which is unlikely but safe to handle, return previous content.
+                    return prevContent;
+                });
+                toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
 
             } else {
                 throw new Error("AI returned empty content for section writing.");
@@ -306,7 +307,7 @@ const ChapterEditor = ({
         const hasContent = sectionContent.trim().length > 0;
         const isWriting = isWritingSection === sectionIndex;
         const isRewriting = isRewritingSection === sectionIndex;
-        const isProcessing = isWriting || isRewriting;
+        const isProcessing = isWriting || isRewriting || isGenerating;
 
         return (
             <div key={`section-container-${sectionIndex}`} className="group/section relative pt-4">
@@ -613,15 +614,19 @@ export default function ChapterPage() {
     }
   }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, selectedFramework, researchProfiles, selectedResearchId, apiKey]);
 
+  // This is the new, robust "Write Full Chapter" implementation
   const handleWriteFullChapter = useCallback(async () => {
     if (!project?.language || !chapterDetails) {
         toast({ title: "Missing Information", description: "Project language and chapter details are required.", variant: "destructive" });
         return;
     }
-    setPageState('generating');
+    setPageState('generating'); // Set a general "generating" state for the whole process
 
-    // Construct the full list of section titles
     const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
+    
+    // Start with the clean skeleton
+    let assembledContent = buildChapterSkeleton();
+    setChapterContent(assembledContent);
 
     try {
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
@@ -630,32 +635,44 @@ export default function ChapterPage() {
             ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
             : undefined;
 
-        const result = await generateFullChapter({
-            bookTitle: project.title,
-            fullOutline: project.outline || '',
-            chapterTitle: chapterDetails.title,
-            sectionTitles: allSectionTitles,
-            language: project.language,
-            styleProfile: selectedStyle?.styleAnalysis,
-            researchProfile: researchPrompt,
-            storytellingFramework: selectedFramework,
-            apiKey: apiKey,
-        });
-
-        if (result && result.chapterContent) {
-            setChapterContent(result.chapterContent);
-            toast({ title: "Chapter Generated", description: "The full chapter has been written by the AI." });
-            setPageState('writing'); // Transition to editor view
-        } else {
-            throw new Error("AI returned empty content for the chapter.");
+        for (const sectionTitle of allSectionTitles) {
+            try {
+                const result = await writeChapterSection({
+                    bookTitle: project.title,
+                    fullOutline: project.outline || '',
+                    chapterTitle: chapterDetails.title,
+                    sectionTitle: sectionTitle,
+                    language: project.language,
+                    styleProfile: selectedStyle?.styleAnalysis,
+                    researchProfile: researchPrompt,
+                    storytellingFramework: selectedFramework,
+                    apiKey: apiKey,
+                });
+                
+                if (result && result.sectionContent) {
+                    // This is a robust way to replace the content for a specific section
+                    assembledContent = assembledContent.replace(
+                        `$$${sectionTitle}$$`, 
+                        `$$${sectionTitle}$$` + `\n\n${result.sectionContent.trim()}\n\n`
+                    );
+                    setChapterContent(assembledContent); // Update state after each section
+                } else {
+                    toast({ title: "AI Warning", description: `The AI returned no content for section: "${sectionTitle}".`, variant: "destructive" });
+                }
+            } catch (sectionError) {
+                console.error(`Error generating section "${sectionTitle}":`, sectionError);
+                toast({ title: "AI Section Failed", description: `Could not generate content for section: "${sectionTitle}".`, variant: "destructive" });
+                // We continue to the next section even if one fails
+            }
         }
-
+        toast({ title: "Chapter Generation Complete", description: "The full chapter draft has been written." });
     } catch (error) {
-        console.error("Error generating full chapter:", error);
-        toast({ title: "AI Chapter Generation Failed", variant: "destructive", description: `Could not generate the chapter. ${error}` });
-        setPageState('overview'); // Return to overview on failure
+        console.error("Error during full chapter generation:", error);
+        toast({ title: "AI Chapter Generation Failed", variant: "destructive", description: `A critical error occurred. ${error}` });
+    } finally {
+        setPageState('writing'); // Transition to editor view when done or on error
     }
-  }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, researchProfiles, selectedResearchId, selectedFramework, apiKey, toast]);
+  }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, researchProfiles, selectedResearchId, selectedFramework, apiKey, toast, buildChapterSkeleton]);
 
 
   if (isProjectLoading) {
@@ -681,19 +698,7 @@ export default function ChapterPage() {
         </div>
     );
   }
-
-  if (pageState === 'generating') {
-      return (
-        <div className="flex h-[80vh] flex-col items-center justify-center space-y-4 rounded-md border border-dashed">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <div className="text-center">
-                <p className="text-lg font-semibold">AI is writing your chapter...</p>
-                <p className="text-muted-foreground">This may take a minute or two. Please don't navigate away.</p>
-            </div>
-        </div>
-      )
-  }
-
+  
   if (pageState === 'overview') {
     return (
         <div className="space-y-6">
@@ -836,12 +841,13 @@ export default function ChapterPage() {
             ) : (
                 <div className="space-y-4">
                     <div className="flex justify-end gap-2 mb-4 sticky top-0 bg-background py-2 z-10">
-                        <Button variant="outline" size="sm" onClick={handleWriteFullChapter}>
-                            <FileText className="mr-2 h-4 w-4" /> Write Full Chapter
+                        <Button variant="outline" size="sm" onClick={handleWriteFullChapter} disabled={pageState === 'generating'}>
+                            {pageState === 'generating' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                             {pageState === 'generating' ? 'Writing...' : 'Write Full Chapter'}
                         </Button>
                         <Popover open={isRewriteChapterPopoverOpen} onOpenChange={setRewriteChapterPopoverOpen}>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" disabled={pageState === 'generating'}>
                                     <RefreshCw className="mr-2 h-4 w-4" /> Rewrite Chapter
                                 </Button>
                             </PopoverTrigger>
@@ -880,10 +886,11 @@ export default function ChapterPage() {
                           selectedResearchId={selectedResearchId}
                           researchProfiles={researchProfiles}
                           selectedFramework={selectedFramework}
+                          isGenerating={pageState === 'generating'}
                         />
                     </div>
                     <div className="flex justify-end pt-4 border-t">
-                        <Button onClick={handleSaveContent} disabled={isSaving}>
+                        <Button onClick={handleSaveContent} disabled={isSaving || pageState === 'generating'}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Save
                         </Button>
