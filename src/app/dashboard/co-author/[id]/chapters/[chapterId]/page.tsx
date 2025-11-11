@@ -6,7 +6,7 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
-import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, Eraser, FileText } from 'lucide-react';
+import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, Eraser, FileText, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +21,6 @@ import { writeChapterSection } from '@/ai/flows/write-chapter-section';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Palette } from 'lucide-react';
 
 
 // Allow up to 5 minutes for AI chapter generation
@@ -620,8 +619,7 @@ export default function ChapterPage() {
     setPageState('generating');
 
     const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
-    const initialContent = buildChapterSkeleton();
-    setChapterContent(initialContent);
+    let currentContent = buildChapterSkeleton(); // Use a local variable to accumulate content
 
     try {
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
@@ -645,12 +643,13 @@ export default function ChapterPage() {
                 });
                 
                 if (result && result.sectionContent) {
-                    setChapterContent(prevContent => {
-                        return prevContent.replace(
-                            `$$${sectionTitle}$$`, 
-                            `$$${sectionTitle}$$` + `\n\n${result.sectionContent.trim()}\n\n`
-                        );
-                    });
+                    // Update the local variable, not the state, inside the loop
+                    currentContent = currentContent.replace(
+                        `$$${sectionTitle}$$`, 
+                        `$$${sectionTitle}$$` + `\n\n${result.sectionContent.trim()}\n\n`
+                    );
+                    // Update the state once per iteration to show real-time progress
+                    setChapterContent(currentContent);
                 } else {
                     toast({ title: "AI Warning", description: `The AI returned no content for section: "${sectionTitle}".`, variant: "destructive" });
                 }
@@ -896,8 +895,3 @@ export default function ChapterPage() {
     </div>
   );
 }
-
-    
-    
-
-    
