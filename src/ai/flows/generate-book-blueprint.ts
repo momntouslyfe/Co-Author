@@ -109,7 +109,7 @@ const generateBookBlueprintFlow = ai.defineFlow(
     outputSchema: GenerateBookBlueprintOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input, { apiKey: input.apiKey, model: input.model });
+    const {output} = await prompt(input, { apiKey: input.apiKey, ...(input.model && { model: input.model }) });
     return output!;
   }
 );

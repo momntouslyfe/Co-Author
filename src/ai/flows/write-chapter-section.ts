@@ -166,7 +166,7 @@ const writeChapterSectionFlow = ai.defineFlow(
         chosenPrompt = writeSectionPrompt;
     }
     
-    const { output } = await chosenPrompt(input, { apiKey: input.apiKey, model: input.model });
+    const { output } = await chosenPrompt(input, { apiKey: input.apiKey, ...(input.model && { model: input.model }) });
 
     if (!output || !output.sectionContent) {
         throw new Error("AI failed to generate the section content.");

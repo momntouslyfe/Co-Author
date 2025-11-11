@@ -101,7 +101,7 @@ const rewriteChapterFlow = ai.defineFlow(
   },
   async (input) => {
     // Call the single, powerful prompt to rewrite the entire chapter at once.
-    const { output } = await rewriteChapterPrompt(input, { apiKey: input.apiKey, model: input.model });
+    const { output } = await rewriteChapterPrompt(input, { apiKey: input.apiKey, ...(input.model && { model: input.model }) });
 
     if (!output || !output.rewrittenContent) {
         throw new Error("AI failed to rewrite the chapter content.");

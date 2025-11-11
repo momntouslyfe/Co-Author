@@ -75,7 +75,7 @@ const analyzeWritingStyleFlow = ai.defineFlow(
   async ({ fileDataUri, apiKey, model }) => {
     const {output} = await prompt(
         { fileDataUri },
-        { apiKey, model }
+        { apiKey, ...(model && { model }) }
     );
     return output!;
   }

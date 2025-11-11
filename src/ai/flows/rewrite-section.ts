@@ -98,7 +98,7 @@ const rewriteSectionFlow = ai.defineFlow(
     outputSchema: RewriteSectionOutputSchema,
   },
   async (input) => {
-    const { output } = await rewriteSectionPrompt(input, { apiKey: input.apiKey, model: input.model });
+    const { output } = await rewriteSectionPrompt(input, { apiKey: input.apiKey, ...(input.model && { model: input.model }) });
     if (!output) {
         throw new Error("AI failed to rewrite the section.");
     }
