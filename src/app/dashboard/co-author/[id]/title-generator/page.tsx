@@ -34,6 +34,8 @@ export default function TitleGeneratorPage() {
 
   const { data: project, isLoading: isProjectLoading } = useDoc<Project>(projectDocRef);
 
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+
   const handleGenerateTitles = async () => {
     if (!project?.outline) {
       toast({
@@ -57,6 +59,7 @@ export default function TitleGeneratorPage() {
       const result = await generateBookTitles({
         outline: project.outline,
         language: project.language,
+        apiKey: apiKey,
       });
       setTitles(result.titles);
       if (result.titles.length > 0) {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -58,12 +59,14 @@ export default function ResearchPage() {
     },
   });
 
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+
   async function onSubmit(values: FormValues) {
     setLoading(true);
     setResult(null);
     setCurrentValues(values);
     try {
-      const researchData = await researchBookTopic(values);
+      const researchData = await researchBookTopic({...values, apiKey});
       setResult(researchData);
     } catch (error) {
       console.error(error);

@@ -14,6 +14,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { ModelReference } from 'genkit/ai';
 
 const ExpandBookContentInputSchema = z.object({
   bookTitle: z.string().describe("The main title of the book."),
@@ -22,6 +23,8 @@ const ExpandBookContentInputSchema = z.object({
   contentToExpand: z.string().describe('The paragraph of book content to use as a starting point for expansion.'),
   instruction: z.string().optional().describe('A specific instruction from the user on how to expand the content.'),
   styleProfile: z.string().optional().describe('The desired writing style for the content.'),
+  apiKey: z.string().optional().describe('The API key for the generative AI model.'),
+  model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
 });
 export type ExpandBookContentInput = z.infer<typeof ExpandBookContentInputSchema>;
 
@@ -78,8 +81,8 @@ const expandBookContentFlow = ai.defineFlow(
     inputSchema: ExpandBookContentInputSchema,
     outputSchema: ExpandBookContentOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const {output} = await prompt(input, { apiKey: input.apiKey, model: input.model });
     return output!;
   }
 );

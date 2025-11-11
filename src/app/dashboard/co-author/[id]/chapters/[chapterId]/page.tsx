@@ -118,6 +118,8 @@ const ChapterEditor = ({
     const researchPrompt = relevantResearchProfile
         ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
         : undefined;
+    
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
     const handleExtendClick = async (paragraph: string, sectionIndex: number, paragraphIndex: number, instruction?: string) => {
         const uniqueIndex = sectionIndex * 1000 + paragraphIndex;
@@ -131,6 +133,7 @@ const ChapterEditor = ({
                 contentToExpand: paragraph,
                 instruction,
                 styleProfile: selectedStyle?.styleAnalysis,
+                apiKey: apiKey,
             });
 
             // Split by the delimiter, but keep the delimiter in the array.
@@ -204,6 +207,7 @@ const ChapterEditor = ({
                 storytellingFramework: selectedFramework,
                 language: project.language,
                 instruction,
+                apiKey: apiKey,
             });
     
             if (result && result.rewrittenSection) {
@@ -240,6 +244,7 @@ const ChapterEditor = ({
                 styleProfile: selectedStyle?.styleAnalysis,
                 researchProfile: researchPrompt,
                 storytellingFramework: selectedFramework,
+                apiKey: apiKey,
             });
 
             if (result && result.sectionContent) {
@@ -559,6 +564,8 @@ export default function ChapterPage() {
     toast({ title: 'Content Copied', description: 'The chapter text has been copied to your clipboard.' });
   }
 
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+
   const handleRewriteChapter = useCallback(async (instruction?: string) => {
     if (!chapterContent) {
         toast({ title: "No Content", description: "There is no content to rewrite.", variant: "destructive" });
@@ -587,6 +594,7 @@ export default function ChapterPage() {
             storytellingFramework: selectedFramework,
             language: project.language,
             instruction,
+            apiKey: apiKey,
         });
 
         if (result && result.rewrittenContent) {
@@ -602,7 +610,7 @@ export default function ChapterPage() {
         setPageState('writing');
         setRewriteChapterInstruction('');
     }
-  }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, selectedFramework, researchProfiles, selectedResearchId]);
+  }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, selectedFramework, researchProfiles, selectedResearchId, apiKey]);
 
 
   if (isProjectLoading) {

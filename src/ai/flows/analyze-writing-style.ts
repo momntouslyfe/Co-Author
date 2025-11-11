@@ -14,9 +14,12 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { ModelReference } from 'genkit/ai';
 
 const AnalyzeWritingStyleInputSchema = z.object({
     fileDataUri: z.string().describe("A writing sample as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'. Supported file types are .txt and .pdf."),
+    apiKey: z.string().optional().describe('The API key for the generative AI model.'),
+    model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
 });
 export type AnalyzeWritingStyleInput = z.infer<typeof AnalyzeWritingStyleInputSchema>;
 
@@ -69,8 +72,11 @@ const analyzeWritingStyleFlow = ai.defineFlow(
     inputSchema: AnalyzeWritingStyleInputSchema,
     outputSchema: AnalyzeWritingStyleOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async ({ fileDataUri, apiKey, model }) => {
+    const {output} = await prompt(
+        { fileDataUri },
+        { apiKey, model }
+    );
     return output!;
   }
 );

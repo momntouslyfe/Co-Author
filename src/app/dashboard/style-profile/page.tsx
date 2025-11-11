@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -123,13 +124,15 @@ export default function StyleProfilePage() {
     }
   };
 
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+
   async function onSubmit(values: FormValues) {
     setLoading(true);
     setAnalysisResult(null);
     setCurrentProfileName(values.profileName);
 
     try {
-      const result = await analyzeWritingStyle({ fileDataUri: values.fileDataUri });
+      const result = await analyzeWritingStyle({ fileDataUri: values.fileDataUri, apiKey: apiKey });
       setAnalysisResult(result.styleAnalysis);
       toast({
         title: 'Analysis Complete',

@@ -11,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { ModelReference } from 'genkit/ai';
 
 const RewriteSectionInputSchema = z.object({
   sectionContent: z.string().describe('The content of the chapter section to be rewritten.'),
@@ -20,6 +21,8 @@ const RewriteSectionInputSchema = z.object({
   storytellingFramework: z.string().optional().describe('The storytelling framework for the book (e.g., The Hero\'s Journey).'),
   language: z.string().describe('The language the chapter should be rewritten in.'),
   instruction: z.string().optional().describe('A specific instruction from the user on how to rewrite the content.'),
+  apiKey: z.string().optional().describe('The API key for the generative AI model.'),
+  model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
 });
 export type RewriteSectionInput = z.infer<typeof RewriteSectionInputSchema>;
 
@@ -98,14 +101,10 @@ const rewriteSectionFlow = ai.defineFlow(
     outputSchema: RewriteSectionOutputSchema,
   },
   async (input) => {
-    const { output } = await rewriteSectionPrompt(input);
+    const { output } = await rewriteSectionPrompt(input, { apiKey: input.apiKey, model: input.model });
     if (!output) {
         throw new Error("AI failed to rewrite the section.");
     }
     return output;
   }
 );
-
-
-
-    

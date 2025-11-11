@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -10,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { ModelReference } from 'genkit/ai';
 
 const GenerateBookBlueprintInputSchema = z.object({
   topic: z.string().describe('The core idea or topic of the book.'),
@@ -17,6 +19,8 @@ const GenerateBookBlueprintInputSchema = z.object({
   storytellingFramework: z.string().describe('The storytelling framework to structure the book (e.g., The Hero\'s Journey).'),
   researchProfile: z.string().optional().describe('An optional, pre-existing AI research profile providing context.'),
   styleProfile: z.string().optional().describe('An optional, pre-existing writing style profile providing context on the desired writing style.'),
+  apiKey: z.string().optional().describe('The API key for the generative AI model.'),
+  model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
 });
 export type GenerateBookBlueprintInput = z.infer<
   typeof GenerateBookBlueprintInputSchema
@@ -105,7 +109,7 @@ const generateBookBlueprintFlow = ai.defineFlow(
     outputSchema: GenerateBookBlueprintOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input, { apiKey: input.apiKey, model: input.model });
     return output!;
   }
 );
