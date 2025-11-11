@@ -36,25 +36,37 @@ const prompt = ai.definePrompt({
   name: 'researchBookTopicPrompt',
   input: {schema: ResearchBookTopicInputSchema},
   output: {schema: ResearchBookTopicOutputSchema},
-  prompt: `You are an expert book research assistant. Your goal is to provide a "Comprehensive Topic Library" and a "Topic Market Analysis" for a given topic, tailored for a specific language and market.
+  prompt: `You are a world-class research analyst. Your task is to produce a "Comprehensive Topic Library" and a "Topic Market Analysis" that is exceptionally deep, comprehensive, and well-sourced.
 
-  Topic: {{{topic}}}
-  Language: {{{language}}}
-  {{#if targetMarket}}Target Market: {{{targetMarket}}}{{/if}}
+  **Topic:** {{{topic}}}
+  **Language:** {{{language}}}
+  {{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
 
-  Provide the following information in {{{language}}}:
+  ---
 
-  1.  **Deep Topic Research (for the "Comprehensive Topic Library"):**
-      *   Conduct thorough research on the topic.
-      *   Gather comprehensive data, key facts, relevant information, and cite potential research sources or papers.
-      *   This information should be detailed enough to serve as a knowledge base for writing an entire book.
+  ### Part 1: Comprehensive Topic Library
 
-  2.  **Pain Point & Audience Analysis (for the "Topic Market Analysis"):**
-      *   **Pain Point Analysis:** Identify and analyze the main pain points, challenges, and problems that readers in the target market face related to this topic. What are they trying to solve?
-      *   **Target Audience Suggestion:** Based on the pain points, suggest the ideal target audience. Be specific (e.g., "University students struggling with time management," not just "students").
+  **CRITICAL INSTRUCTIONS:**
+  1.  **Go Deep:** Your research must be exhaustive. Cover the topic's history, key concepts, current state, primary actors or contributors, major debates, and future trends. Do not provide a surface-level overview.
+  2.  **Structure and Formatting:** Present the information in a highly structured, readable format using Markdown. Use clear headings, subheadings, bullet points, and bold text to organize the data. This is not a single essay; it is a structured library of information.
+  3.  **Source Integration (NON-NEGOTIABLE):** You MUST synthesize information from a wide array of sources, including academic papers, reputable news articles, industry reports, market data, and expert opinions. For every key fact, statistic, or significant claim, you MUST provide an inline citation, like this: [Source: link or publication name]. The quality and quantity of your sources are paramount. Aim for dozens, if not hundreds, of unique sources.
+  4.  **Content Requirements:**
+      *   **Key Data & Statistics:** Include relevant numbers, figures, and statistics with sources.
+      *   **Expert Opinions:** Quote or paraphrase insights from leading experts in the field, citing them appropriately.
+      *   **Case Studies/Examples:** Provide real-world examples or case studies to illustrate concepts.
+      *   **Different Perspectives:** If there are debates or different schools of thought on the topic, present them fairly.
 
-  Format the output as a JSON object with the specified keys.
-  `,
+  ---
+
+  ### Part 2: Topic Market Analysis
+
+  **CRITICAL INSTRUCTIONS:**
+  1.  **Pain Point Analysis:** Based on your deep research, identify and analyze the most significant pain points, challenges, and unanswered questions that people in the {{{targetMarket_or_default}}} have about this topic. What problems are they desperately trying to solve?
+  2.  **Target Audience Suggestion:** Based on the pain points, create a detailed persona for the ideal target reader. Go beyond simple demographics. Include their goals, frustrations, and the "job" they would be "hiring" this book to do for them.
+
+  ---
+
+  You must provide the entire response in the specified **{{{language}}}**. Proceed with generating the two parts now.`,
 });
 
 const researchBookTopicFlow = ai.defineFlow(
@@ -68,3 +80,4 @@ const researchBookTopicFlow = ai.defineFlow(
     return output!;
   }
 );
+
