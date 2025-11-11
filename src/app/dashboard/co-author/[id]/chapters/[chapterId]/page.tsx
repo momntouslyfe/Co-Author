@@ -624,9 +624,9 @@ export default function ChapterPage() {
 
     const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
     
-    // Start with the clean skeleton
-    let assembledContent = buildChapterSkeleton();
-    setChapterContent(assembledContent);
+    // Start with the clean skeleton and update the state immediately
+    const initialContent = buildChapterSkeleton();
+    setChapterContent(initialContent);
 
     try {
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
@@ -634,7 +634,8 @@ export default function ChapterPage() {
         const researchPrompt = relevantResearchProfile
             ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
             : undefined;
-
+        
+        let currentContent = initialContent;
         for (const sectionTitle of allSectionTitles) {
             try {
                 const result = await writeChapterSection({
@@ -650,12 +651,13 @@ export default function ChapterPage() {
                 });
                 
                 if (result && result.sectionContent) {
-                    // This is a robust way to replace the content for a specific section
-                    assembledContent = assembledContent.replace(
+                    // Update the local content string
+                    currentContent = currentContent.replace(
                         `$$${sectionTitle}$$`, 
                         `$$${sectionTitle}$$` + `\n\n${result.sectionContent.trim()}\n\n`
                     );
-                    setChapterContent(assembledContent); // Update state after each section
+                    // Update the React state to make the new section visible immediately
+                    setChapterContent(currentContent);
                 } else {
                     toast({ title: "AI Warning", description: `The AI returned no content for section: "${sectionTitle}".`, variant: "destructive" });
                 }
@@ -903,4 +905,5 @@ export default function ChapterPage() {
   );
 }
 
+    
     
