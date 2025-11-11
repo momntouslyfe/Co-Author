@@ -6,7 +6,7 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
-import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, Eraser, Palette } from 'lucide-react';
+import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, Eraser, Palette, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -253,10 +253,14 @@ const ChapterEditor = ({
             if (result && result.sectionContent) {
                 const allSections = content.split(/(\$\$[^$]+\$\$)/g);
                 const titleToFind = `$$${sectionTitle}$$`;
-                const titleIndex = allSections.findIndex(s => s === titleToFind);
+                const titleIndex = allSections.findIndex(s => s.trim() === titleToFind);
 
-                if (titleIndex !== -1 && titleIndex + 1 < allSections.length) {
-                    allSections[titleIndex + 1] = `\n\n${result.sectionContent.trim()}\n\n`;
+                if (titleIndex !== -1) {
+                    const contentIndex = titleIndex + 1;
+                    if (contentIndex >= allSections.length) {
+                        throw new Error("Calculated invalid index for section content.");
+                    }
+                    allSections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
                     onContentChange(allSections.join(''));
                     toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
                 } else {
@@ -278,7 +282,7 @@ const ChapterEditor = ({
         const allSections = content.split(/(\$\$[^$]+\$\$)/g);
         const titleToFind = findTitleForSection(allSections, sectionIndex);
 
-        const titleIndex = allSections.findIndex(s => s === titleToFind);
+        const titleIndex = allSections.findIndex(s => s.trim() === titleToFind);
         if (titleIndex !== -1 && titleIndex + 1 < allSections.length) {
             allSections[titleIndex + 1] = '\n\n\n\n'; // Set to empty with newlines for structure
             onContentChange(allSections.join(''));
@@ -778,10 +782,6 @@ export default function ChapterPage() {
                             <Pencil className="mr-2 h-4 w-4" />
                             Proceed to Interactive Editor
                         </Button>
-                        <Button onClick={handleWriteFullChapter} size="lg" variant="secondary">
-                            <Wand2 className="mr-2 h-4 w-4" />
-                            Write Full Chapter with AI
-                        </Button>
                     </div>
                 </CardContent>
             </Card>
@@ -817,8 +817,8 @@ export default function ChapterPage() {
             ) : (
                 <div className="space-y-4">
                     <div className="flex justify-end gap-2 mb-4 sticky top-0 bg-background py-2 z-10">
-                        <Button variant="outline" size="sm">
-                            <User className="mr-2 h-4 w-4" /> My Insights
+                        <Button variant="outline" size="sm" onClick={handleWriteFullChapter}>
+                            <FileText className="mr-2 h-4 w-4" /> Write Full Chapter
                         </Button>
                         <Popover open={isRewriteChapterPopoverOpen} onOpenChange={setRewriteChapterPopoverOpen}>
                             <PopoverTrigger asChild>
@@ -876,3 +876,5 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
