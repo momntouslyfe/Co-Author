@@ -65,7 +65,7 @@ export const rewriteSectionPrompt = ai.definePrompt({
 
 2.  **LANGUAGE:** You MUST write the entire response in **{{{language}}}**.
 
-3.  **REWRITE, DON'T JUST EDIT:** Do not simply make minor edits. Substantially rewrite sentences, rephrase ideas, and improve the flow and impact of the entire section while preserving the original meaning and core concepts.
+3.  **REWRITE, DON'T JUST EDIT (NON-NEGOTIABLE):** You are not an editor making minor changes. Your task is to **completely rewrite** the text from scratch. Do not simply copy or slightly rephrase sentences. You MUST produce a new version of the text that conveys the same core ideas but with entirely new sentence structures, vocabulary, and flow. Preserving the original meaning is key, but preserving the original text is a failure.
 
 4.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs (3-5 sentences), but you MUST VARY their length for good rhythm. Ensure a double newline (a blank line) exists between every paragraph.
 
