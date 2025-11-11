@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -107,7 +106,7 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 1.  **LANGUAGE:** You MUST write in **{{{language}}}**.
 2.  **ACTION STEP FORMAT (NON-NEGOTIABLE):** You are writing the "Action Step" section. You MUST follow this format precisely:
     1.  Start with a single, concise paragraph that summarizes the core lesson or takeaway of the entire chapter based on the provided content.
-    2.  After the summary paragraph, create a bulleted or numbered list containing 5 to 7 single-sentence action items that the reader can implement. These action items must be direct, clear, and derived from the chapter's main points.
+    2.  After the summary paragraph, create a bulleted or numbered list containing 5 to 7 single-sentence action items that the reader can implement. These action items must be direct, clear, and derived from the chapter's main points. Use standard Markdown for the list (e.g., '-' for bullets, '1.' for numbers). Do NOT use HTML tags like &lt;li&gt;.
 3.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the summary paragraph followed by the list. Do not add the section title.
 
 Proceed to write the "Your Action Step" section now.
@@ -175,5 +174,3 @@ const writeChapterSectionFlow = ai.defineFlow(
     };
   }
 );
-
-    
