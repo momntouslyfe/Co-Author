@@ -93,6 +93,7 @@ const ChapterEditor = ({
     selectedFramework,
     isGenerating,
     setIsGenerating,
+    onRewriteChapter,
 }: { 
     project: Project, 
     chapterDetails: Chapter, 
@@ -107,6 +108,7 @@ const ChapterEditor = ({
     selectedFramework: string;
     isGenerating: boolean;
     setIsGenerating: (isGenerating: boolean) => void;
+    onRewriteChapter: (instruction?: string) => void;
 }) => {
     
     const [isExtending, setIsExtending] = useState<number | null>(null);
@@ -119,6 +121,8 @@ const ChapterEditor = ({
     const [openRewritePopoverIndex, setOpenRewritePopoverIndex] = useState<number | null>(null);
     
     const { toast } = useToast();
+    const [rewriteChapterInstruction, setRewriteChapterInstruction] = useState('');
+    const [isRewriteChapterPopoverOpen, setRewriteChapterPopoverOpen] = useState(false);
 
     const buildChapterSkeleton = useCallback(() => {
         let skeleton = `$$Introduction$$\n\n\n\n`;
@@ -254,25 +258,6 @@ const ChapterEditor = ({
         }
     };
 
-    const handleClearSection = (sectionIndex: number) => {
-        onContentChange(prevContent => {
-            const allSections = prevContent.split(/(\$\$[^$]+\$\$)/g);
-            const titleToFind = findTitleForSection(allSections, sectionIndex);
-            if (!titleToFind) return prevContent;
-    
-            const titleIndex = allSections.findIndex(s => s.trim() === titleToFind.trim());
-            if (titleIndex !== -1) {
-                if (titleIndex + 1 < allSections.length && !allSections[titleIndex + 1].startsWith('$$')) {
-                     allSections[titleIndex + 1] = '\n\n\n\n'; 
-                } else {
-                     allSections.splice(titleIndex + 1, 0, '\n\n\n\n');
-                }
-                return allSections.join('');
-            }
-            return prevContent;
-        });
-        toast({ title: 'Section Cleared' });
-    };
 
     const handleWriteFullChapter = useCallback(async () => {
         if (!project.language) {
@@ -369,7 +354,7 @@ const ChapterEditor = ({
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor={`rewrite-instruction-${sectionIndex}`} className="sr-only">Instruction</Label>
-                                        <Input id={`rewrite-instruction-${sectionIndex}`} placeholder="e.g., Make it more concise" value={rewriteSectionInstruction} onChange={(e) => setRewriteSectionInstruction(e.target.value)} />
+                                        <Textarea id={`rewrite-instruction-${sectionIndex}`} placeholder="e.g., Make it more concise" value={rewriteSectionInstruction} onChange={(e) => setRewriteSectionInstruction(e.target.value)} />
                                         <Button size="sm" onClick={() => handleRewriteSection(sectionIndex, sectionContent.trim(), rewriteSectionInstruction)} disabled={!rewriteSectionInstruction || isProcessing}>
                                             <Pencil className="mr-2 h-4 w-4" /> Rewrite with My Instruction
                                         </Button>
@@ -410,7 +395,7 @@ const ChapterEditor = ({
                                             <div className="space-y-2"><h4 className="font-medium leading-none">Guided Extend</h4><p className="text-sm text-muted-foreground">Give the AI specific instructions.</p></div>
                                             <div className="grid gap-2">
                                                 <Label htmlFor={`instruction-${sectionIndex}-${pIndex}`} className="sr-only">Instruction</Label>
-                                                <Input id={`instruction-${sectionIndex}-${pIndex}`} placeholder="e.g., Add a historical example" value={extendInstruction} onChange={(e) => setExtendInstruction(e.target.value)} />
+                                                <Textarea id={`instruction-${sectionIndex}-${pIndex}`} placeholder="e.g., Add a historical example" value={extendInstruction} onChange={(e) => setExtendInstruction(e.target.value)} />
                                                 <Button size="sm" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex, extendInstruction)} disabled={!extendInstruction || isExtending === (sectionIndex * 1000 + pIndex)}>
                                                     <Pencil className="mr-2 h-4 w-4" /> Write With My Instruction
                                                 </Button>
@@ -458,6 +443,11 @@ const ChapterEditor = ({
         return renderedSections;
     };
 
+    const handleLocalRewriteChapter = (instruction?: string) => {
+        setRewriteChapterPopoverOpen(false);
+        onRewriteChapter(instruction);
+    };
+
     return (
         <div className="prose max-w-none dark:prose-invert space-y-8">
             <div className="flex justify-end gap-2 mb-4 sticky top-0 bg-background py-2 z-10">
@@ -465,6 +455,33 @@ const ChapterEditor = ({
                     {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
                     {isGenerating ? 'Writing...' : 'Write Full Chapter'}
                 </Button>
+                 <Popover open={isRewriteChapterPopoverOpen} onOpenChange={setRewriteChapterPopoverOpen}>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" disabled={isGenerating}>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Rewrite Chapter
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                        <div className="grid gap-4">
+                            <div className="space-y-2">
+                                <h4 className="font-medium leading-none">Guided Chapter Rewrite</h4>
+                                <p className="text-sm text-muted-foreground">Provide specific instructions for the rewrite.</p>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="rewrite-chapter-instruction" className="sr-only">Instruction</Label>
+                                <Textarea id="rewrite-chapter-instruction" placeholder="e.g., Make it more formal and add more examples." value={rewriteChapterInstruction} onChange={(e) => setRewriteChapterInstruction(e.target.value)} />
+                                <Button size="sm" onClick={() => handleLocalRewriteChapter(rewriteChapterInstruction)} disabled={!rewriteChapterInstruction || isGenerating}>
+                                    <Pencil className="mr-2 h-4 w-4" /> Rewrite with My Instruction
+                                </Button>
+                            </div>
+                            <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
+                            <Button size="sm" variant="secondary" onClick={() => handleLocalRewriteChapter()} disabled={isGenerating}>
+                                <RefreshCw className="mr-2 h-4 w-4" /> Just Rewrite Chapter
+                            </Button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
                 <Button variant="outline" size="sm" onClick={onCopyContent}>
                     <Copy className="mr-2 h-4 w-4" /> Copy Text
                 </Button>
@@ -508,9 +525,7 @@ export default function ChapterPage() {
   const [selectedStyleId, setSelectedStyleId] = useState<string>('default');
   const [selectedResearchId, setSelectedResearchId] = useState<string>(project?.researchProfileId || 'none');
   const [selectedFramework, setSelectedFramework] = useState<string>(project?.storytellingFramework || '');
-  const [rewriteChapterInstruction, setRewriteChapterInstruction] = useState('');
-  const [isRewriteChapterPopoverOpen, setRewriteChapterPopoverOpen] = useState(false);
-
+  
 
   const styleProfilesQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -615,7 +630,6 @@ export default function ChapterPage() {
     }
 
     setPageState('rewriting');
-    setRewriteChapterPopoverOpen(false);
     try {
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
         const stylePrompt = selectedStyle?.styleAnalysis;
@@ -647,7 +661,6 @@ export default function ChapterPage() {
         toast({ title: "AI Rewrite Failed", variant: "destructive", description: "Could not rewrite the chapter. The process may have timed out. Please try again." });
     } finally {
         setPageState('writing');
-        setRewriteChapterInstruction('');
     }
   }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, selectedFramework, researchProfiles, selectedResearchId, apiKey]);
 
@@ -832,6 +845,7 @@ export default function ChapterPage() {
                           selectedFramework={selectedFramework}
                           isGenerating={isGenerating}
                           setIsGenerating={setIsGenerating}
+                          onRewriteChapter={handleRewriteChapter}
                         />
                     </div>
                     <div className="flex justify-end pt-4 border-t">
@@ -847,5 +861,7 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+    
 
     
