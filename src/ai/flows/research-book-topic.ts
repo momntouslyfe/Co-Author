@@ -57,7 +57,7 @@ const prompt = ai.definePrompt({
 
   **CRITICAL INSTRUCTIONS:**
   1.  **Pain Point Analysis:** Based on your research, identify and analyze the most significant pain points, challenges, and frustrations people in the target market have regarding this topic. Format this as a well-structured Markdown document.
-  2.  **Target Audience Suggestion:** Based on the pain points, create a detailed persona for the ideal target reader. Go beyond simple demographics to include their goals, frustrations, and what they hope to achieve by reading a book on this topic. Format this as a well-structured Markdown document.
+  2.  **Target Audience Suggestions:** Based on the pain points, create a list of **5 to 7 distinct personas** for the ideal target readers. For each persona, go beyond simple demographics and provide a name, a brief description, their goals, and their specific frustrations related to the topic. Format this as a well-structured Markdown document with clear headings for each persona.
 
   ---
 
