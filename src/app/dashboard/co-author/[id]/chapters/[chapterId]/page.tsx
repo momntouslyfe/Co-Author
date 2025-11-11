@@ -469,6 +469,7 @@ export default function ChapterPage() {
   const [selectedFramework, setSelectedFramework] = useState<string>(project?.storytellingFramework || '');
   const [rewriteChapterInstruction, setRewriteChapterInstruction] = useState('');
   const [isRewriteChapterPopoverOpen, setRewriteChapterPopoverOpen] = useState(false);
+  const [fullChapterContent, setFullChapterContent] = useState<string | null>(null);
 
 
   const styleProfilesQuery = useMemoFirebase(() => {
@@ -522,6 +523,13 @@ export default function ChapterPage() {
 
     }
   }, [project, chapterId, chapterDetails, buildChapterSkeleton]);
+
+  useEffect(() => {
+    if (fullChapterContent) {
+        setChapterContent(fullChapterContent);
+        setFullChapterContent(null);
+    }
+  }, [fullChapterContent]);
   
 
   const handleProceedToEditor = () => {
@@ -617,11 +625,11 @@ export default function ChapterPage() {
         return;
     }
     setPageState('generating');
-
-    const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
-    let currentContent = buildChapterSkeleton(); // Use a local variable to accumulate content
+    
+    let currentContent = buildChapterSkeleton();
 
     try {
+        const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
         const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
         const researchPrompt = relevantResearchProfile
@@ -643,13 +651,10 @@ export default function ChapterPage() {
                 });
                 
                 if (result && result.sectionContent) {
-                    // Update the local variable, not the state, inside the loop
                     currentContent = currentContent.replace(
                         `$$${sectionTitle}$$`, 
                         `$$${sectionTitle}$$` + `\n\n${result.sectionContent.trim()}\n\n`
                     );
-                    // Update the state once per iteration to show real-time progress
-                    setChapterContent(currentContent);
                 } else {
                     toast({ title: "AI Warning", description: `The AI returned no content for section: "${sectionTitle}".`, variant: "destructive" });
                 }
@@ -658,6 +663,7 @@ export default function ChapterPage() {
                 toast({ title: "AI Section Failed", description: `Could not generate content for section: "${sectionTitle}".`, variant: "destructive" });
             }
         }
+        setFullChapterContent(currentContent);
         toast({ title: "Chapter Generation Complete", description: "The full chapter draft has been written." });
     } catch (error) {
         console.error("Error during full chapter generation:", error);
