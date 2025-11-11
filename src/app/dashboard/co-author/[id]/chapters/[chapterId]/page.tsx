@@ -6,7 +6,7 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
-import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, User, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, Eraser, FileText, Palette } from 'lucide-react';
+import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, Eraser, FileText, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -93,7 +93,7 @@ const ChapterEditor = ({
     project: Project, 
     chapterDetails: Chapter, 
     content: string; 
-    onContentChange: (newContent: string) => void; 
+    onContentChange: (newContent: string | ((prev: string) => string)) => void;
     selectedStyleId: string; 
     styleProfiles: StyleProfile[] | null;
     selectedResearchId: string;
@@ -139,22 +139,25 @@ const ChapterEditor = ({
                 apiKey: apiKey,
             });
 
-            // Split by the delimiter, but keep the delimiter in the array.
-            const sections = content.split(/(\$\$[^$]+\$\$)/g);
-            const titleToFind = findTitleForSection(sections, sectionIndex);
+            onContentChange(prevContent => {
+                // Split by the delimiter, but keep the delimiter in the array.
+                const sections = prevContent.split(/(\$\$[^$]+\$\$)/g);
+                const titleToFind = findTitleForSection(sections, sectionIndex);
 
-            const titleIndex = sections.findIndex(s => s === titleToFind);
+                const titleIndex = sections.findIndex(s => s === titleToFind);
 
-            if (titleIndex !== -1 && titleIndex + 1 < sections.length) {
-                const contentPartIndex = titleIndex + 1;
-                const sectionParagraphs = (sections[contentPartIndex] || '').trim().split('\n\n').filter(p => p.trim() !== '');
-                sectionParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
-                sections[contentPartIndex] = `\n\n${sectionParagraphs.join('\n\n')}\n\n`;
-                onContentChange(sections.join(''));
-                toast({ title: "Content Extended", description: "New content has been added." });
-            } else {
-                throw new Error("Could not find section to extend.");
-            }
+                if (titleIndex !== -1 && titleIndex + 1 < sections.length) {
+                    const contentPartIndex = titleIndex + 1;
+                    const sectionParagraphs = (sections[contentPartIndex] || '').trim().split('\n\n').filter(p => p.trim() !== '');
+                    sectionParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
+                    sections[contentPartIndex] = `\n\n${sectionParagraphs.join('\n\n')}\n\n`;
+                    return sections.join('');
+                }
+                // If something went wrong, return the previous content to avoid data loss
+                return prevContent;
+            });
+
+            toast({ title: "Content Extended", description: "New content has been added." });
 
         } catch (error) {
             console.error("Failed to extend content", error);
@@ -165,16 +168,12 @@ const ChapterEditor = ({
         }
     };
     
-    const findTitleForSection = (sections: string[], sectionIndex: number): string => {
-        let titleIndex = -1;
-        
+    const findTitleForSection = (sections: string[], sectionIndex: number): string | null => {
         const titleSections = sections.filter(s => s.startsWith('$$') && s.endsWith('$$'));
-
         if (sectionIndex >= 0 && sectionIndex < titleSections.length) {
             return titleSections[sectionIndex];
         }
-
-        throw new Error(`Could not find a title for section index ${sectionIndex}.`);
+        return null;
     };
 
     const handleRewriteSection = async (sectionIndex: number, sectionContentToRewrite: string, instruction?: string) => {
@@ -211,7 +210,10 @@ const ChapterEditor = ({
             if (result && result.rewrittenSection) {
                  onContentChange(prevContent => {
                     const currentSections = prevContent.split(/(\$\$[^$]+\$\$)/g);
-                    const titleIndex = currentSections.findIndex(s => s.trim() === titleToFind);
+                    const currentTitleToFind = findTitleForSection(currentSections, sectionIndex);
+                    if (!currentTitleToFind) return prevContent;
+
+                    const titleIndex = currentSections.findIndex(s => s.trim() === currentTitleToFind.trim());
                     if (titleIndex !== -1) {
                          if (titleIndex + 1 >= currentSections.length || currentSections[titleIndex + 1].startsWith('$$')) {
                             currentSections.splice(titleIndex + 1, 0, ''); 
@@ -258,8 +260,10 @@ const ChapterEditor = ({
             if (result && result.sectionContent) {
                 onContentChange(prevContent => {
                     const allSections = prevContent.split(/(\$\$[^$]+\$\$)/g);
-                    const titleToFind = `$$${sectionTitle}$$`;
-                    const titleIndex = allSections.findIndex(s => s.trim() === titleToFind);
+                    const titleToFind = findTitleForSection(allSections, sectionIndex);
+                     if (!titleToFind) return prevContent;
+
+                    const titleIndex = allSections.findIndex(s => s.trim() === titleToFind.trim());
     
                     if (titleIndex !== -1) {
                         if (titleIndex + 1 >= allSections.length || allSections[titleIndex + 1].startsWith('$$')) {
@@ -287,8 +291,9 @@ const ChapterEditor = ({
         onContentChange(prevContent => {
             const allSections = prevContent.split(/(\$\$[^$]+\$\$)/g);
             const titleToFind = findTitleForSection(allSections, sectionIndex);
+            if (!titleToFind) return prevContent;
     
-            const titleIndex = allSections.findIndex(s => s.trim() === titleToFind);
+            const titleIndex = allSections.findIndex(s => s.trim() === titleToFind.trim());
             if (titleIndex !== -1) {
                 if (titleIndex + 1 < allSections.length && !allSections[titleIndex + 1].startsWith('$$')) {
                      allSections[titleIndex + 1] = '\n\n\n\n'; 
@@ -469,7 +474,6 @@ export default function ChapterPage() {
   const [selectedFramework, setSelectedFramework] = useState<string>(project?.storytellingFramework || '');
   const [rewriteChapterInstruction, setRewriteChapterInstruction] = useState('');
   const [isRewriteChapterPopoverOpen, setRewriteChapterPopoverOpen] = useState(false);
-  const [fullChapterContent, setFullChapterContent] = useState<string | null>(null);
 
 
   const styleProfilesQuery = useMemoFirebase(() => {
@@ -523,13 +527,6 @@ export default function ChapterPage() {
 
     }
   }, [project, chapterId, chapterDetails, buildChapterSkeleton]);
-
-  useEffect(() => {
-    if (fullChapterContent) {
-        setChapterContent(fullChapterContent);
-        setFullChapterContent(null);
-    }
-  }, [fullChapterContent]);
   
 
   const handleProceedToEditor = () => {
@@ -625,9 +622,9 @@ export default function ChapterPage() {
         return;
     }
     setPageState('generating');
+    // Start with a clean skeleton
+    setChapterContent(buildChapterSkeleton());
     
-    let currentContent = buildChapterSkeleton();
-
     try {
         const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
@@ -651,10 +648,12 @@ export default function ChapterPage() {
                 });
                 
                 if (result && result.sectionContent) {
-                    currentContent = currentContent.replace(
-                        `$$${sectionTitle}$$`, 
-                        `$$${sectionTitle}$$` + `\n\n${result.sectionContent.trim()}\n\n`
-                    );
+                    setChapterContent(prevContent => {
+                        const placeholder = `$$${sectionTitle}$$`;
+                        const newContent = `$$${sectionTitle}$$\n\n${result.sectionContent.trim()}\n\n`;
+                        // Replace the placeholder section with the newly generated content
+                        return prevContent.replace(placeholder, newContent);
+                    });
                 } else {
                     toast({ title: "AI Warning", description: `The AI returned no content for section: "${sectionTitle}".`, variant: "destructive" });
                 }
@@ -663,7 +662,6 @@ export default function ChapterPage() {
                 toast({ title: "AI Section Failed", description: `Could not generate content for section: "${sectionTitle}".`, variant: "destructive" });
             }
         }
-        setFullChapterContent(currentContent);
         toast({ title: "Chapter Generation Complete", description: "The full chapter draft has been written." });
     } catch (error) {
         console.error("Error during full chapter generation:", error);
