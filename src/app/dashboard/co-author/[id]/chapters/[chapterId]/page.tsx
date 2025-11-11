@@ -18,6 +18,7 @@ import type { Chapter, ResearchProfile, StyleProfile } from '@/lib/definitions';
 import { rewriteChapter } from '@/ai/flows/rewrite-chapter';
 import { rewriteSection } from '@/ai/flows/rewrite-section';
 import { writeChapterSection } from '@/ai/flows/write-chapter-section';
+import { generateFullChapter } from '@/ai/flows/generate-full-chapter';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -76,7 +77,7 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
 };
 
 // New state to manage the workflow on this page
-type PageState = 'overview' | 'writing' | 'rewriting';
+type PageState = 'overview' | 'writing' | 'rewriting' | 'generating';
 
 // New Component for the interactive editor
 const ChapterEditor = ({ 
@@ -166,21 +167,14 @@ const ChapterEditor = ({
     
     const findTitleForSection = (sections: string[], sectionIndex: number): string => {
         let titleIndex = -1;
-        if (sectionIndex === -1) { // Intro
-            titleIndex = sections.findIndex(s => s.startsWith('$$') && s.includes(chapterDetails.title));
-        } else {
-            let count = 0;
-            for (let i = 0; i < sections.length; i++) {
-                if (sections[i].startsWith('$$')) {
-                    if (count === sectionIndex + 1) { // +1 to skip main chapter title
-                        titleIndex = i;
-                        break;
-                    }
-                    count++;
-                }
-            }
+        
+        const titleSections = sections.filter(s => s.startsWith('$$') && s.endsWith('$$'));
+
+        if (sectionIndex >= 0 && sectionIndex < titleSections.length) {
+            return titleSections[sectionIndex];
         }
-        return sections[titleIndex];
+
+        throw new Error(`Could not find a title for section index ${sectionIndex}.`);
     };
 
     const handleRewriteSection = async (sectionIndex: number, sectionContentToRewrite: string, instruction?: string) => {
@@ -301,7 +295,7 @@ const ChapterEditor = ({
         return (
             <div key={`section-container-${sectionIndex}`} className="group/section relative pt-4">
                 <div className="flex items-center justify-between gap-4 border-b pb-2">
-                     <h3 className={`font-headline font-bold ${sectionIndex === -1 ? 'text-2xl' : 'text-xl'}`}>{title}</h3>
+                     <h3 className={`font-headline font-bold ${sectionIndex === 0 ? 'text-2xl' : 'text-xl'}`}>{title}</h3>
                      <div className="flex items-center gap-2 opacity-0 group-hover/section:opacity-100 transition-opacity">
                         <Button
                             variant="outline"
@@ -399,12 +393,12 @@ const ChapterEditor = ({
     };
 
     const renderContent = () => {
-        const sections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');;
+        const sections = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
         if (sections.length === 0) return null;
 
         const renderedSections: JSX.Element[] = [];
         
-        let sectionIndexCounter = -1;
+        let sectionIndexCounter = 0;
 
         for (let i = 0; i < sections.length; i++) {
             const part = sections[i];
@@ -484,8 +478,8 @@ export default function ChapterPage() {
   const subTopics = chapterData?.subTopics || [];
   
   const buildChapterSkeleton = useCallback(() => {
-    if (!chapterDetails || !subTopics) return '';
-    let skeleton = `$$${chapterDetails.title}$$\n\n\n\n`; // Add space for intro content
+    if (!chapterDetails) return '';
+    let skeleton = `$$Introduction$$\n\n\n\n`; // Add intro section
     subTopics.forEach(topic => {
       skeleton += `$$${topic}$$\n\n\n\n`;
     });
@@ -599,6 +593,47 @@ export default function ChapterPage() {
     }
   }, [chapterContent, styleProfiles, selectedStyleId, toast, project?.language, selectedFramework, researchProfiles, selectedResearchId, apiKey]);
 
+  const handleWriteFullChapter = useCallback(async () => {
+    if (!project?.language || !chapterDetails) {
+        toast({ title: "Missing Information", description: "Project language and chapter details are required.", variant: "destructive" });
+        return;
+    }
+    setPageState('generating');
+
+    try {
+        const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
+        const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
+        const researchPrompt = relevantResearchProfile
+            ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
+            : undefined;
+
+        const result = await generateFullChapter({
+            bookTitle: project.title,
+            fullOutline: project.outline || '',
+            chapterTitle: chapterDetails.title,
+            subTopics: subTopics,
+            language: project.language,
+            styleProfile: selectedStyle?.styleAnalysis,
+            researchProfile: researchPrompt,
+            storytellingFramework: selectedFramework,
+            apiKey: apiKey,
+        });
+
+        if (result && result.chapterContent) {
+            setChapterContent(result.chapterContent);
+            toast({ title: "Chapter Generated", description: "The full chapter has been written by the AI." });
+            setPageState('writing'); // Transition to editor view
+        } else {
+            throw new Error("AI returned empty content for the chapter.");
+        }
+
+    } catch (error) {
+        console.error("Error generating full chapter:", error);
+        toast({ title: "AI Chapter Generation Failed", variant: "destructive", description: `Could not generate the chapter. ${error}` });
+        setPageState('overview'); // Return to overview on failure
+    }
+  }, [project, chapterDetails, subTopics, styleProfiles, selectedStyleId, researchProfiles, selectedResearchId, selectedFramework, apiKey, toast]);
+
 
   if (isProjectLoading) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -622,6 +657,18 @@ export default function ChapterPage() {
             </Card>
         </div>
     );
+  }
+
+  if (pageState === 'generating') {
+      return (
+        <div className="flex h-[80vh] flex-col items-center justify-center space-y-4 rounded-md border border-dashed">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <div className="text-center">
+                <p className="text-lg font-semibold">AI is writing your chapter...</p>
+                <p className="text-muted-foreground">This may take a minute or two. Please don't navigate away.</p>
+            </div>
+        </div>
+      )
   }
 
   if (pageState === 'overview') {
@@ -726,10 +773,14 @@ export default function ChapterPage() {
                         </CardContent>
                     </Card>
 
-                    <div className="max-w-md">
-                         <Button onClick={handleProceedToEditor} size="lg" className="w-full">
+                    <div className="flex flex-wrap gap-4">
+                         <Button onClick={handleProceedToEditor} size="lg">
                             <Pencil className="mr-2 h-4 w-4" />
-                            Proceed to Editor
+                            Proceed to Interactive Editor
+                        </Button>
+                        <Button onClick={handleWriteFullChapter} size="lg" variant="secondary">
+                            <Wand2 className="mr-2 h-4 w-4" />
+                            Write Full Chapter with AI
                         </Button>
                     </div>
                 </CardContent>
