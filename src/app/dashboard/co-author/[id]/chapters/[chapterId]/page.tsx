@@ -409,15 +409,6 @@ const ChapterEditor = ({
                 <div className="flex items-center justify-between gap-4 border-b pb-2">
                      <h3 className={`font-headline font-bold ${sectionIndex === 0 ? 'text-2xl' : 'text-xl'}`}>{title}</h3>
                      <div className="flex items-center gap-2 opacity-0 group-hover/section:opacity-100 transition-opacity">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleWriteSection(sectionIndex, title)}
-                            disabled={isProcessing}
-                        >
-                           {isWriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                           Write with AI
-                        </Button>
                         {hasContent && (
                             <>
                             <Popover open={openRewritePopoverIndex === sectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? sectionIndex : null)}>
@@ -496,7 +487,7 @@ const ChapterEditor = ({
                         ))
                     ) : (
                         <div className="flex items-center justify-center h-24 text-sm text-muted-foreground border-2 border-dashed rounded-md">
-                           Click "Write with AI" to generate this section.
+                           Click "Write Full Chapter" to generate the content for your book.
                         </div>
                     )}
                 </div>
@@ -927,8 +918,3 @@ export default function ChapterPage() {
     </div>
   );
 }
-
-    
-
-    
-
