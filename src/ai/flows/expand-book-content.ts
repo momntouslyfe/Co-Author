@@ -64,7 +64,13 @@ const prompt = ai.definePrompt({
 4.  The new paragraphs must follow these human-like writing rules:
     *   **Varied Paragraphs:** Use short paragraphs, typically 3-5 sentences long, but you MUST vary the length for rhythm and readability.
     *   **Clarity:** Ensure there are clear gaps (a double newline) between every paragraph.
-5.  Maintain the writing style specified, if one is provided.
+{{#if styleProfile}}
+5.  **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
+    ---
+    **Writing Style Profile:**
+    {{{styleProfile}}}
+    ---
+{{/if}}
 6.  Return ONLY the new paragraphs. Do not repeat the original paragraph in your response.
 
 **User's Instruction:**
@@ -76,11 +82,6 @@ Just write more. Expand on the ideas presented in the starting paragraph.
 
 **Starting Paragraph:**
 {{{contentToExpand}}}
-
-{{#if styleProfile}}
-**Writing Style:**
-{{{styleProfile}}}
-{{/if}}
 `,
 });
 

@@ -48,8 +48,9 @@ const writeSectionPrompt = ai.definePrompt({
 - Full Book Outline: {{{fullOutline}}}
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
 {{#if styleProfile}}
-- **Writing Style Profile (CRITICAL):** You MUST strictly adhere to this writing style.
+- **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
   ---
+  **Writing Style Profile:**
   {{{styleProfile}}}
   ---
 {{/if}}
