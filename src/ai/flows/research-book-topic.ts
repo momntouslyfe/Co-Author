@@ -22,7 +22,7 @@ const ResearchBookTopicInputSchema = z.object({
 export type ResearchBookTopicInput = z.infer<typeof ResearchBookTopicInputSchema>;
 
 const ResearchBookTopicOutputSchema = z.object({
-  deepTopicResearch: z.string().describe('Comprehensive research on the topic, presented in well-structured Markdown format.'),
+  deepTopicResearch: z.string().describe('Comprehensive research on the topic, including history, key concepts, trends, and a list of reference links. Formatted in Markdown.'),
   painPointAnalysis: z.string().describe('Analysis of the pain points, challenges, and problems readers face, presented in well-structured Markdown.'),
   targetAudienceSuggestion: z.string().describe('Suggestions for the ideal target audience, presented in well-structured Markdown.'),
 });
@@ -36,7 +36,7 @@ const prompt = ai.definePrompt({
   name: 'researchBookTopicPrompt',
   input: {schema: ResearchBookTopicInputSchema},
   output: {schema: ResearchBookTopicOutputSchema},
-  prompt: `You are a world-class research analyst. Your task is to produce a "Comprehensive Topic Library" and a "Topic Market Analysis" that is deep, comprehensive, and well-structured.
+  prompt: `You are a world-class research analyst. Your task is to produce a "Comprehensive Topic Library" and a "Topic Market Analysis" that is exceptionally deep, comprehensive, and well-sourced.
 
   **Topic:** {{{topic}}}
   **Language:** {{{language}}}
@@ -47,24 +47,21 @@ const prompt = ai.definePrompt({
   ### Part 1: Comprehensive Topic Library
 
   **CRITICAL INSTRUCTIONS:**
-  1.  **Go Deep:** Your research must be thorough. Cover the topic's history, key concepts, current state, and future trends.
-  2.  **Structure and Formatting (NON-NEGOTIABLE):** Present all information in a highly structured, readable format using Markdown. Use clear headings, subheadings, bullet points, and bold text to organize the data. This is not a single essay; it is a structured library of information.
-  3.  **Content Requirements:**
-      *   Include relevant key data and statistics.
-      *   Paraphrase insights from leading experts in the field.
-      *   Provide real-world examples or case studies to illustrate concepts.
+  1.  **Go Deep:** Your research must be thorough. Cover the topic's history, key concepts, current state, and future trends. Include relevant data, statistics, and insights from leading experts.
+  2.  **Structure and Formatting (NON-NEGOTIABLE):** Present all information in a highly structured, readable format using Markdown. Use clear headings, subheadings, bullet points, and bold text. This is a structured library, not an essay.
+  3.  **References (NON-NEGOTIABLE):** At the end of this section, you MUST include a "References" heading followed by a bulleted list of all the source URLs you used for your research.
 
   ---
 
   ### Part 2: Topic Market Analysis
 
   **CRITICAL INSTRUCTIONS:**
-  1.  **Pain Point Analysis:** Based on your research, identify and analyze the most significant pain points and challenges people in the target market have regarding this topic. Format this as a well-structured Markdown document.
-  2.  **Target Audience Suggestion:** Based on the pain points, create a detailed persona for the ideal target reader. Go beyond simple demographics. Include their goals, frustrations, and what they hope to achieve by reading a book on this topic. Format this as a well-structured Markdown document.
+  1.  **Pain Point Analysis:** Based on your research, identify and analyze the most significant pain points, challenges, and frustrations people in the target market have regarding this topic. Format this as a well-structured Markdown document.
+  2.  **Target Audience Suggestion:** Based on the pain points, create a detailed persona for the ideal target reader. Go beyond simple demographics to include their goals, frustrations, and what they hope to achieve by reading a book on this topic. Format this as a well-structured Markdown document.
 
   ---
 
-  You must provide the entire response in the specified **{{{language}}}**. Proceed with generating the two parts now.`,
+  You must provide the entire response in the specified **{{{language}}}**, organized into the three requested output fields: \`deepTopicResearch\`, \`painPointAnalysis\`, and \`targetAudienceSuggestion\`. Proceed with generating the two parts now.`,
 });
 
 const researchBookTopicFlow = ai.defineFlow(
