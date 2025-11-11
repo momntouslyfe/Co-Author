@@ -61,9 +61,7 @@ const prompt = ai.definePrompt({
 1.  Use the "Starting Paragraph" below as the primary context.
 2.  Follow the "User's Instruction" to guide what you write next. If no instruction is provided, your default task is to simply expand upon the ideas in the starting paragraph.
 3.  Generate AT LEAST ONE, and preferably two to three, new paragraphs.
-4.  The new paragraphs must follow these human-like writing rules:
-    *   **Varied Paragraphs:** Use short paragraphs, typically 3-5 sentences long, but you MUST vary the length for rhythm and readability.
-    *   **Clarity:** Ensure there are clear gaps (a double newline) between every paragraph.
+4.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs (3-5 sentences), but you MUST VARY their length for good rhythm. Ensure a double newline (a blank line) exists between every paragraph.
 {{#if styleProfile}}
 5.  **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
     ---

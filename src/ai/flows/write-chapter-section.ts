@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -75,7 +76,7 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
 1.  **FOCUSED CONTENT:** All content must be directly related to the provided section title.
 
-2.  **HUMAN-LIKE PARAGRAPHING:** Use short, readable paragraphs (3-5 sentences), but VARY their length for good rhythm. Ensure a double newline (a blank line) exists between paragraphs.
+2.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs (3-5 sentences), but VARY their length for good rhythm. Ensure a double newline (a blank line) exists between paragraphs.
 
 3.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the text for the new section. Do not add the section title or any other formatting; return only the paragraphs.
 
@@ -106,8 +107,9 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 1.  **LANGUAGE:** You MUST write in **{{{language}}}**.
 2.  **ACTION STEP FORMAT (NON-NEGOTIABLE):** You are writing the "Action Step" section. You MUST follow this format precisely:
     1.  Start with a single, concise paragraph that summarizes the core lesson or takeaway of the entire chapter based on the provided content.
-    2.  After the summary paragraph, create a bulleted or numbered list containing 5 to 7 single-sentence action items that the reader can implement. These action items must be direct, clear, and derived from the chapter's main points. Use standard Markdown for the list (e.g., '-' for bullets, '1.' for numbers). Do NOT use HTML tags like &lt;li&gt;.
-3.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the summary paragraph followed by the list. Do not add the section title.
+    2.  After the summary paragraph, create a bulleted or numbered list containing 5 to 7 single-sentence action items that the reader can implement. These action items must be direct, clear, and derived from the chapter's main points. Use standard Markdown for the list (e.g., '-' for bullets, '1.' for numbers). Do NOT use HTML tags.
+3.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Ensure there are clear gaps (a double newline) between the summary paragraph and the list.
+4.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the summary paragraph followed by the list. Do not add the section title.
 
 Proceed to write the "Your Action Step" section now.
 `,
@@ -134,7 +136,8 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
 1.  **LANGUAGE:** You MUST write in **{{{language}}}**.
 2.  **"COMING UP NEXT" FORMAT (NON-NEGOTIABLE):** You are writing the "Coming Up Next" section. You MUST write one or two short paragraphs that act as a summary or teaser for the *next* chapter in the outline. Keep it brief and intriguing. Do not write more than two paragraphs.
-3.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the teaser paragraphs. Do not add the section title.
+3.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs and ensure a double newline (a blank line) exists between them if you write more than one.
+4.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the teaser paragraphs. Do not add the section title.
 
 Proceed to write the "Coming Up Next" section now.
 `,

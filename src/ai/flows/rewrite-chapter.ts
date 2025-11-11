@@ -67,10 +67,7 @@ const rewriteChapterPrompt = ai.definePrompt({
 
 5.  **REWRITE, DON'T JUST EDIT:** Do not simply make minor edits. Substantially rewrite sentences, rephrase ideas, and improve the flow and impact of the entire chapter while preserving the original meaning and core concepts.
 
-6.  **HUMAN-LIKE PARAGRAPHING:**
-    *   Use short paragraphs, typically 3-5 sentences long.
-    *   You MUST vary paragraph length for rhythm and readability.
-    *   Ensure there are clear gaps (a double newline) between every paragraph and section.
+6.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs (3-5 sentences), but you MUST VARY their length for good rhythm. Ensure a double newline (a blank line) exists between every paragraph and section.
 
 {{#if styleProfile}}
 7.  **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.

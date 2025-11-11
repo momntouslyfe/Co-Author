@@ -21,6 +21,7 @@ import { writeChapterSection } from '@/ai/flows/write-chapter-section';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 // Allow up to 5 minutes for AI chapter generation
@@ -253,64 +254,6 @@ const ChapterEditor = ({
         }
     };
 
-    const handleWriteSection = async (sectionIndex: number, sectionTitle: string) => {
-        if (!project.language) {
-            toast({ title: "Language not set", description: "Project language is required to write.", variant: "destructive" });
-            return;
-        }
-        setIsWritingSection(sectionIndex);
-
-        try {
-            const currentContentForContext = await new Promise<string>(resolve => {
-                onContentChange(prev => {
-                    resolve(prev);
-                    return prev;
-                });
-            });
-
-            const result = await writeChapterSection({
-                bookTitle: project.title,
-                fullOutline: project.outline || '',
-                chapterTitle: chapterDetails.title,
-                sectionTitle: sectionTitle,
-                language: project.language,
-                previousContent: currentContentForContext,
-                styleProfile: selectedStyle?.styleAnalysis,
-                researchProfile: researchPrompt,
-                storytellingFramework: selectedFramework,
-                apiKey: apiKey,
-            });
-
-            if (result && result.sectionContent) {
-                onContentChange(prevContent => {
-                    const allSections = prevContent.split(/(\$\$[^$]+\$\$)/g);
-                    const titleToFind = findTitleForSection(allSections, sectionIndex);
-                     if (!titleToFind) return prevContent;
-
-                    const titleIndex = allSections.findIndex(s => s.trim() === titleToFind.trim());
-    
-                    if (titleIndex !== -1) {
-                        if (titleIndex + 1 >= allSections.length || allSections[titleIndex + 1].startsWith('$$')) {
-                            allSections.splice(titleIndex + 1, 0, '');
-                        }
-                        allSections[titleIndex + 1] = `\n\n${result.sectionContent.trim()}\n\n`;
-                        return allSections.join('');
-                    }
-                    return prevContent;
-                });
-                toast({ title: "Section Written", description: `The AI has written the "${sectionTitle}" section.` });
-
-            } else {
-                throw new Error("AI returned empty content for section writing.");
-            }
-        } catch (error) {
-            console.error("Error writing section:", error);
-            toast({ title: "AI Writing Failed", variant: "destructive", description: `Could not write the section. ${error}` });
-        } finally {
-            setIsWritingSection(null);
-        }
-    };
-
     const handleClearSection = (sectionIndex: number) => {
         onContentChange(prevContent => {
             const allSections = prevContent.split(/(\$\$[^$]+\$\$)/g);
@@ -414,7 +357,7 @@ const ChapterEditor = ({
                             <Popover open={openRewritePopoverIndex === sectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? sectionIndex : null)}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" size="sm" disabled={isProcessing}>
-                                        {isRewriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                        <RefreshCw className="mr-2 h-4 w-4" />
                                         Rewrite
                                     </Button>
                                 </PopoverTrigger>
@@ -447,16 +390,16 @@ const ChapterEditor = ({
                 </div>
 
                 <div className="mt-4">
-                    {isWriting ? (
-                        <div className="space-y-2">
-                            <div className="h-6 w-full rounded-md bg-muted animate-pulse"></div>
-                            <div className="h-6 w-5/6 rounded-md bg-muted animate-pulse"></div>
-                            <div className="h-6 w-3/4 rounded-md bg-muted animate-pulse"></div>
+                    {isWriting || isRewriting ? (
+                         <div className="space-y-2">
+                            <Skeleton className="h-6 w-full" />
+                            <Skeleton className="h-6 w-5/6" />
+                            <Skeleton className="h-6 w-3/4" />
                         </div>
                     ) : hasContent ? (
                         sectionContent.trim().split('\n\n').filter(p => p.trim()).map((paragraph, pIndex) => (
                             <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4 group/paragraph">
-                                <p className="text-base leading-relaxed">{paragraph}</p>
+                                <p className="text-base leading-relaxed whitespace-pre-wrap">{paragraph}</p>
                                 <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
                                 <Popover open={openExtendPopoverIndex === (sectionIndex * 1000 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (sectionIndex * 1000 + pIndex) : null)}>
                                     <PopoverTrigger asChild>
