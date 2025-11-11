@@ -4,9 +4,13 @@
 /**
  * @fileOverview This file defines a Genkit flow for generating the content of a book chapter.
  *
- * This flow now uses a single, robust prompt to generate the entire chapter content
- * in one API call. This approach is more efficient and avoids rate-limiting issues
- * by instructing the AI to handle the full structure internally.
+ * This flow now uses a robust, iterative approach. Instead of a single large prompt,
+ * it breaks the task down:
+ * 1.  It generates the introduction.
+ * 2.  It loops through each sub-topic, generating content for one section at a time.
+ * 3.  It generates the final action step and teaser sections.
+ * 4.  It assembles all the pieces into a single, complete chapter.
+ * This method is more reliable and prevents incomplete outputs for long chapters.
  *
  * @exported generateChapterContent - A function that generates the chapter content.
  * @exported GenerateChapterContentInput - The input type for the function.
@@ -16,6 +20,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+// Input schema remains the same, providing all necessary context.
 const GenerateChapterContentInputSchema = z.object({
   bookTitle: z.string().describe('The main title of the book.'),
   bookTopic: z.string().describe('The core topic or idea of the book.'),
@@ -35,20 +40,29 @@ const GenerateChapterContentOutputSchema = z.object({
 export type GenerateChapterContentOutput = z.infer<typeof GenerateChapterContentOutputSchema>;
 
 
-const generateFullChapterPrompt = ai.definePrompt({
-    name: 'generateFullChapterPrompt',
-    input: { schema: GenerateChapterContentInputSchema },
-    output: { schema: GenerateChapterContentOutputSchema },
-    prompt: `You are an expert ghostwriter tasked with writing a complete book chapter in {{{bookLanguage}}}.
+// A new, focused prompt for generating a single, substantial section for a sub-topic.
+const generateSectionContentPrompt = ai.definePrompt({
+    name: 'generateSectionContentPrompt',
+    input: { schema: z.object({
+        bookTitle: z.string(),
+        fullOutline: z.string(),
+        chapterTitle: z.string(),
+        bookLanguage: z.string(),
+        styleProfile: z.string().optional(),
+        researchProfile: z.string().optional(),
+        storytellingFramework: z.string().optional(),
+        subTopic: z.string(),
+    }) },
+    output: { schema: z.object({ sectionContent: z.string() }) },
+    prompt: `You are an expert ghostwriter. Your task is to write a single, comprehensive section for a book chapter in {{{bookLanguage}}}.
 
 **CONTEXT:**
 - Book Title: {{{bookTitle}}}
-- Book Topic: {{{bookTopic}}}
+- Chapter: {{{chapterTitle}}}
 - Full Book Outline: {{{fullOutline}}}
-- Chapter to Write: {{{chapterTitle}}}
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
 {{#if styleProfile}}
-- **Writing Style Profile (CRITICAL):** You MUST strictly adhere to the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages) described. For example, a Bangla-English mix like 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট' should be replicated if the style profile indicates it.
+- **Writing Style Profile (CRITICAL):** You MUST strictly adhere to this writing style. Match the tone, voice, vocabulary, sentence structure, and any code-mixing described.
   ---
   {{{styleProfile}}}
   ---
@@ -61,32 +75,59 @@ const generateFullChapterPrompt = ai.definePrompt({
 {{/if}}
 
 **YOUR TASK:**
-Write the **ENTIRE chapter content from start to finish as a single, complete block of text**. You MUST follow all instructions below precisely. Any deviation or incomplete response is a failure.
+Write a substantial and insightful section for the sub-topic: **"{{{subTopic}}}"**.
 
-**CRITICAL STRUCTURE & FORMATTING RULES:**
-1.  **TOTAL WORD COUNT (ABSOLUTE & NON-NEGOTIABLE):** You are commanded to write a complete chapter with a total word count of **AT LEAST 2250 words**. This is not a suggestion, it is a strict rule.
-2.  **PER-SECTION WORD COUNT (ABSOLUTE & NON-NEGOTIABLE):** For EACH sub-topic listed below, you are commanded to write a substantial section between **500 and 650 words**. This is not a suggestion, it is a strict rule. Failure to meet this per-section word count is a failure of the entire task.
-3.  **SINGLE OUTPUT:** You MUST generate the entire chapter in one single response. Do not stop. Do not output anything other than the chapter content.
-4.  **Chapter Title:** Start with the chapter title, enclosed in double dollar signs. Example: \`$$My Chapter Title$$\`
-5.  **Introduction:** After the title, write a short, engaging introduction (2-3 sentences) for the chapter.
-6.  **Sub-Topic Sections:**
-    *   For EACH sub-topic in the list below, you MUST create a section.
-    *   Start each section with the sub-topic title enclosed in double dollar signs. Example: \`$$My Sub-Topic Title$$\`
-    *   Write a comprehensive section of **500 to 650 words** for each sub-topic.
-7.  **Action Step:** After all sub-topic sections, create a section titled \`$$Your Action Step$$\`. Write a single, practical action step (2-3 sentences) for the reader based on the chapter's content.
-8.  **Teaser:** After the action step, create a section titled \`$$Coming Up Next$$\`. Based on the "Full Book Outline", identify the chapter immediately following "{{{chapterTitle}}}" and write a compelling 1-2 sentence teaser that creates anticipation for that specific next chapter's content.
-9.  **Paragraphs & Spacing:**
-    *   Use short, human-like paragraphs (3-5 sentences), but VARY their length for rhythm.
-    *   Crucially, there MUST be a double newline (a blank line) between every paragraph and between every \`$$...$$\` section.
-    *   After each \`$$...$$\` title (including Action Step and Coming Up Next), you MUST write the corresponding content on a new line after a double newline.
+**CRITICAL INSTRUCTIONS:**
+1.  **WORD COUNT (NON-NEGOTIABLE):** You are commanded to write a section between **500 and 650 words**. This is a strict rule.
+2.  **FOCUSED CONTENT:** All content must be directly related to the sub-topic provided.
+3.  **HUMAN-LIKE PARAGRAPHING:** Use short, readable paragraphs (3-5 sentences), but VARY their length for good rhythm. Ensure a double newline (a blank line) exists between every paragraph.
+4.  **RETURN ONLY THE SECTION CONTENT:** Your output must ONLY be the text for this section. Do not add titles, headings, or any other formatting like \`$$...$$\`.
 
+Proceed to write the section now.
+`,
+});
 
-**SUB-TOPICS TO COVER:**
-{{#each subTopics}}
-- {{{this}}}
-{{/each}}
+// A new, simpler prompt for generating introductions, action steps, and teasers.
+const generateSimpleSectionPrompt = ai.definePrompt({
+    name: 'generateSimpleSectionPrompt',
+    input: { schema: z.object({
+        bookTitle: z.string(),
+        fullOutline: z.string(),
+        chapterTitle: z.string(),
+        bookLanguage: z.string(),
+        styleProfile: z.string().optional(),
+        isIntroduction: z.boolean().optional(),
+        isActionStep: z.boolean().optional(),
+        isTeaser: z.boolean().optional(),
+    }) },
+    output: { schema: z.object({ sectionContent: z.string() }) },
+    prompt: `You are an expert ghostwriter. Your task is to write a specific, short part of a book chapter in {{{bookLanguage}}}.
 
-Proceed to write the full chapter now. You must not stop until all sections are complete and both the per-section and total word count minimums are met.
+**CONTEXT:**
+- Book Title: {{{bookTitle}}}
+- Chapter: {{{chapterTitle}}}
+- Full Book Outline: {{{fullOutline}}}
+{{#if styleProfile}}
+- **Writing Style Profile:** Adhere to this style.
+  ---
+  {{{styleProfile}}}
+  ---
+{{/if}}
+
+**YOUR TASK:**
+{{#if isIntroduction}}
+Write a short, engaging introduction (2-3 sentences) for the chapter "{{{chapterTitle}}}".
+{{/if}}
+{{#if isActionStep}}
+Write a single, practical action step (2-3 sentences) for the reader based on the content of the chapter "{{{chapterTitle}}}".
+{{/if}}
+{{#if isTeaser}}
+Based on the "Full Book Outline", identify the chapter immediately following "{{{chapterTitle}}}" and write a compelling 1-2 sentence teaser that creates anticipation for that specific next chapter's content.
+{{/if}}
+
+**CRITICAL INSTRUCTIONS:**
+- Keep it concise as instructed.
+- Return ONLY the text content. Do not add titles or formatting like \`$$...$$\`.
 `,
 });
 
@@ -103,15 +144,60 @@ const generateChapterContentFlow = ai.defineFlow(
     outputSchema: GenerateChapterContentOutputSchema,
   },
   async (input) => {
-    // Call the single, powerful prompt to generate everything at once.
-    const { output } = await generateFullChapterPrompt(input);
+    const { 
+        bookTitle, bookTopic, bookLanguage, fullOutline, chapterTitle, 
+        subTopics, storytellingFramework, researchProfile, styleProfile 
+    } = input;
 
-    if (!output || !output.chapterContent) {
-        throw new Error("AI failed to generate the full chapter content.");
+    let fullChapterContent = '';
+
+    // 1. Generate Chapter Title and Introduction
+    fullChapterContent += `$$${chapterTitle}$$\n\n`;
+    const introResult = await generateSimpleSectionPrompt({
+        bookTitle, fullOutline, chapterTitle, bookLanguage, styleProfile,
+        isIntroduction: true
+    });
+    if (introResult.output) {
+        fullChapterContent += `${introResult.output.sectionContent}\n\n`;
     }
 
+    // 2. Loop through each sub-topic and generate its section content
+    for (const subTopic of subTopics) {
+        fullChapterContent += `$$${subTopic}$$\n\n`;
+        
+        const sectionResult = await generateSectionContentPrompt({
+            bookTitle, fullOutline, chapterTitle, bookLanguage, styleProfile,
+            researchProfile, storytellingFramework, subTopic,
+        });
+
+        if (sectionResult.output) {
+            fullChapterContent += `${sectionResult.output.sectionContent.trim()}\n\n`;
+        }
+    }
+
+    // 3. Generate the Action Step
+    fullChapterContent += `$$Your Action Step$$\n\n`;
+    const actionStepResult = await generateSimpleSectionPrompt({
+        bookTitle, fullOutline, chapterTitle, bookLanguage, styleProfile,
+        isActionStep: true
+    });
+    if (actionStepResult.output) {
+        fullChapterContent += `${actionStepResult.output.sectionContent}\n\n`;
+    }
+
+    // 4. Generate the "Coming Up Next" Teaser
+    fullChapterContent += `$$Coming Up Next$$\n\n`;
+    const teaserResult = await generateSimpleSectionPrompt({
+        bookTitle, fullOutline, chapterTitle, bookLanguage, styleProfile,
+        isTeaser: true
+    });
+    if (teaserResult.output) {
+        fullChapterContent += `${teaserResult.output.sectionContent}\n\n`;
+    }
+    
+    // 5. Return the fully assembled chapter
     return {
-      chapterContent: output.chapterContent,
+      chapterContent: fullChapterContent.trim(),
     };
   }
 );
