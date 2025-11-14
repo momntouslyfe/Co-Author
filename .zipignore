@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.genkit/
+.git/
+.replit
+replit.nix
+.upm/
+*.log
+.gitignore
+.zipignore
+tmp/
