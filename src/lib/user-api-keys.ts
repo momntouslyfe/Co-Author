@@ -2,7 +2,7 @@
 
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { encrypt, decrypt } from './encryption';
-import { getSdks } from '@/firebase';
+import { initializeFirebase } from '@/firebase';
 
 export interface UserApiKeyData {
   encryptedApiKey: string;
@@ -16,7 +16,7 @@ export async function saveUserApiKey(
   apiKey: string,
   preferredModel: string
 ): Promise<void> {
-  const { firestore } = getSdks(require('@/firebase').getApp());
+  const { firestore } = initializeFirebase();
   const encryptedKey = encrypt(apiKey);
   
   const userKeyRef = doc(firestore, 'userApiKeys', userId);
@@ -30,7 +30,7 @@ export async function saveUserApiKey(
 }
 
 export async function getUserApiKey(userId: string): Promise<{ apiKey: string; model: string } | null> {
-  const { firestore } = getSdks(require('@/firebase').getApp());
+  const { firestore } = initializeFirebase();
   const userKeyRef = doc(firestore, 'userApiKeys', userId);
   const docSnap = await getDoc(userKeyRef);
   
@@ -48,7 +48,7 @@ export async function getUserApiKey(userId: string): Promise<{ apiKey: string; m
 }
 
 export async function hasUserApiKey(userId: string): Promise<boolean> {
-  const { firestore } = getSdks(require('@/firebase').getApp());
+  const { firestore } = initializeFirebase();
   const userKeyRef = doc(firestore, 'userApiKeys', userId);
   const docSnap = await getDoc(userKeyRef);
   
@@ -56,7 +56,7 @@ export async function hasUserApiKey(userId: string): Promise<boolean> {
 }
 
 export async function getUserPreferredModel(userId: string): Promise<string | null> {
-  const { firestore } = getSdks(require('@/firebase').getApp());
+  const { firestore } = initializeFirebase();
   const userKeyRef = doc(firestore, 'userApiKeys', userId);
   const docSnap = await getDoc(userKeyRef);
   
