@@ -18,7 +18,7 @@ import { getUserGenkitInstance } from '@/lib/genkit-user';
 const AnalyzeWritingStyleInputSchema = z.object({
     userId: z.string().describe('The user ID for API key retrieval.'),
     idToken: z.string().describe('Firebase ID token for authentication verification.'),
-    fileDataUri: z.string().describe("A writing sample as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'. Supported file types are .txt and .pdf.'),
+    fileDataUri: z.string().describe("A writing sample as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'. Supported file types are .txt and .pdf."),
     model: z.string().optional().describe('The generative AI model to use.'),
 });
 export type AnalyzeWritingStyleInput = z.infer<typeof AnalyzeWritingStyleInputSchema>;
@@ -66,8 +66,7 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
   });
   
   const {output} = await prompt(
-    { fileDataUri: input.fileDataUri, userId: input.userId },
-    { ...(input.model && { model: input.model }) }
+    { fileDataUri: input.fileDataUri, userId: input.userId, idToken: input.idToken, ...(input.model && { model: input.model }) },
   );
   return output!;
 }
