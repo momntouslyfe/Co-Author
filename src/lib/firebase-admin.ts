@@ -4,7 +4,8 @@ import { firebaseConfig } from '@/firebase/config';
 let adminApp: admin.app.App | null = null;
 
 export function initializeFirebaseAdmin(): admin.app.App {
-  if (adminApp && admin.apps.length > 0) {
+  if (admin.apps.length > 0) {
+    adminApp = admin.app();
     return adminApp;
   }
 
