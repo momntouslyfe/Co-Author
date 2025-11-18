@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { AIIntegrationSettings } from "@/components/settings/ai-integration-settings";
 
 export default function SettingsPage() {
   return (
@@ -13,14 +14,18 @@ export default function SettingsPage() {
       </div>
       <Separator />
 
-      <Tabs defaultValue="profile" className="space-y-4">
+      <Tabs defaultValue="ai" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="ai">AI Integration</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="billing">Billing</TabsTrigger>
-          <TabsTrigger value="ai">AI Integration</TabsTrigger>
           <TabsTrigger value="blog">Blog/SEO</TabsTrigger>
         </TabsList>
         
+        <TabsContent value="ai">
+          <AIIntegrationSettings />
+        </TabsContent>
+
         <TabsContent value="profile">
           <Card>
             <CardHeader>
@@ -41,18 +46,6 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               <p>PAYG and subscription management UI will be here, supporting Stripe, Paddle, and UddoktaPay.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="ai">
-          <Card>
-            <CardHeader>
-              <CardTitle>Backend AI Integration</CardTitle>
-              <CardDescription>Configure and select from multiple AI providers.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Admin panel to provide API keys for OpenAI, Gemini, Claude, and others. Admins can select specific models to be used for different AI functionalities in the app.</p>
             </CardContent>
           </Card>
         </TabsContent>

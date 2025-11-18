@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -9,11 +8,12 @@
  * - ResearchBookTopicOutput - The return type for the researchBooktopic function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { ModelReference } from 'genkit/ai';
+import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const ResearchBookTopicInputSchema = z.object({
+  userId: z.string().describe('The user ID for API key retrieval.'),
   topic: z.string().describe('The topic to research.'),
   language: z.string().describe('The language for the research results (e.g., "English", "Bangla").'),
   targetMarket: z.string().optional().describe('The specific target market for the research (e.g., "USA", "Global Tech Industry").'),
@@ -29,14 +29,13 @@ const ResearchBookTopicOutputSchema = z.object({
 export type ResearchBookTopicOutput = z.infer<typeof ResearchBookTopicOutputSchema>;
 
 export async function researchBookTopic(input: ResearchBookTopicInput): Promise<ResearchBookTopicOutput> {
-  return researchBookTopicFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'researchBookTopicPrompt',
-  input: {schema: ResearchBookTopicInputSchema},
-  output: {schema: ResearchBookTopicOutputSchema},
-  prompt: `You are a world-class research analyst. Your task is to produce a "Comprehensive Topic Library" and a "Topic Market Analysis" that is exceptionally deep, comprehensive, and well-sourced.
+  const { ai, model } = await getUserGenkitInstance(input.userId);
+  
+  const prompt = ai.definePrompt({
+    name: 'researchBookTopicPrompt',
+    input: {schema: ResearchBookTopicInputSchema},
+    output: {schema: ResearchBookTopicOutputSchema},
+    prompt: `You are a world-class research analyst. Your task is to produce a "Comprehensive Topic Library" and a "Topic Market Analysis" that is exceptionally deep, comprehensive, and well-sourced.
 
   **Topic:** {{{topic}}}
   **Language:** {{{language}}}
@@ -62,16 +61,8 @@ const prompt = ai.definePrompt({
   ---
 
   You must provide the entire response in the specified **{{{language}}}**, organized into the three requested output fields: \`deepTopicResearch\`, \`painPointAnalysis\`, and \`targetAudienceSuggestion\`. Proceed with generating the two parts now.`,
-});
-
-const researchBookTopicFlow = ai.defineFlow(
-  {
-    name: 'researchBookTopicFlow',
-    inputSchema: ResearchBookTopicInputSchema,
-    outputSchema: ResearchBookTopicOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
-    return output!;
-  }
-);
+  });
+  
+  const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
+  return output!;
+}

@@ -8,7 +8,6 @@
  * This file is kept to avoid breaking imports but should be considered deprecated.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateChapterContentInputSchema = z.object({

@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -9,11 +8,12 @@
  * - GenerateBookTitlesOutput - The return type for the generateBookTitles function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { ModelReference } from 'genkit/ai';
+import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const GenerateBookTitlesInputSchema = z.object({
+  userId: z.string().describe('The user ID for API key retrieval.'),
   outline: z.string().describe('The complete and finalized book outline (Master Blueprint).'),
   language: z.string().describe('The language for the titles.'),
   model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
@@ -32,14 +32,13 @@ export type GenerateBookTitlesOutput = z.infer<
 export async function generateBookTitles(
   input: GenerateBookTitlesInput
 ): Promise<GenerateBookTitlesOutput> {
-  return generateBookTitlesFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'generateBookTitlesPrompt',
-  input: {schema: GenerateBookTitlesInputSchema},
-  output: {schema: GenerateBookTitlesOutputSchema},
-  prompt: `You are an expert copywriter specializing in crafting compelling, money-making book titles. Your task is to generate 10-15 catchy and conversion-focused titles based on the provided book outline. The titles should be in the specified language.
+  const { ai, model } = await getUserGenkitInstance(input.userId);
+  
+  const prompt = ai.definePrompt({
+    name: 'generateBookTitlesPrompt',
+    input: {schema: GenerateBookTitlesInputSchema},
+    output: {schema: GenerateBookTitlesOutputSchema},
+    prompt: `You are an expert copywriter specializing in crafting compelling, money-making book titles. Your task is to generate 10-15 catchy and conversion-focused titles based on the provided book outline. The titles should be in the specified language.
 
 **CRITICAL INSTRUCTIONS:**
 -   Analyze the entire outline to understand the book's core themes, target audience, and unique selling points.
@@ -50,16 +49,8 @@ const prompt = ai.definePrompt({
 **Book Outline:**
 {{{outline}}}
 `,
-});
-
-const generateBookTitlesFlow = ai.defineFlow(
-  {
-    name: 'generateBookTitlesFlow',
-    inputSchema: GenerateBookTitlesInputSchema,
-    outputSchema: GenerateBookTitlesOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
-    return output!;
-  }
-);
+  });
+  
+  const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
+  return output!;
+}

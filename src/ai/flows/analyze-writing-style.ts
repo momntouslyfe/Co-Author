@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -12,11 +11,12 @@
  * @exported AnalyzeWritingStyleOutput - The return type for the analyzeWritingStyle function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { ModelReference } from 'genkit/ai';
+import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const AnalyzeWritingStyleInputSchema = z.object({
+    userId: z.string().describe('The user ID for API key retrieval.'),
     fileDataUri: z.string().describe("A writing sample as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'. Supported file types are .txt and .pdf."),
     model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
 });
@@ -28,14 +28,13 @@ const AnalyzeWritingStyleOutputSchema = z.object({
 export type AnalyzeWritingStyleOutput = z.infer<typeof AnalyzeWritingStyleOutputSchema>;
 
 export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Promise<AnalyzeWritingStyleOutput> {
-  return analyzeWritingStyleFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'analyzeWritingStylePrompt',
-  input: {schema: AnalyzeWritingStyleInputSchema},
-  output: {schema: AnalyzeWritingStyleOutputSchema},
-  prompt: `You are an expert writing analyst. Your task is to first extract the text from the following file, and then perform a deep analysis of the extracted writing sample.
+  const { ai, model } = await getUserGenkitInstance(input.userId);
+  
+  const prompt = ai.definePrompt({
+    name: 'analyzeWritingStylePrompt',
+    input: {schema: AnalyzeWritingStyleInputSchema},
+    output: {schema: AnalyzeWritingStyleOutputSchema},
+    prompt: `You are an expert writing analyst. Your task is to first extract the text from the following file, and then perform a deep analysis of the extracted writing sample.
 
   File: {{media url=fileDataUri}}
 
@@ -58,24 +57,16 @@ const prompt = ai.definePrompt({
 
   5.  **Pacing:** Describe the flow of information (e.g., Fast, Slow, Deliberate).
 
-  6.  **Code-Mixing Analysis:** Identify and analyze the use of mixed-language phrases (e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট'). Comment on its frequency, purpose, and the specific languages being mixed. This is a critical component of the author's voice.
+  6.  **Code-Mixing Analysis:** Identify and analyze the use of mixed-language phrases (e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট'). Comment on its frequency, purpose, and the specific languages being mixed. This is a critical component of the author's voice.
 
   7.  **Overall Summary:** Conclude with a brief summary of the author's unique stylistic signature, placing special emphasis on how all the above elements, including code-mixing, create a cohesive voice.
 
   Return only the detailed analysis, following all formatting rules.`,
-});
-
-const analyzeWritingStyleFlow = ai.defineFlow(
-  {
-    name: 'analyzeWritingStyleFlow',
-    inputSchema: AnalyzeWritingStyleInputSchema,
-    outputSchema: AnalyzeWritingStyleOutputSchema,
-  },
-  async ({ fileDataUri, model }) => {
-    const {output} = await prompt(
-        { fileDataUri },
-        { ...(model && { model }) }
-    );
-    return output!;
-  }
-);
+  });
+  
+  const {output} = await prompt(
+    { fileDataUri: input.fileDataUri, userId: input.userId },
+    { ...(input.model && { model: input.model }) }
+  );
+  return output!;
+}

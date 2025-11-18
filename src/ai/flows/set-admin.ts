@@ -9,7 +9,6 @@
  * @exported SetAdminOutput - The return type for the setAdmin function.
  */
 
-import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import * as admin from 'firebase-admin';
 
@@ -44,37 +43,26 @@ export async function setAdmin(input: SetAdminInput): Promise<SetAdminOutput> {
     return { message: 'This operation is only allowed in the development environment.' };
   }
   
-  return setAdminFlow(input);
-}
+  try {
+    // Ensure the admin SDK is initialized before using it.
+    initializeFirebaseAdmin();
+    const auth = admin.auth();
+    const user = await auth.getUserByEmail(input.email);
 
-const setAdminFlow = ai.defineFlow(
-  {
-    name: 'setAdminFlow',
-    inputSchema: SetAdminInputSchema,
-    outputSchema: SetAdminOutputSchema,
-  },
-  async ({ email }) => {
-    try {
-      // Ensure the admin SDK is initialized before using it.
-      initializeFirebaseAdmin();
-      const auth = admin.auth();
-      const user = await auth.getUserByEmail(email);
-
-      if (user.customClaims?.['isAdmin']) {
-        return { message: `${email} is already an admin.` };
-      }
-
-      // Set the custom claim. This marks the user as an admin.
-      await auth.setCustomUserClaims(user.uid, { ...user.customClaims, isAdmin: true });
-      
-      return { message: `Successfully made ${email} an admin.` };
-    } catch (error: any) {
-      console.error('Error in setAdminFlow:', error);
-      // Provide more specific error messages back to the client.
-      if (error.code === 'auth/user-not-found') {
-        return { message: `User with email ${email} not found. Please ensure they have signed up first.` };
-      }
-      return { message: `An unexpected error occurred: ${error.message}` };
+    if (user.customClaims?.['isAdmin']) {
+      return { message: `${input.email} is already an admin.` };
     }
+
+    // Set the custom claim. This marks the user as an admin.
+    await auth.setCustomUserClaims(user.uid, { ...user.customClaims, isAdmin: true });
+    
+    return { message: `Successfully made ${input.email} an admin.` };
+  } catch (error: any) {
+    console.error('Error in setAdminFlow:', error);
+    // Provide more specific error messages back to the client.
+    if (error.code === 'auth/user-not-found') {
+      return { message: `User with email ${input.email} not found. Please ensure they have signed up first.` };
+    }
+    return { message: `An unexpected error occurred: ${error.message}` };
   }
-);
+}

@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -9,11 +8,12 @@
  * @exported RewriteSectionOutput - The return type for the rewriteSection function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { ModelReference } from 'genkit/ai';
+import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const RewriteSectionInputSchema = z.object({
+  userId: z.string().describe('The user ID for API key retrieval.'),
   sectionContent: z.string().describe('The content of the chapter section to be rewritten.'),
   chapterContent: z.string().optional().describe('The full content of the chapter for context, used when rewriting summary sections like Action Steps.'),
   styleProfile: z.string().optional().describe('An optional, pre-existing writing style profile to guide the tone and voice.'),
@@ -30,8 +30,10 @@ const RewriteSectionOutputSchema = z.object({
 });
 export type RewriteSectionOutput = z.infer<typeof RewriteSectionOutputSchema>;
 
-
-export const rewriteSectionPrompt = ai.definePrompt({
+export async function rewriteSection(input: RewriteSectionInput): Promise<RewriteSectionOutput> {
+  const { ai, model } = await getUserGenkitInstance(input.userId);
+  
+  const rewriteSectionPrompt = ai.definePrompt({
     name: 'rewriteSectionPrompt',
     input: { schema: RewriteSectionInputSchema },
     output: { schema: RewriteSectionOutputSchema },
@@ -69,7 +71,7 @@ export const rewriteSectionPrompt = ai.definePrompt({
 4.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs (3-5 sentences), but you MUST VARY their length for good rhythm. Ensure a double newline (a blank line) exists between every paragraph.
 
 {{#if styleProfile}}
-5.  **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
+5.  **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
     ---
     **Writing Style Profile:**
     {{{styleProfile}}}
@@ -83,24 +85,11 @@ export const rewriteSectionPrompt = ai.definePrompt({
 {{{sectionContent}}}
 \`\`\`
 `,
-});
-
-export async function rewriteSection(input: RewriteSectionInput): Promise<RewriteSectionOutput> {
-  return rewriteSectionFlow(input);
-}
-
-
-const rewriteSectionFlow = ai.defineFlow(
-  {
-    name: 'rewriteSectionFlow',
-    inputSchema: RewriteSectionInputSchema,
-    outputSchema: RewriteSectionOutputSchema,
-  },
-  async (input) => {
-    const { output } = await rewriteSectionPrompt(input, { ...(input.model && { model: input.model }) });
-    if (!output) {
-        throw new Error("AI failed to rewrite the section.");
-    }
-    return output;
+  });
+  
+  const { output } = await rewriteSectionPrompt(input, { ...(input.model && { model: input.model }) });
+  if (!output) {
+    throw new Error("AI failed to rewrite the section.");
   }
-);
+  return output;
+}

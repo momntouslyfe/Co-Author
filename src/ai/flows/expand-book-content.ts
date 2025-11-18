@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -12,11 +11,12 @@
  * @exported ExpandBookContentOutput - The return type for the expandBookContent function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { ModelReference } from 'genkit/ai';
+import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const ExpandBookContentInputSchema = z.object({
+  userId: z.string().describe('The user ID for API key retrieval.'),
   bookTitle: z.string().describe("The main title of the book."),
   fullOutline: z.string().describe("The entire book outline for context."),
   chapterTitle: z.string().describe("The title of the current chapter."),
@@ -35,14 +35,13 @@ const ExpandBookContentOutputSchema = z.object({
 export type ExpandBookContentOutput = z.infer<typeof ExpandBookContentOutputSchema>;
 
 export async function expandBookContent(input: ExpandBookContentInput): Promise<ExpandBookContentOutput> {
-  return expandBookContentFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'expandBookContentPrompt',
-  input: {schema: ExpandBookContentInputSchema},
-  output: {schema: ExpandBookContentOutputSchema},
-  prompt: `You are an AI co-author. Your task is to take a given paragraph and generate one or more new paragraphs of content that naturally follow it, based on the user's instruction.
+  const { ai, model } = await getUserGenkitInstance(input.userId);
+  
+  const prompt = ai.definePrompt({
+    name: 'expandBookContentPrompt',
+    input: {schema: ExpandBookContentInputSchema},
+    output: {schema: ExpandBookContentOutputSchema},
+    prompt: `You are an AI co-author. Your task is to take a given paragraph and generate one or more new paragraphs of content that naturally follow it, based on the user's instruction.
 
 **CONTEXT:**
 - Book Title: {{{bookTitle}}}
@@ -62,7 +61,7 @@ const prompt = ai.definePrompt({
 3.  Generate AT LEAST ONE, and preferably two to three, new paragraphs.
 4.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs (3-5 sentences), but you MUST VARY their length for good rhythm. Ensure a double newline (a blank line) exists between every paragraph.
 {{#if styleProfile}}
-5.  **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
+5.  **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
     ---
     **Writing Style Profile:**
     {{{styleProfile}}}
@@ -80,16 +79,8 @@ Just write more. Expand on the ideas presented in the starting paragraph.
 **Starting Paragraph:**
 {{{contentToExpand}}}
 `,
-});
-
-const expandBookContentFlow = ai.defineFlow(
-  {
-    name: 'expandBookContentFlow',
-    inputSchema: ExpandBookContentInputSchema,
-    outputSchema: ExpandBookContentOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
-    return output!;
-  }
-);
+  });
+  
+  const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
+  return output!;
+}

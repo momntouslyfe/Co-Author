@@ -9,11 +9,12 @@
  * - GenerateBookBlueprintOutput - The return type for the generateBookBlueprint function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { ModelReference } from 'genkit/ai';
+import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const GenerateBookBlueprintInputSchema = z.object({
+  userId: z.string().describe('The user ID for API key retrieval.'),
   topic: z.string().describe('The core idea or topic of the book.'),
   language: z.string().describe('The language the book will be written in.'),
   storytellingFramework: z.string().describe('The storytelling framework to structure the book (e.g., The Hero\'s Journey).'),
@@ -37,14 +38,13 @@ export type GenerateBookBlueprintOutput = z.infer<
 export async function generateBookBlueprint(
   input: GenerateBookBlueprintInput
 ): Promise<GenerateBookBlueprintOutput> {
-  return generateBookBlueprintFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'generateBookBlueprintPrompt',
-  input: {schema: GenerateBookBlueprintInputSchema},
-  output: {schema: GenerateBookBlueprintOutputSchema},
-  prompt: `You are an expert book outline generator. Your task is to create THREE (3) distinct, detailed, and professional book outlines based on the user's inputs. Label them "Outline A", "Outline B", and "Outline C".
+  const { ai, model } = await getUserGenkitInstance(input.userId);
+  
+  const prompt = ai.definePrompt({
+    name: 'generateBookBlueprintPrompt',
+    input: {schema: GenerateBookBlueprintInputSchema},
+    output: {schema: GenerateBookBlueprintOutputSchema},
+    prompt: `You are an expert book outline generator. Your task is to create THREE (3) distinct, detailed, and professional book outlines based on the user's inputs. Label them "Outline A", "Outline B", and "Outline C".
 
 **Contextual Information:**
 Core Idea: {{{topic}}}
@@ -99,16 +99,8 @@ Use this style profile to influence the tone of the chapter titles and descripti
 
 Return ONLY the three formatted, concise outlines, following all rules precisely.
 `,
-});
-
-const generateBookBlueprintFlow = ai.defineFlow(
-  {
-    name: 'generateBookBlueprintFlow',
-    inputSchema: GenerateBookBlueprintInputSchema,
-    outputSchema: GenerateBookBlueprintOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
-    return output!;
-  }
-);
+  });
+  
+  const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
+  return output!;
+}

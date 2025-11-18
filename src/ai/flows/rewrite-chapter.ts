@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -13,11 +12,12 @@
  * @exported RewriteChapterOutput - The return type for the rewriteChapter function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { ModelReference } from 'genkit/ai';
+import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const RewriteChapterInputSchema = z.object({
+  userId: z.string().describe('The user ID for API key retrieval.'),
   chapterContent: z.string().describe('The full content of the chapter to be rewritten.'),
   styleProfile: z.string().optional().describe('An optional, pre-existing writing style profile to guide the tone and voice.'),
   researchProfile: z.string().optional().describe('An optional, pre-existing AI research profile providing context on the target audience and their pain points.'),
@@ -33,8 +33,10 @@ const RewriteChapterOutputSchema = z.object({
 });
 export type RewriteChapterOutput = z.infer<typeof RewriteChapterOutputSchema>;
 
-
-const rewriteChapterPrompt = ai.definePrompt({
+export async function rewriteChapter(input: RewriteChapterInput): Promise<RewriteChapterOutput> {
+  const { ai, model } = await getUserGenkitInstance(input.userId);
+  
+  const rewriteChapterPrompt = ai.definePrompt({
     name: 'rewriteChapterPrompt',
     input: { schema: RewriteChapterInputSchema },
     output: { schema: RewriteChapterOutputSchema },
@@ -69,7 +71,7 @@ const rewriteChapterPrompt = ai.definePrompt({
 6.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs (3-5 sentences), but you MUST VARY their length for good rhythm. Ensure a double newline (a blank line) exists between every paragraph and section.
 
 {{#if styleProfile}}
-7.  **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
+7.  **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
     ---
     **Writing Style Profile:**
     {{{styleProfile}}}
@@ -85,29 +87,15 @@ const rewriteChapterPrompt = ai.definePrompt({
 
 Proceed to rewrite the entire chapter now. You must not stop until all sections are complete.
 `,
-});
+  });
+  
+  const { output } = await rewriteChapterPrompt(input, { ...(input.model && { model: input.model }) });
 
-export async function rewriteChapter(input: RewriteChapterInput): Promise<RewriteChapterOutput> {
-  return rewriteChapterFlow(input);
-}
-
-
-const rewriteChapterFlow = ai.defineFlow(
-  {
-    name: 'rewriteChapterFlow',
-    inputSchema: RewriteChapterInputSchema,
-    outputSchema: RewriteChapterOutputSchema,
-  },
-  async (input) => {
-    // Call the single, powerful prompt to rewrite the entire chapter at once.
-    const { output } = await rewriteChapterPrompt(input, { ...(input.model && { model: input.model }) });
-
-    if (!output || !output.rewrittenContent) {
-        throw new Error("AI failed to rewrite the chapter content.");
-    }
-    
-    return {
-        rewrittenContent: output.rewrittenContent,
-    };
+  if (!output || !output.rewrittenContent) {
+    throw new Error("AI failed to rewrite the chapter content.");
   }
-);
+  
+  return {
+    rewrittenContent: output.rewrittenContent,
+  };
+}
