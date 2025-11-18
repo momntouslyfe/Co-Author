@@ -1,13 +1,16 @@
 'use server';
 
 import { encrypt, decrypt } from './encryption';
+import { firebaseConfig } from '@/firebase/config';
 
 function initializeFirebaseAdmin() {
   const admin = require('firebase-admin');
   if (admin.apps.length > 0) {
     return admin.apps[0]!;
   }
-  return admin.initializeApp();
+  return admin.initializeApp({
+    projectId: firebaseConfig.projectId,
+  });
 }
 
 export interface UserApiKeyData {
