@@ -12,11 +12,12 @@
  */
 
 import {z} from 'genkit';
-import { ModelReference } from 'genkit/ai';
+
 import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const ExpandBookContentInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
+  idToken: z.string().describe('Firebase ID token for authentication verification.'),
   bookTitle: z.string().describe("The main title of the book."),
   fullOutline: z.string().describe("The entire book outline for context."),
   chapterTitle: z.string().describe("The title of the current chapter."),
@@ -25,7 +26,7 @@ const ExpandBookContentInputSchema = z.object({
   styleProfile: z.string().optional().describe('The desired writing style for the content.'),
   researchProfile: z.string().optional().describe('An AI research profile with audience context.'),
   storytellingFramework: z.string().optional().describe('The storytelling framework for the book.'),
-  model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
+  model: z.string().optional().describe('The generative AI model to use.'),
 });
 export type ExpandBookContentInput = z.infer<typeof ExpandBookContentInputSchema>;
 
@@ -35,7 +36,7 @@ const ExpandBookContentOutputSchema = z.object({
 export type ExpandBookContentOutput = z.infer<typeof ExpandBookContentOutputSchema>;
 
 export async function expandBookContent(input: ExpandBookContentInput): Promise<ExpandBookContentOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId);
+  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
   
   const prompt = ai.definePrompt({
     name: 'expandBookContentPrompt',

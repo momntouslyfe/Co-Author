@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuthUser } from '@/firebase/auth/use-user';
 import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { getIdToken } from '@/lib/client-auth';
 
 const formSchema = z.object({
   topic: z.string().min(3, 'Topic must be at least 3 characters.'),
@@ -60,17 +61,32 @@ export default function ResearchPage() {
   });
 
   async function onSubmit(values: FormValues) {
+    if (!user) {
+      toast({
+        title: 'Not Authenticated',
+        description: 'Please log in to perform research.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     setResult(null);
     setCurrentValues(values);
     try {
-      const researchData = await researchBookTopic({...values});
+      const idToken = await getIdToken(user);
+      const researchData = await researchBookTopic({
+        userId: user.uid,
+        idToken,
+        ...values
+      });
       setResult(researchData);
     } catch (error) {
       console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
       toast({
         title: 'Error during research',
-        description: 'An unexpected error occurred. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

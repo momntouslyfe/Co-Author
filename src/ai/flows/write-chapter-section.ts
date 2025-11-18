@@ -13,11 +13,12 @@
  */
 
 import {z} from 'genkit';
-import { ModelReference } from 'genkit/ai';
+
 import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const WriteChapterSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
+  idToken: z.string().describe('Firebase ID token for authentication verification.'),
   bookTitle: z.string().describe('The main title of the book.'),
   fullOutline: z.string().describe('The entire book outline for context.'),
   chapterTitle: z.string().describe('The title of the chapter this section belongs to.'),
@@ -27,7 +28,7 @@ const WriteChapterSectionInputSchema = z.object({
   storytellingFramework: z.string().optional().describe('The storytelling framework for the book.'),
   researchProfile: z.string().optional().describe('An AI research profile with audience context.'),
   styleProfile: z.string().optional().describe('An AI style profile to guide the tone and voice.'),
-  model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
+  model: z.string().optional().describe('The generative AI model to use.'),
 });
 export type WriteChapterSectionInput = z.infer<typeof WriteChapterSectionInputSchema>;
 
@@ -37,7 +38,7 @@ const WriteChapterSectionOutputSchema = z.object({
 export type WriteChapterSectionOutput = z.infer<typeof WriteChapterSectionOutputSchema>;
 
 export async function writeChapterSection(input: WriteChapterSectionInput): Promise<WriteChapterSectionOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId);
+  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
   
   let chosenPrompt;
   

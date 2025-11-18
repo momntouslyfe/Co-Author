@@ -48,6 +48,18 @@ service cloud.firestore {
     }
 
     /**
+     * @description CRITICAL SECURITY: User API keys must only be accessible by the owning user.
+     * @path /userApiKeys/{userId}
+     * @allow (get, create, update) Only if the authenticated user's UID matches the document ID (userId).
+     * @deny All other access, including list operations to prevent enumeration.
+     * @principle User API keys contain sensitive encrypted credentials and must be strictly protected.
+     */
+    match /userApiKeys/{userId} {
+      allow get, create, update: if request.auth != null && request.auth.uid == userId;
+      allow list, delete: if false;
+    }
+
+    /**
      * @description Allows public read and write access to coupon data. **THIS IS INSECURE FOR PRODUCTION.**
      * @path /coupons/{couponId}
      * @allow (get, list, create, update, delete) Any unauthenticated user can read and write any coupon document.

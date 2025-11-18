@@ -1,13 +1,14 @@
+/**
+ * DEPRECATED: This file is no longer used.
+ * 
+ * All AI functionality now requires users to provide their own API keys.
+ * Use getUserGenkitInstance() from @/lib/genkit-user instead.
+ * 
+ * DO NOT import from this file or use the global genkit instance.
+ * Any imports from this file will fail.
+ */
 
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/google-genai';
-
-// Initialize the Google AI plugin with the API key from the environment variable.
-const googleAIPlugin = googleAI({
-    apiKey: process.env.GEMINI_API_KEY,
-});
-
-export const ai = genkit({
-  plugins: [googleAIPlugin],
-  model: 'googleai/gemini-2.5-flash',
-});
+throw new Error(
+  'DEPRECATED: The global genkit instance is disabled. ' +
+  'All AI operations must use user-provided API keys via getUserGenkitInstance(userId).'
+);

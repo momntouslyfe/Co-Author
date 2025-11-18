@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { getIdToken } from '@/lib/client-auth';
 
 
 // Allow up to 5 minutes for AI chapter generation
@@ -142,11 +143,15 @@ const ChapterEditor = ({
         : undefined;
 
     const handleExtendClick = async (paragraph: string, sectionIndex: number, paragraphIndex: number, instruction?: string) => {
+        if (!user) return;
         const uniqueIndex = sectionIndex * 1000 + paragraphIndex;
         setIsExtending(uniqueIndex);
         setOpenExtendPopoverIndex(null); // Close the popover
         try {
+            const idToken = await getIdToken(user);
             const result = await expandBookContent({
+                userId: user.uid,
+                idToken,
                 bookTitle: project.title,
                 fullOutline: project.outline || '',
                 chapterTitle: chapterDetails.title,
@@ -195,6 +200,7 @@ const ChapterEditor = ({
     };
 
     const handleRewriteSection = async (sectionIndex: number, sectionContentToRewrite: string, instruction?: string) => {
+        if (!user) return;
         if (!project.language) {
             toast({ title: "Language not set", description: "Project language is required to rewrite.", variant: "destructive" });
             return;
@@ -204,6 +210,7 @@ const ChapterEditor = ({
         setOpenRewritePopoverIndex(null);
     
         try {
+            const idToken = await getIdToken(user);
             const allSections = content.split(/(\$\$[^$]+\$\$)/g);
             const titleToFind = findTitleForSection(allSections, sectionIndex);
 
@@ -221,6 +228,8 @@ const ChapterEditor = ({
                 : undefined;
 
             const result = await rewriteSection({
+                userId: user.uid,
+                idToken,
                 sectionContent: sectionContentToRewrite,
                 chapterContent: needsFullContext ? content : undefined,
                 styleProfile: selectedStyle?.styleAnalysis,
@@ -281,7 +290,10 @@ const ChapterEditor = ({
                 });
             });
 
+            const idToken = await getIdToken(user!);
             const result = await writeChapterSection({
+              userId: user!.uid,
+              idToken,
               bookTitle: project.title,
               fullOutline: project.outline || '',
               chapterTitle: chapterDetails.title,
@@ -619,6 +631,7 @@ export default function ChapterPage() {
   }, [chapterContent, toast]);
 
   const handleRewriteChapter = useCallback(async (instruction?: string) => {
+    if (!user) return;
     if (!chapterContent) {
         toast({ title: "No Content", description: "There is no content to rewrite.", variant: "destructive" });
         return;
@@ -630,6 +643,7 @@ export default function ChapterPage() {
 
     setPageState('rewriting');
     try {
+        const idToken = await getIdToken(user);
         const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
         const stylePrompt = selectedStyle?.styleAnalysis;
 
@@ -639,6 +653,8 @@ export default function ChapterPage() {
             : undefined;
 
         const result = await rewriteChapter({
+            userId: user.uid,
+            idToken,
             chapterContent: chapterContent,
             styleProfile: stylePrompt,
             researchProfile: researchPrompt,

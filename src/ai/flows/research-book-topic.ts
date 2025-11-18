@@ -9,15 +9,16 @@
  */
 
 import {z} from 'genkit';
-import { ModelReference } from 'genkit/ai';
+
 import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const ResearchBookTopicInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
+  idToken: z.string().describe('Firebase ID token for authentication verification.'),
   topic: z.string().describe('The topic to research.'),
   language: z.string().describe('The language for the research results (e.g., "English", "Bangla").'),
   targetMarket: z.string().optional().describe('The specific target market for the research (e.g., "USA", "Global Tech Industry").'),
-  model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
+  model: z.string().optional().describe('The generative AI model to use.'),
 });
 export type ResearchBookTopicInput = z.infer<typeof ResearchBookTopicInputSchema>;
 
@@ -29,7 +30,7 @@ const ResearchBookTopicOutputSchema = z.object({
 export type ResearchBookTopicOutput = z.infer<typeof ResearchBookTopicOutputSchema>;
 
 export async function researchBookTopic(input: ResearchBookTopicInput): Promise<ResearchBookTopicOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId);
+  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
   
   const prompt = ai.definePrompt({
     name: 'researchBookTopicPrompt',

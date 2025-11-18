@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
+import { getIdToken } from '@/lib/client-auth';
 
 
 const formSchema = z.object({
@@ -111,6 +112,15 @@ export default function CoAuthorWorkspacePage() {
   }, [project, form]);
 
   async function onSubmit(values: FormValues) {
+    if (!user) {
+      toast({
+        title: 'Not Authenticated',
+        description: 'Please log in to generate a blueprint.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     setResult(null);
     setSelectedOutline(null);
@@ -125,7 +135,10 @@ export default function CoAuthorWorkspacePage() {
     const styleProfileContent = selectedStyleProfile?.styleAnalysis;
 
     try {
+      const idToken = await getIdToken(user);
       const blueprint = await generateBookBlueprint({
+        userId: user.uid,
+        idToken,
         topic: values.topic,
         language: values.language,
         storytellingFramework: values.storytellingFramework,
@@ -135,9 +148,10 @@ export default function CoAuthorWorkspacePage() {
       setResult(blueprint);
     } catch (error) {
       console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
       toast({
         title: 'Error Generating Blueprint',
-        description: 'An unexpected error occurred. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

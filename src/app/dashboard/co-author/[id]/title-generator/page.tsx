@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateBookTitles } from '@/ai/flows/generate-book-titles';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { getIdToken } from '@/lib/client-auth';
 
 export default function TitleGeneratorPage() {
   const { toast } = useToast();
@@ -35,6 +36,14 @@ export default function TitleGeneratorPage() {
   const { data: project, isLoading: isProjectLoading } = useDoc<Project>(projectDocRef);
 
   const handleGenerateTitles = async () => {
+    if (!user) {
+      toast({
+        title: 'Not Authenticated',
+        description: 'Please log in to generate titles.',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (!project?.outline) {
       toast({
         title: 'Outline Missing',
@@ -54,7 +63,10 @@ export default function TitleGeneratorPage() {
     setLoading(true);
     setTitles([]);
     try {
+      const idToken = await getIdToken(user);
       const result = await generateBookTitles({
+        userId: user.uid,
+        idToken,
         outline: project.outline,
         language: project.language,
       });
@@ -64,9 +76,10 @@ export default function TitleGeneratorPage() {
       }
     } catch (error) {
       console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
       toast({
         title: 'Error Generating Titles',
-        description: 'An unexpected error occurred. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

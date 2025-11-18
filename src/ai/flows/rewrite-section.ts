@@ -9,11 +9,12 @@
  */
 
 import {z} from 'genkit';
-import { ModelReference } from 'genkit/ai';
+
 import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const RewriteSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
+  idToken: z.string().describe('Firebase ID token for authentication verification.'),
   sectionContent: z.string().describe('The content of the chapter section to be rewritten.'),
   chapterContent: z.string().optional().describe('The full content of the chapter for context, used when rewriting summary sections like Action Steps.'),
   styleProfile: z.string().optional().describe('An optional, pre-existing writing style profile to guide the tone and voice.'),
@@ -21,7 +22,7 @@ const RewriteSectionInputSchema = z.object({
   storytellingFramework: z.string().optional().describe('The storytelling framework for the book (e.g., The Hero\'s Journey).'),
   language: z.string().describe('The language the chapter should be rewritten in.'),
   instruction: z.string().optional().describe('A specific instruction from the user on how to rewrite the content.'),
-  model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
+  model: z.string().optional().describe('The generative AI model to use.'),
 });
 export type RewriteSectionInput = z.infer<typeof RewriteSectionInputSchema>;
 
@@ -31,7 +32,7 @@ const RewriteSectionOutputSchema = z.object({
 export type RewriteSectionOutput = z.infer<typeof RewriteSectionOutputSchema>;
 
 export async function rewriteSection(input: RewriteSectionInput): Promise<RewriteSectionOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId);
+  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
   
   const rewriteSectionPrompt = ai.definePrompt({
     name: 'rewriteSectionPrompt',

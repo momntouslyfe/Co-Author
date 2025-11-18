@@ -28,6 +28,7 @@ import { Bot, Loader2, Save, Trash2, Upload } from 'lucide-react';
 import { analyzeWritingStyle } from '@/ai/flows/analyze-writing-style';
 import type { StyleProfile } from '@/lib/definitions';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { getIdToken } from '@/lib/client-auth';
 import { addDoc, collection, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import {
     AlertDialog,
@@ -125,12 +126,26 @@ export default function StyleProfilePage() {
   };
 
   async function onSubmit(values: FormValues) {
+    if (!user) {
+      toast({
+        title: 'Not Authenticated',
+        description: 'Please log in to analyze your writing style.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     setAnalysisResult(null);
     setCurrentProfileName(values.profileName);
 
     try {
-      const result = await analyzeWritingStyle({ fileDataUri: values.fileDataUri });
+      const idToken = await getIdToken(user);
+      const result = await analyzeWritingStyle({ 
+        userId: user.uid,
+        idToken,
+        fileDataUri: values.fileDataUri 
+      });
       setAnalysisResult(result.styleAnalysis);
       toast({
         title: 'Analysis Complete',
@@ -138,9 +153,10 @@ export default function StyleProfilePage() {
       });
     } catch (error) {
       console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred while analyzing your style. Please try again.';
       toast({
         title: 'Analysis Failed',
-        description: 'An error occurred while analyzing your style. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

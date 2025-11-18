@@ -13,18 +13,19 @@
  */
 
 import {z} from 'genkit';
-import { ModelReference } from 'genkit/ai';
+
 import { getUserGenkitInstance } from '@/lib/genkit-user';
 
 const RewriteChapterInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
+  idToken: z.string().describe('Firebase ID token for authentication verification.'),
   chapterContent: z.string().describe('The full content of the chapter to be rewritten.'),
   styleProfile: z.string().optional().describe('An optional, pre-existing writing style profile to guide the tone and voice.'),
   researchProfile: z.string().optional().describe('An optional, pre-existing AI research profile providing context on the target audience and their pain points.'),
   storytellingFramework: z.string().optional().describe('The storytelling framework for the book (e.g., The Hero\'s Journey).'),
   language: z.string().describe('The language the chapter should be rewritten in.'),
   instruction: z.string().optional().describe('A specific instruction from the user on how to rewrite the chapter.'),
-  model: z.custom<ModelReference<any>>().optional().describe('The generative AI model to use.'),
+  model: z.string().optional().describe('The generative AI model to use.'),
 });
 export type RewriteChapterInput = z.infer<typeof RewriteChapterInputSchema>;
 
@@ -34,7 +35,7 @@ const RewriteChapterOutputSchema = z.object({
 export type RewriteChapterOutput = z.infer<typeof RewriteChapterOutputSchema>;
 
 export async function rewriteChapter(input: RewriteChapterInput): Promise<RewriteChapterOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId);
+  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
   
   const rewriteChapterPrompt = ai.definePrompt({
     name: 'rewriteChapterPrompt',
