@@ -1,12 +1,6 @@
 import { headers } from 'next/headers';
 import * as admin from 'firebase-admin';
-
-function initializeFirebaseAdmin() {
-  if (admin.apps.length > 0) {
-    return admin.apps[0]!;
-  }
-  return admin.initializeApp();
-}
+import { initializeFirebaseAdmin } from './firebase-admin';
 
 export async function getAuthenticatedUserId(): Promise<string> {
   const headersList = await headers();

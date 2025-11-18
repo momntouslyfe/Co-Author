@@ -11,6 +11,7 @@
 
 import { z } from 'genkit';
 import * as admin from 'firebase-admin';
+import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
 
 const SetAdminInputSchema = z.object({
   email: z.string().email().describe('The email address of the user to make an admin.'),
@@ -21,19 +22,6 @@ const SetAdminOutputSchema = z.object({
   message: z.string().describe('The result of the operation.'),
 });
 export type SetAdminOutput = z.infer<typeof SetAdminOutputSchema>;
-
-function initializeFirebaseAdmin() {
-  // If the app is already initialized, do nothing.
-  // This is the key to preventing re-initialization errors.
-  if (admin.apps.length > 0) {
-    return;
-  }
-  
-  // This initialization method is robust for both local development (where it uses
-  // GOOGLE_APPLICATION_CREDENTIALS) and deployed Google Cloud environments.
-  // It relies on Application Default Credentials (ADC).
-  admin.initializeApp();
-}
 
 export async function setAdmin(input: SetAdminInput): Promise<SetAdminOutput> {
   // IMPORTANT: In a real-world application, you MUST add robust authentication and

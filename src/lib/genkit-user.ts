@@ -11,13 +11,7 @@ import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 import { getUserApiKey } from './user-api-keys';
 import * as admin from 'firebase-admin';
-
-function initializeFirebaseAdmin() {
-  if (admin.apps.length > 0) {
-    return admin.apps[0]!;
-  }
-  return admin.initializeApp();
-}
+import { initializeFirebaseAdmin } from './firebase-admin';
 
 async function verifyUserIdWithToken(userId: string, idToken: string): Promise<void> {
   if (!idToken || idToken.trim() === '') {

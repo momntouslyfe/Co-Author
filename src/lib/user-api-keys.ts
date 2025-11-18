@@ -1,22 +1,8 @@
 'use server';
 
 import { encrypt, decrypt } from './encryption';
-import { firebaseConfig } from '@/firebase/config';
-
-function initializeFirebaseAdmin() {
-  const admin = require('firebase-admin');
-  if (admin.apps.length > 0) {
-    return admin.apps[0]!;
-  }
-  
-  return admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID || firebaseConfig.projectId,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
+import { initializeFirebaseAdmin } from './firebase-admin';
+import * as admin from 'firebase-admin';
 
 export interface UserApiKeyData {
   encryptedApiKey: string;
@@ -30,7 +16,6 @@ export async function saveUserApiKey(
   apiKey: string,
   preferredModel: string
 ): Promise<void> {
-  const admin = require('firebase-admin');
   initializeFirebaseAdmin();
   const db = admin.firestore();
   const encryptedKey = encrypt(apiKey);
@@ -46,7 +31,6 @@ export async function saveUserApiKey(
 }
 
 export async function getUserApiKey(userId: string): Promise<{ apiKey: string; model: string } | null> {
-  const admin = require('firebase-admin');
   initializeFirebaseAdmin();
   const db = admin.firestore();
   const userKeyRef = db.collection('userApiKeys').doc(userId);
@@ -66,7 +50,6 @@ export async function getUserApiKey(userId: string): Promise<{ apiKey: string; m
 }
 
 export async function hasUserApiKey(userId: string): Promise<boolean> {
-  const admin = require('firebase-admin');
   initializeFirebaseAdmin();
   const db = admin.firestore();
   const userKeyRef = db.collection('userApiKeys').doc(userId);
@@ -76,7 +59,6 @@ export async function hasUserApiKey(userId: string): Promise<boolean> {
 }
 
 export async function getUserPreferredModel(userId: string): Promise<string | null> {
-  const admin = require('firebase-admin');
   initializeFirebaseAdmin();
   const db = admin.firestore();
   const userKeyRef = db.collection('userApiKeys').doc(userId);
