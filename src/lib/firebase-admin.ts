@@ -1,9 +1,18 @@
-import * as admin from 'firebase-admin';
 import { firebaseConfig } from '@/firebase/config';
 
-let adminApp: admin.app.App | null = null;
+let adminApp: any = null;
+let adminModule: any = null;
 
-export function initializeFirebaseAdmin(): admin.app.App {
+function getAdmin() {
+  if (!adminModule) {
+    adminModule = require('firebase-admin');
+  }
+  return adminModule;
+}
+
+export function initializeFirebaseAdmin(): any {
+  const admin = getAdmin();
+  
   if (admin.apps.length > 0) {
     adminApp = admin.app();
     return adminApp;
@@ -38,7 +47,7 @@ export function initializeFirebaseAdmin(): admin.app.App {
   }
 }
 
-export function getFirebaseAdmin(): admin.app.App {
+export function getFirebaseAdmin(): any {
   if (!adminApp) {
     return initializeFirebaseAdmin();
   }

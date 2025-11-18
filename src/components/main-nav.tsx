@@ -14,7 +14,6 @@ import {
   Share2,
   Rss,
   Settings,
-  Shield,
   Archive,
   Palette,
 } from 'lucide-react';
@@ -32,7 +31,6 @@ const navItems = [
 
 const secondaryNavItems = [
     { href: '/dashboard/settings', icon: <Settings />, label: 'Settings' },
-    { href: '/dashboard/admin', icon: <Shield />, label: 'Admin', admin: true },
 ]
 
 export function MainNav() {
@@ -64,23 +62,20 @@ export function MainNav() {
         </SidebarMenuItem>
       ))}
       <div className="flex-grow" />
-      {secondaryNavItems.map((item) => {
-        if (item.admin && !isAdmin && !isDevelopment) return null;
-        return (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
-                tooltip={item.label}
-              >
-                <Link href={item.href}>
-                    {item.icon}
-                    <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-        );
-      })}
+      {secondaryNavItems.map((item) => (
+        <SidebarMenuItem key={item.href}>
+          <SidebarMenuButton
+            asChild
+            isActive={pathname === item.href}
+            tooltip={item.label}
+          >
+            <Link href={item.href}>
+              {item.icon}
+              <span>{item.label}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
     </SidebarMenu>
   );
 }
