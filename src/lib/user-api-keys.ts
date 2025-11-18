@@ -1,8 +1,14 @@
 'use server';
 
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import * as admin from 'firebase-admin';
 import { encrypt, decrypt } from './encryption';
-import { initializeFirebase } from '@/firebase';
+
+function initializeFirebaseAdmin() {
+  if (admin.apps.length > 0) {
+    return admin.apps[0]!;
+  }
+  return admin.initializeApp();
+}
 
 export interface UserApiKeyData {
   encryptedApiKey: string;
@@ -16,25 +22,27 @@ export async function saveUserApiKey(
   apiKey: string,
   preferredModel: string
 ): Promise<void> {
-  const { firestore } = initializeFirebase();
+  initializeFirebaseAdmin();
+  const db = admin.firestore();
   const encryptedKey = encrypt(apiKey);
   
-  const userKeyRef = doc(firestore, 'userApiKeys', userId);
+  const userKeyRef = db.collection('userApiKeys').doc(userId);
   
-  await setDoc(userKeyRef, {
+  await userKeyRef.set({
     encryptedApiKey: encryptedKey,
     preferredModel: preferredModel,
-    updatedAt: serverTimestamp(),
-    createdAt: serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
 }
 
 export async function getUserApiKey(userId: string): Promise<{ apiKey: string; model: string } | null> {
-  const { firestore } = initializeFirebase();
-  const userKeyRef = doc(firestore, 'userApiKeys', userId);
-  const docSnap = await getDoc(userKeyRef);
+  initializeFirebaseAdmin();
+  const db = admin.firestore();
+  const userKeyRef = db.collection('userApiKeys').doc(userId);
+  const docSnap = await userKeyRef.get();
   
-  if (!docSnap.exists()) {
+  if (!docSnap.exists) {
     return null;
   }
   
@@ -48,19 +56,21 @@ export async function getUserApiKey(userId: string): Promise<{ apiKey: string; m
 }
 
 export async function hasUserApiKey(userId: string): Promise<boolean> {
-  const { firestore } = initializeFirebase();
-  const userKeyRef = doc(firestore, 'userApiKeys', userId);
-  const docSnap = await getDoc(userKeyRef);
+  initializeFirebaseAdmin();
+  const db = admin.firestore();
+  const userKeyRef = db.collection('userApiKeys').doc(userId);
+  const docSnap = await userKeyRef.get();
   
-  return docSnap.exists();
+  return docSnap.exists;
 }
 
 export async function getUserPreferredModel(userId: string): Promise<string | null> {
-  const { firestore } = initializeFirebase();
-  const userKeyRef = doc(firestore, 'userApiKeys', userId);
-  const docSnap = await getDoc(userKeyRef);
+  initializeFirebaseAdmin();
+  const db = admin.firestore();
+  const userKeyRef = db.collection('userApiKeys').doc(userId);
+  const docSnap = await userKeyRef.get();
   
-  if (!docSnap.exists()) {
+  if (!docSnap.exists) {
     return null;
   }
   
