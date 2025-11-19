@@ -39,6 +39,17 @@ export type GenerateBookBlueprintOutput = z.infer<
 export async function generateBookBlueprint(
   input: GenerateBookBlueprintInput
 ): Promise<GenerateBookBlueprintOutput> {
+  // Log what the AI flow actually receives
+  console.log('AI Flow - Blueprint Generation Input:', {
+    topic: input.topic,
+    language: input.language,
+    storytellingFramework: input.storytellingFramework,
+    hasResearchProfile: !!input.researchProfile,
+    researchProfileLength: input.researchProfile?.length || 0,
+    hasStyleProfile: !!input.styleProfile,
+    styleProfileLength: input.styleProfile?.length || 0,
+  });
+  
   const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
   
   const prompt = ai.definePrompt({

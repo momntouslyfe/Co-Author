@@ -135,13 +135,31 @@ export default function CoAuthorWorkspacePage() {
     setSelectedOutline(null);
     setIsEditing(false);
 
-    const selectedResearchProfile = researchProfiles?.find(p => p.id === values.researchProfileId);
+    // Filter out "none" values and find the actual profiles
+    const selectedResearchProfile = values.researchProfileId && values.researchProfileId !== 'none'
+      ? researchProfiles?.find(p => p.id === values.researchProfileId)
+      : undefined;
+    
     const researchProfileContent = selectedResearchProfile 
       ? `PAIN POINTS:\n${selectedResearchProfile.painPointAnalysis}\n\nDEEP RESEARCH:\n${selectedResearchProfile.deepTopicResearch}`
       : undefined;
 
-    const selectedStyleProfile = styleProfiles?.find(p => p.id === values.styleProfileId);
+    const selectedStyleProfile = values.styleProfileId && values.styleProfileId !== 'none'
+      ? styleProfiles?.find(p => p.id === values.styleProfileId)
+      : undefined;
+    
     const styleProfileContent = selectedStyleProfile?.styleAnalysis;
+
+    // Log what context is being sent to the AI for debugging
+    console.log('Blueprint Generation Context:', {
+      topic: values.topic,
+      language: values.language,
+      storytellingFramework: values.storytellingFramework,
+      hasResearchProfile: !!researchProfileContent,
+      researchProfileId: selectedResearchProfile?.id,
+      hasStyleProfile: !!styleProfileContent,
+      styleProfileId: selectedStyleProfile?.id,
+    });
 
     try {
       const idToken = await getIdToken(user);
