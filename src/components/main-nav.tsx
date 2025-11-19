@@ -12,7 +12,6 @@ import {
   Search,
   FileText,
   Share2,
-  Rss,
   Settings,
   Archive,
   Palette,
@@ -26,7 +25,6 @@ const navItems = [
   { href: '/dashboard/research/saved', icon: <Archive />, label: 'Saved Research' },
   { href: '/dashboard/style-profile', icon: <Palette />, label: 'Style Profile' },
   { href: '/dashboard/affiliate', icon: <Share2 />, label: 'Affiliate' },
-  { href: '/dashboard/blog', icon: <Rss />, label: 'Blog' },
 ];
 
 const secondaryNavItems = [
