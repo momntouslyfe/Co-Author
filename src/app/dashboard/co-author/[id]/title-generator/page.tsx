@@ -78,6 +78,7 @@ export default function TitleGeneratorPage() {
         idToken,
         outline: project.outline,
         language: project.language,
+        storytellingFramework: project.storytellingFramework,
       });
       setTitles(result.titles);
       if (result.titles.length > 0) {

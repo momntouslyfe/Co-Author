@@ -17,6 +17,7 @@ const GenerateBookTitlesInputSchema = z.object({
   idToken: z.string().describe('Firebase ID token for authentication verification.'),
   outline: z.string().describe('The complete and finalized book outline (Master Blueprint).'),
   language: z.string().describe('The language for the titles.'),
+  storytellingFramework: z.string().optional().describe('The storytelling framework used for the book (e.g., The Hero\'s Journey).'),
   model: z.string().optional().describe('The generative AI model to use.'),
 });
 export type GenerateBookTitlesInput = z.infer<
@@ -42,9 +43,14 @@ export async function generateBookTitles(
       output: {schema: GenerateBookTitlesOutputSchema},
       prompt: `You are an expert copywriter specializing in crafting compelling, money-making book titles. Your task is to generate 10-15 catchy and conversion-focused titles based on the provided book outline. The titles should be in the specified language.
 
+**CONTEXT:**
+-   Language for the book: {{{language}}}
+{{#if storytellingFramework}}-   Storytelling Framework: {{{storytellingFramework}}}{{/if}}
+
 **CRITICAL INSTRUCTIONS:**
 -   Analyze the entire outline to understand the book's core themes, target audience, and unique selling points.
 -   Create titles that are memorable, intriguing, and clearly communicate the book's value.
+{{#if storytellingFramework}}-   Consider the storytelling framework ({{{storytellingFramework}}}) when crafting titles that resonate with the book's structure.{{/if}}
 -   Ensure the titles are in the requested language: {{{language}}}.
 -   Do not add any labels, numbers, or prefixes to the titles. Return only a clean array of title strings.
 
