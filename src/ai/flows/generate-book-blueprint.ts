@@ -42,12 +42,15 @@ export async function generateBookBlueprint(
   // Log what the AI flow actually receives
   console.log('AI Flow - Blueprint Generation Input:', {
     topic: input.topic,
+    topicPreview: input.topic?.substring(0, 100),
     language: input.language,
     storytellingFramework: input.storytellingFramework,
     hasResearchProfile: !!input.researchProfile,
     researchProfileLength: input.researchProfile?.length || 0,
+    researchProfilePreview: input.researchProfile?.substring(0, 200),
     hasStyleProfile: !!input.styleProfile,
     styleProfileLength: input.styleProfile?.length || 0,
+    styleProfilePreview: input.styleProfile?.substring(0, 200),
   });
   
   const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
@@ -57,22 +60,24 @@ export async function generateBookBlueprint(
       name: 'generateBookBlueprintPrompt',
       input: {schema: GenerateBookBlueprintInputSchema},
       output: {schema: GenerateBookBlueprintOutputSchema},
-      prompt: `You are an expert book outline generator. Your task is to create THREE (3) distinct, detailed, and professional book outlines based on the user's inputs. Label them "Outline A", "Outline B", and "Outline C".
+      prompt: `You are an expert book outline generator. Your task is to create THREE (3) distinct, detailed, and professional book outlines based on the user's specific inputs below. Label them "Outline A", "Outline B", and "Outline C".
 
-**Contextual Information:**
-Core Idea: {{{topic}}}
-Language: {{{language}}}
-Storytelling Framework: {{{storytellingFramework}}}
+**CRITICAL: You MUST base your outlines on ALL the contextual information provided below. Do NOT create generic outlines. Use the specific details from the Core Idea, Research Profile, and Style Profile to create highly relevant and personalized book structures.**
+
+**Core Contextual Information:**
+- Core Idea/Topic: {{{topic}}}
+- Language for the book: {{{language}}}
+- Storytelling Framework to follow: {{{storytellingFramework}}}
 
 {{#if researchProfile}}
-**AI Research Profile Context:**
-Use this research to ensure the outline's topics are relevant and valuable.
+**Research Profile Context (MUST USE THIS DATA):**
+The following research provides deep insights into the target audience, their pain points, and relevant topics. Your outlines MUST incorporate these insights and address the pain points identified:
 {{{researchProfile}}}
 {{/if}}
 
 {{#if styleProfile}}
-**AI Writing Style Profile Context:**
-Use this style profile to influence the tone of the chapter titles and descriptions.
+**Writing Style Profile Context (MUST USE THIS GUIDANCE):**
+The following style profile defines the desired writing tone and voice. Your chapter titles and descriptions MUST reflect this style:
 {{{styleProfile}}}
 {{/if}}
 

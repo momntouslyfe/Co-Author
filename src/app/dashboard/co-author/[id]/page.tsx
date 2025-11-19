@@ -168,14 +168,25 @@ export default function CoAuthorWorkspacePage() {
     const styleProfileContent = selectedStyleProfile?.styleAnalysis;
 
     // Log what context is being sent to the AI for debugging
-    console.log('Blueprint Generation Context:', {
+    console.log('Blueprint Generation Context (Client):', {
       topic: values.topic,
+      topicLength: values.topic.length,
       language: values.language,
       storytellingFramework: values.storytellingFramework,
       hasResearchProfile: !!researchProfileContent,
       researchProfileId: selectedResearchProfile?.id,
+      researchProfileLength: researchProfileContent?.length || 0,
       hasStyleProfile: !!styleProfileContent,
       styleProfileId: selectedStyleProfile?.id,
+      styleProfileLength: styleProfileContent?.length || 0,
+    });
+    
+    console.log('Full Context Being Sent:', {
+      topic: values.topic,
+      language: values.language,
+      framework: values.storytellingFramework,
+      researchPreview: researchProfileContent ? researchProfileContent.substring(0, 300) + '...' : 'None',
+      stylePreview: styleProfileContent ? styleProfileContent.substring(0, 300) + '...' : 'None',
     });
 
     try {
