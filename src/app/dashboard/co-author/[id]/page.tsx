@@ -128,14 +128,8 @@ export default function CoAuthorWorkspacePage() {
             researchProfileId: project.researchProfileId || undefined,
             styleProfileId: project.styleProfileId || undefined,
         });
-        
-        if (project.currentStep === 'title' && project.outline) {
-          router.push(`/dashboard/co-author/${projectId}/title-generator`);
-        } else if (project.currentStep === 'chapters' && project.title) {
-          router.push(`/dashboard/co-author/${projectId}/chapters`);
-        }
     }
-  }, [project, form, router, projectId]);
+  }, [project, form]);
 
   async function onSubmit(values: FormValues) {
     if (!user) {
