@@ -147,13 +147,30 @@ Proceed to write the section content now.
     });
   }
   
-  const { output } = await chosenPrompt(input, { ...(input.model && { model: input.model }) });
+  try {
+    const { output } = await chosenPrompt(input, { ...(input.model && { model: input.model }) });
 
-  if (!output || !output.sectionContent) {
-    throw new Error("AI failed to generate the section content.");
+    if (!output || !output.sectionContent) {
+      throw new Error("AI failed to generate the section content.");
+    }
+    
+    return {
+      sectionContent: output.sectionContent,
+    };
+  } catch (error: any) {
+    console.error('Error generating section content:', error);
+    
+    // Provide a more helpful error message
+    if (error.message?.includes('Schema validation failed') || error.message?.includes('must be object')) {
+      throw new Error(
+        'The AI returned an unexpected response format. This could be due to:\n' +
+        '- API rate limits or quota exceeded\n' +
+        '- Network connectivity issues\n' +
+        '- Invalid or expired API key\n\n' +
+        'Please try again in a moment. If the problem persists, check your API key settings.'
+      );
+    }
+    
+    throw error;
   }
-  
-  return {
-    sectionContent: output.sectionContent,
-  };
 }

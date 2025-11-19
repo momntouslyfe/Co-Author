@@ -538,8 +538,8 @@ export default function ChapterPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedStyleId, setSelectedStyleId] = useState<string>('default');
-  const [selectedResearchId, setSelectedResearchId] = useState<string>(project?.researchProfileId || 'none');
-  const [selectedFramework, setSelectedFramework] = useState<string>(project?.storytellingFramework || '');
+  const [selectedResearchId, setSelectedResearchId] = useState<string>('none');
+  const [selectedFramework, setSelectedFramework] = useState<string>('');
   
 
   const styleProfilesQuery = useMemoFirebase(() => {
@@ -578,6 +578,17 @@ export default function ChapterPage() {
 
   useEffect(() => {
     if (project) {
+        // Initialize profiles and framework from project data
+        if (project.styleProfileId) {
+            setSelectedStyleId(project.styleProfileId);
+        }
+        if (project.researchProfileId) {
+            setSelectedResearchId(project.researchProfileId);
+        }
+        if (project.storytellingFramework) {
+            setSelectedFramework(project.storytellingFramework);
+        }
+        
         const savedChapter = project.chapters?.find(c => c.id === chapterId);
         if (savedChapter && savedChapter.content) {
             setChapterContent(savedChapter.content);
