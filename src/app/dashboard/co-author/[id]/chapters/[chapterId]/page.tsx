@@ -95,6 +95,7 @@ const ChapterEditor = ({
     isGenerating,
     setIsGenerating,
     onRewriteChapter,
+    user,
 }: { 
     project: Project, 
     chapterDetails: Chapter, 
@@ -110,6 +111,7 @@ const ChapterEditor = ({
     isGenerating: boolean;
     setIsGenerating: (isGenerating: boolean) => void;
     onRewriteChapter: (instruction?: string) => void;
+    user: any;
 }) => {
     
     const [isExtending, setIsExtending] = useState<number | null>(null);
@@ -336,7 +338,7 @@ const ChapterEditor = ({
       }, [
         project, chapterDetails, subTopics, buildChapterSkeleton, 
         selectedStyle, researchPrompt, selectedFramework, 
-        onContentChange, setIsGenerating, toast
+        onContentChange, setIsGenerating, toast, user
     ]);
 
     const renderSection = (sectionIndex: number, title: string, sectionContent: string) => {
@@ -860,6 +862,7 @@ export default function ChapterPage() {
                           isGenerating={isGenerating}
                           setIsGenerating={setIsGenerating}
                           onRewriteChapter={handleRewriteChapter}
+                          user={user}
                         />
                     </div>
                     <div className="flex justify-end pt-4 border-t">
