@@ -52,11 +52,12 @@ export async function generateBookBlueprint(
   
   const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
   
-  const prompt = ai.definePrompt({
-    name: 'generateBookBlueprintPrompt',
-    input: {schema: GenerateBookBlueprintInputSchema},
-    output: {schema: GenerateBookBlueprintOutputSchema},
-    prompt: `You are an expert book outline generator. Your task is to create THREE (3) distinct, detailed, and professional book outlines based on the user's inputs. Label them "Outline A", "Outline B", and "Outline C".
+  try {
+    const prompt = ai.definePrompt({
+      name: 'generateBookBlueprintPrompt',
+      input: {schema: GenerateBookBlueprintInputSchema},
+      output: {schema: GenerateBookBlueprintOutputSchema},
+      prompt: `You are an expert book outline generator. Your task is to create THREE (3) distinct, detailed, and professional book outlines based on the user's inputs. Label them "Outline A", "Outline B", and "Outline C".
 
 **Contextual Information:**
 Core Idea: {{{topic}}}
@@ -111,8 +112,45 @@ Use this style profile to influence the tone of the chapter titles and descripti
 
 Return ONLY the three formatted, concise outlines, following all rules precisely.
 `,
-  });
-  
-  const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
-  return output!;
+    });
+    
+    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
+    
+    if (!output) {
+      throw new Error('The AI did not return any blueprint data. Please try again.');
+    }
+    
+    return output;
+  } catch (error: any) {
+    console.error('Error in generateBookBlueprint:', error);
+    
+    // Handle specific error types with user-friendly messages
+    if (error.message?.includes('503') || error.message?.includes('overloaded')) {
+      throw new Error(
+        'The AI service is currently overloaded. Please wait a moment and try again. ' +
+        'This is a temporary issue with Google\'s servers.'
+      );
+    }
+    
+    if (error.message?.includes('401') || error.message?.includes('Unauthorized') || error.message?.includes('API key')) {
+      throw new Error(
+        'Your API key appears to be invalid or expired. Please check your API key in Settings and try again.'
+      );
+    }
+    
+    if (error.message?.includes('429') || error.message?.includes('quota')) {
+      throw new Error(
+        'You have exceeded your API quota. Please check your Google AI usage limits or try again later.'
+      );
+    }
+    
+    if (error.message?.includes('Schema validation')) {
+      throw new Error(
+        'The AI returned an unexpected format. This could be due to API rate limits. Please try again in a moment.'
+      );
+    }
+    
+    // Re-throw with original message if we don't have a specific handler
+    throw new Error(error.message || 'An unexpected error occurred while generating blueprints. Please try again.');
+  }
 }

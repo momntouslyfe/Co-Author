@@ -35,11 +35,12 @@ export async function generateBookTitles(
 ): Promise<GenerateBookTitlesOutput> {
   const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
   
-  const prompt = ai.definePrompt({
-    name: 'generateBookTitlesPrompt',
-    input: {schema: GenerateBookTitlesInputSchema},
-    output: {schema: GenerateBookTitlesOutputSchema},
-    prompt: `You are an expert copywriter specializing in crafting compelling, money-making book titles. Your task is to generate 10-15 catchy and conversion-focused titles based on the provided book outline. The titles should be in the specified language.
+  try {
+    const prompt = ai.definePrompt({
+      name: 'generateBookTitlesPrompt',
+      input: {schema: GenerateBookTitlesInputSchema},
+      output: {schema: GenerateBookTitlesOutputSchema},
+      prompt: `You are an expert copywriter specializing in crafting compelling, money-making book titles. Your task is to generate 10-15 catchy and conversion-focused titles based on the provided book outline. The titles should be in the specified language.
 
 **CRITICAL INSTRUCTIONS:**
 -   Analyze the entire outline to understand the book's core themes, target audience, and unique selling points.
@@ -50,8 +51,36 @@ export async function generateBookTitles(
 **Book Outline:**
 {{{outline}}}
 `,
-  });
-  
-  const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
-  return output!;
+    });
+    
+    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
+    
+    if (!output || !output.titles || output.titles.length === 0) {
+      throw new Error('The AI did not return any title suggestions. Please try again.');
+    }
+    
+    return output;
+  } catch (error: any) {
+    console.error('Error in generateBookTitles:', error);
+    
+    if (error.message?.includes('503') || error.message?.includes('overloaded')) {
+      throw new Error(
+        'The AI service is currently overloaded. Please wait a moment and try again.'
+      );
+    }
+    
+    if (error.message?.includes('401') || error.message?.includes('Unauthorized') || error.message?.includes('API key')) {
+      throw new Error(
+        'Your API key appears to be invalid or expired. Please check your API key in Settings.'
+      );
+    }
+    
+    if (error.message?.includes('429') || error.message?.includes('quota')) {
+      throw new Error(
+        'You have exceeded your API quota. Please check your usage limits or try again later.'
+      );
+    }
+    
+    throw new Error(error.message || 'An unexpected error occurred while generating titles. Please try again.');
+  }
 }

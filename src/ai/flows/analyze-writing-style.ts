@@ -31,11 +31,12 @@ export type AnalyzeWritingStyleOutput = z.infer<typeof AnalyzeWritingStyleOutput
 export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Promise<AnalyzeWritingStyleOutput> {
   const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
   
-  const prompt = ai.definePrompt({
-    name: 'analyzeWritingStylePrompt',
-    input: {schema: AnalyzeWritingStyleInputSchema},
-    output: {schema: AnalyzeWritingStyleOutputSchema},
-    prompt: `You are an expert writing analyst. Your task is to first extract the text from the following file, and then perform a deep analysis of the extracted writing sample.
+  try {
+    const prompt = ai.definePrompt({
+      name: 'analyzeWritingStylePrompt',
+      input: {schema: AnalyzeWritingStyleInputSchema},
+      output: {schema: AnalyzeWritingStyleOutputSchema},
+      prompt: `You are an expert writing analyst. Your task is to first extract the text from the following file, and then perform a deep analysis of the extracted writing sample.
 
   File: {{media url=fileDataUri}}
 
@@ -63,10 +64,38 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
   7.  **Overall Summary:** Conclude with a brief summary of the author's unique stylistic signature, placing special emphasis on how all the above elements, including code-mixing, create a cohesive voice.
 
   Return only the detailed analysis, following all formatting rules.`,
-  });
-  
-  const {output} = await prompt(
-    { fileDataUri: input.fileDataUri, userId: input.userId, idToken: input.idToken, ...(input.model && { model: input.model }) },
-  );
-  return output!;
+    });
+    
+    const {output} = await prompt(
+      { fileDataUri: input.fileDataUri, userId: input.userId, idToken: input.idToken, ...(input.model && { model: input.model }) },
+    );
+    
+    if (!output || !output.styleAnalysis) {
+      throw new Error('The AI did not return any style analysis. Please try again.');
+    }
+    
+    return output;
+  } catch (error: any) {
+    console.error('Error in analyzeWritingStyle:', error);
+    
+    if (error.message?.includes('503') || error.message?.includes('overloaded')) {
+      throw new Error(
+        'The AI service is currently overloaded. Please wait a moment and try again.'
+      );
+    }
+    
+    if (error.message?.includes('401') || error.message?.includes('Unauthorized') || error.message?.includes('API key')) {
+      throw new Error(
+        'Your API key appears to be invalid or expired. Please check your API key in Settings.'
+      );
+    }
+    
+    if (error.message?.includes('429') || error.message?.includes('quota')) {
+      throw new Error(
+        'You have exceeded your API quota. Please check your usage limits or try again later.'
+      );
+    }
+    
+    throw new Error(error.message || 'An unexpected error occurred while analyzing writing style. Please try again.');
+  }
 }
