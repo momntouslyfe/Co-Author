@@ -30,11 +30,24 @@ Make sure all your Firebase environment variables are also set on Vercel:
 - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
 - `NEXT_PUBLIC_FIREBASE_APP_ID`
 
-### 3. Firebase Admin SDK
-If using Firebase Admin (server-side):
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_CLIENT_EMAIL`
-- `FIREBASE_PRIVATE_KEY` (make sure to preserve line breaks with `\n`)
+### 3. Firebase Admin SDK (REQUIRED)
+The app REQUIRES Firebase Admin SDK credentials to save user data. You have two options:
+
+**Option A: Use full service account JSON (Recommended):**
+- `FIREBASE_SERVICE_ACCOUNT` = entire service account JSON
+
+**Option B: Use individual credentials:**
+- `FIREBASE_PROJECT_ID` = your Firebase project ID
+- `FIREBASE_CLIENT_EMAIL` = service account email
+- `FIREBASE_PRIVATE_KEY` = service account private key (preserve `\n` line breaks)
+
+**How to get service account credentials:**
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your project
+3. Settings (⚙️) → Project Settings → Service Accounts tab
+4. Click "Generate New Private Key"
+5. Download the JSON file
+6. Copy the entire JSON content to `FIREBASE_SERVICE_ACCOUNT` on Vercel
 
 ## Deployment Steps
 
@@ -50,7 +63,11 @@ If using Firebase Admin (server-side):
 ## Common Issues
 
 ### Issue: Users can't save API keys (500 error)
-**Solution:** ENCRYPTION_KEY is missing. Add it to Vercel environment variables.
+**Cause 1:** ENCRYPTION_KEY is missing
+**Solution:** Add `ENCRYPTION_KEY` to Vercel environment variables
+
+**Cause 2:** Firebase Admin credentials missing (Error: "Firebase: Need to provide options")
+**Solution:** Add `FIREBASE_SERVICE_ACCOUNT` with your service account JSON from Firebase Console
 
 ### Issue: Firebase errors
 **Solution:** Check all Firebase environment variables are set correctly.
