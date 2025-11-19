@@ -72,10 +72,16 @@ Preferred communication style: Simple, everyday language.
 - **Data Models** (from `docs/backend.json`):
   - **User**: Google ID, email, affiliate ID, display name
   - **Coupon**: Discount codes for monetization system
-  - **Project**: Book projects with title, description, chapters, outline, status, research/style profile references
+  - **Project**: Book projects with title, description, chapters, outline, status, currentStep (workflow progress tracking), research/style profile references
   - **ResearchProfile**: AI-generated topic research, pain points, target audience
   - **StyleProfile**: AI-analyzed writing style preferences
   - **Chapter**: Individual chapter content with title, part, and text
+
+**Workflow State Management** (Added: Nov 19, 2025):
+- **currentStep tracking**: Projects now include a `currentStep` field ('blueprint' | 'title' | 'chapters') to track user progress through the book creation workflow
+- **Automatic navigation**: Users are automatically routed to resume at their last workflow position when reopening a project
+- **Regeneration support**: Users can regenerate blueprints and titles multiple times without losing their current progress
+- **State persistence**: Each workflow step (blueprint save, title save) updates the currentStep before allowing navigation to the next stage
 
 **Data Access Patterns**:
 - **Custom hooks**: `useCollection()`, `useDoc()` for real-time Firestore subscriptions
