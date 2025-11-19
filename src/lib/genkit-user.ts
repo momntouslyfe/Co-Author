@@ -47,11 +47,20 @@ export async function getUserGenkitInstance(userId: string, idToken: string) {
   try {
     userKeyData = await getUserApiKey(userId);
   } catch (error: any) {
-    throw new Error(`Failed to retrieve API key: ${error?.message || 'Unknown error'}`);
+    const errorMessage = error?.message || 'Unknown error';
+    
+    if (errorMessage.includes('could not be decrypted')) {
+      throw new Error(
+        'Your saved API key is no longer valid. This can happen after system updates. ' +
+        'Please go to Settings and re-enter your Google AI API key to continue using AI features.'
+      );
+    }
+    
+    throw new Error(`Failed to retrieve API key: ${errorMessage}`);
   }
   
   if (!userKeyData) {
-    throw new Error('API key not configured. Please add your Google AI API key in Settings.');
+    throw new Error('API key not configured. Please add your Google AI API key in Settings to use AI features.');
   }
 
   const googleAIPlugin = googleAI({
