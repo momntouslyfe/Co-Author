@@ -82,18 +82,25 @@ The following style profile defines the desired writing tone and voice. Your cha
 {{/if}}
 
 **CRITICAL INSTRUCTIONS FOR EACH OUTLINE:**
-1.  **Strict Markdown Formatting:** You MUST use Markdown for structuring the outlines.
+1.  **LANGUAGE (NON-NEGOTIABLE):** You MUST write the ENTIRE blueprint in **{{{language}}}**. This includes:
+    *   ALL Part titles
+    *   ALL Chapter titles
+    *   ALL Chapter descriptions
+    *   ALL Sub-topics
+    *   Everything except the labels "Outline A", "Outline B", and "Outline C" must be in {{{language}}}.
+
+2.  **Strict Markdown Formatting:** You MUST use Markdown for structuring the outlines.
     *   **Parts:** Use \`##\` for Part titles (e.g., \`## Part 1: The Setup\`).
     *   **Chapters:** Use \`###\` for Chapter titles (e.g., \`### Chapter 1: The Ordinary World\`).
     *   **Chapter Description:** After the chapter title, provide a single, concise, italicized sentence describing the chapter's purpose (e.g., *This chapter introduces the protagonist's normal life before the adventure begins.*).
     *   **Sub-topics:** Use a hyphen-based unordered list (\`-\`) for the sub-topics within each chapter.
 
-2.  **Structure Requirements:**
+3.  **Structure Requirements:**
     *   Each outline MUST be divided into 3 to 5 "Parts".
     *   Each outline MUST contain a total of 12 to 15 "Chapters".
     *   Each Chapter MUST contain 4 to 6 detailed sub-topics (talking points).
 
-3.  **Content Rules:**
+4.  **Content Rules:**
     *   Be an outliner, not a writer. The output must be a structural outline only.
     *   Sub-topics should be short phrases or questions. Do NOT write paragraphs for sub-topics.
     *   Ensure each of the three outlines (A, B, and C) offers a genuinely different angle or structure for the book.
