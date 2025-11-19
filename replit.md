@@ -58,11 +58,19 @@ Preferred communication style: Simple, everyday language.
 - **Admin system**: Custom claims for role-based access control (admin privileges)
 - **Non-blocking auth**: Special auth patterns to prevent UI blocking during sign-in
 
-**Error Handling Architecture**:
+**Error Handling Architecture** (Updated: Nov 19, 2025):
 - **Global error boundary**: `FirebaseErrorListener` component catches permission errors
 - **Event emitter pattern**: Typed event system (`error-emitter.ts`) for cross-component error propagation
 - **Custom error types**: `FirestorePermissionError` with detailed context for debugging
 - **Non-blocking updates**: Firestore writes execute without awaiting, errors caught and emitted
+- **AI Flow Error Handling**: All AI flows now include comprehensive try-catch blocks that translate technical errors into user-friendly messages:
+  - 503 Service Unavailable → "The AI service is currently overloaded"
+  - 401 Unauthorized → "Your API key appears to be invalid or expired"
+  - 429 Too Many Requests → "You have exceeded your API quota"
+  - Schema validation failures → Helpful retry guidance
+  - Null/empty responses → Clear error messages prompting retry
+- **Context Validation**: Blueprint generation properly filters out "none" values for research/style profiles before sending to AI
+- **Debug Logging**: Server-side logging tracks AI input context (presence/length) without exposing sensitive data
 
 ### Data Storage
 
