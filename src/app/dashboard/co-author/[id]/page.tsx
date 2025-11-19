@@ -70,6 +70,7 @@ export default function CoAuthorWorkspacePage() {
   const [result, setResult] = useState<GenerateBookBlueprintOutput | null>(null);
   const [selectedOutline, setSelectedOutline] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
 
   const projectDocRef = useMemoFirebase(() => {
@@ -214,8 +215,8 @@ export default function CoAuthorWorkspacePage() {
     return notFound();
   }
   
-  const showBlueprintGenerator = !project?.outline && !isEditing;
-  const showMasterBlueprint = !!project?.outline && !isEditing;
+  const showBlueprintGenerator = (!project?.outline || isRegenerating) && !isEditing;
+  const showMasterBlueprint = !!project?.outline && !isEditing && !isRegenerating;
   const showEditor = isEditing;
 
 
@@ -437,12 +438,14 @@ export default function CoAuthorWorkspacePage() {
                         setResult(null);
                         setSelectedOutline(null);
                         setIsEditing(false);
+                        setIsRegenerating(true);
                     }}>
                         Regenerate Blueprint
                     </Button>
                     <Button variant="outline" onClick={() => {
                         setSelectedOutline(project?.outline || '');
                         setIsEditing(true);
+                        setIsRegenerating(false);
                     }}>
                         Edit Blueprint
                     </Button>

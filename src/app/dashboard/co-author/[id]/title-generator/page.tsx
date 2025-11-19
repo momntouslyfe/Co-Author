@@ -26,6 +26,7 @@ export default function TitleGeneratorPage() {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [keeping, setKeeping] = useState(false);
   const [titles, setTitles] = useState<string[]>([]);
   const [selectedTitle, setSelectedTitle] = useState<string>('');
 
@@ -128,6 +129,27 @@ export default function TitleGeneratorPage() {
       setSaving(false);
     }
   };
+
+  const handleKeepCurrentTitle = async () => {
+    if (!projectDocRef) return;
+    setKeeping(true);
+    try {
+      await updateDoc(projectDocRef, {
+        currentStep: 'chapters',
+        lastUpdated: serverTimestamp(),
+      });
+      router.push(`/dashboard/co-author/${projectId}/chapters`);
+    } catch (error) {
+      console.error('Error updating step:', error);
+      toast({
+        title: 'Error',
+        description: 'Could not proceed to the next step.',
+        variant: 'destructive',
+      });
+    } finally {
+      setKeeping(false);
+    }
+  };
   
   if (isProjectLoading) {
     return (
@@ -179,9 +201,17 @@ export default function TitleGeneratorPage() {
               variant="outline" 
               size="lg"
               className="ml-4"
-              onClick={() => router.push(`/dashboard/co-author/${projectId}/chapters`)}
+              disabled={keeping}
+              onClick={handleKeepCurrentTitle}
             >
-              Keep Current & Continue
+              {keeping ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Continuing...
+                </>
+              ) : (
+                'Keep Current & Continue'
+              )}
             </Button>
           )}
         </CardContent>
