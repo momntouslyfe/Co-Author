@@ -92,6 +92,8 @@ export default function CoAuthorWorkspacePage() {
   const { data: researchProfiles } = useCollection<ResearchProfile>(researchProfilesQuery);
   const { data: styleProfiles } = useCollection<StyleProfile>(styleProfilesQuery);
 
+  const router = useRouter();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -108,8 +110,14 @@ export default function CoAuthorWorkspacePage() {
             researchProfileId: project.researchProfileId || undefined,
             styleProfileId: project.styleProfileId || undefined,
         });
+        
+        if (project.currentStep === 'title' && project.outline) {
+          router.push(`/dashboard/co-author/${projectId}/title-generator`);
+        } else if (project.currentStep === 'chapters' && project.title) {
+          router.push(`/dashboard/co-author/${projectId}/chapters`);
+        }
     }
-  }, [project, form]);
+  }, [project, form, router, projectId]);
 
   async function onSubmit(values: FormValues) {
     if (!user) {
@@ -180,10 +188,12 @@ export default function CoAuthorWorkspacePage() {
         storytellingFramework: currentFormValues.storytellingFramework,
         researchProfileId: currentFormValues.researchProfileId,
         styleProfileId: currentFormValues.styleProfileId,
+        currentStep: 'title',
         lastUpdated: serverTimestamp(),
       });
       toast({ title: 'Success', description: 'Master Blueprint saved successfully.' });
-      setIsEditing(false); // Lock it in
+      setIsEditing(false);
+      setResult(null);
     } catch (error) {
       console.error(error);
       toast({ title: 'Error Saving', description: 'Could not save the blueprint.', variant: 'destructive'});
@@ -423,6 +433,13 @@ export default function CoAuthorWorkspacePage() {
                 <CardDescription>Your book's structure is locked in. You can now proceed to title generation and chapter writing.</CardDescription>
                 </div>
                 <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => {
+                        setResult(null);
+                        setSelectedOutline(null);
+                        setIsEditing(false);
+                    }}>
+                        Regenerate Blueprint
+                    </Button>
                     <Button variant="outline" onClick={() => {
                         setSelectedOutline(project?.outline || '');
                         setIsEditing(true);

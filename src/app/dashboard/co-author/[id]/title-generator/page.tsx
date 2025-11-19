@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
-import { Loader2, Sparkles, Save, Lightbulb } from 'lucide-react';
+import { Loader2, Sparkles, Save, Lightbulb, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ import { generateBookTitles } from '@/ai/flows/generate-book-titles';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { getIdToken } from '@/lib/client-auth';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function TitleGeneratorPage() {
   const { toast } = useToast();
@@ -34,6 +35,12 @@ export default function TitleGeneratorPage() {
   }, [user, firestore, projectId]);
 
   const { data: project, isLoading: isProjectLoading } = useDoc<Project>(projectDocRef);
+
+  useEffect(() => {
+    if (project?.title && titles.length === 0) {
+      setSelectedTitle(project.title);
+    }
+  }, [project?.title, titles.length]);
 
   const handleGenerateTitles = async () => {
     if (!user) {
@@ -101,6 +108,7 @@ export default function TitleGeneratorPage() {
       if (!projectDocRef) throw new Error('Project reference not found.');
       await updateDoc(projectDocRef, {
         title: selectedTitle,
+        currentStep: 'chapters',
         lastUpdated: serverTimestamp(),
       });
       toast({
@@ -135,11 +143,21 @@ export default function TitleGeneratorPage() {
 
   return (
     <div className="space-y-8">
+      {project?.title && titles.length === 0 && (
+        <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertDescription className="text-green-600 dark:text-green-400">
+            <strong>Current Title:</strong> {project.title}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="font-headline text-3xl">Step 2: Generate Your Book Title</CardTitle>
           <CardDescription>
             Let our AI craft the perfect, money-making title for your book based on your finalized blueprint.
+            {project?.title && ' You can generate new titles or keep your current one.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center">
@@ -152,10 +170,20 @@ export default function TitleGeneratorPage() {
             ) : (
               <>
                 <Sparkles className="mr-2 h-4 w-4" />
-                Generate Titles
+                {project?.title ? 'Regenerate Titles' : 'Generate Titles'}
               </>
             )}
           </Button>
+          {project?.title && titles.length === 0 && (
+            <Button 
+              variant="outline" 
+              size="lg"
+              className="ml-4"
+              onClick={() => router.push(`/dashboard/co-author/${projectId}/chapters`)}
+            >
+              Keep Current & Continue
+            </Button>
+          )}
         </CardContent>
       </Card>
 

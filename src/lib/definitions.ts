@@ -29,6 +29,7 @@ export type Project = {
   lastUpdated: string;
   researchProfileId?: string;
   styleProfileId?: string;
+  currentStep?: 'blueprint' | 'title' | 'chapters';
 };
 
 export type ResearchProfile = {
