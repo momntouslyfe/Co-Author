@@ -16,6 +16,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { WorkflowNavigation } from '@/components/workflow-navigation';
 
 // Helper function to parse the Markdown outline into a structured format
 const parseOutline = (outline: string): { parts: { title: string; chapters: Chapter[] }[] } => {
@@ -83,6 +84,13 @@ export default function ChaptersPage() {
 
   return (
     <div className="space-y-8">
+      <WorkflowNavigation
+        projectId={projectId}
+        currentStep="chapters"
+        projectHasOutline={!!project?.outline}
+        projectHasTitle={!!project?.title}
+      />
+      
       <Card>
         <CardHeader>
           <CardTitle className="font-headline text-3xl">Step 3: Write Your Book</CardTitle>

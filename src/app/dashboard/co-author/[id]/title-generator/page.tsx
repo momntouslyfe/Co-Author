@@ -15,6 +15,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { getIdToken } from '@/lib/client-auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { WorkflowNavigation } from '@/components/workflow-navigation';
 
 export default function TitleGeneratorPage() {
   const { toast } = useToast();
@@ -165,6 +166,13 @@ export default function TitleGeneratorPage() {
 
   return (
     <div className="space-y-8">
+      <WorkflowNavigation
+        projectId={projectId}
+        currentStep="title"
+        projectHasOutline={!!project?.outline}
+        projectHasTitle={!!project?.title}
+      />
+      
       {project?.title && titles.length === 0 && (
         <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
           <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />

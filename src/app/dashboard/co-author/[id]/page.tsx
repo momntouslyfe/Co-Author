@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { generateBookBlueprint } from '@/ai/flows/generate-book-blueprint';
 import type { GenerateBookBlueprintOutput } from '@/ai/flows/generate-book-blueprint';
-import { Bot, Loader2, Save } from 'lucide-react';
+import { Bot, Loader2, Save, Info } from 'lucide-react';
 import { useAuthUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import type { ResearchProfile, StyleProfile, Project } from '@/lib/definitions';
 import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -29,6 +29,8 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { getIdToken } from '@/lib/client-auth';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { WorkflowNavigation } from '@/components/workflow-navigation';
 
 
 const formSchema = z.object({
@@ -101,6 +103,21 @@ export default function CoAuthorWorkspacePage() {
       topic: '',
     },
   });
+  
+  const selectedResearchProfileId = form.watch('researchProfileId');
+  const selectedStyleProfileId = form.watch('styleProfileId');
+  
+  const selectedResearchProfile = useMemo(() => {
+    return selectedResearchProfileId && selectedResearchProfileId !== 'none'
+      ? researchProfiles?.find(p => p.id === selectedResearchProfileId)
+      : undefined;
+  }, [selectedResearchProfileId, researchProfiles]);
+  
+  const selectedStyleProfile = useMemo(() => {
+    return selectedStyleProfileId && selectedStyleProfileId !== 'none'
+      ? styleProfiles?.find(p => p.id === selectedStyleProfileId)
+      : undefined;
+  }, [selectedStyleProfileId, styleProfiles]);
   
   useEffect(() => {
     if (project) {
@@ -213,6 +230,7 @@ export default function CoAuthorWorkspacePage() {
       toast({ title: 'Success', description: 'Master Blueprint saved successfully.' });
       setIsEditing(false);
       setResult(null);
+      setIsRegenerating(false);
     } catch (error) {
       console.error(error);
       toast({ title: 'Error Saving', description: 'Could not save the blueprint.', variant: 'destructive'});
@@ -240,6 +258,13 @@ export default function CoAuthorWorkspacePage() {
 
   return (
     <div className="space-y-8">
+      <WorkflowNavigation
+        projectId={projectId}
+        currentStep="blueprint"
+        projectHasOutline={!!project?.outline}
+        projectHasTitle={!!project?.title}
+      />
+      
       {(showBlueprintGenerator && !result) && (
         <div className="space-y-6">
             <header>
@@ -368,6 +393,21 @@ export default function CoAuthorWorkspacePage() {
                     )}
                     />
                 </div>
+                
+                {(selectedResearchProfile || selectedStyleProfile) && (
+                  <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                    <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <AlertDescription className="text-blue-600 dark:text-blue-400">
+                      <strong>AI Context Active:</strong> {' '}
+                      {selectedResearchProfile && 
+                        `Research profile "${selectedResearchProfile.topic}" will provide audience insights and topic research.`}
+                      {selectedResearchProfile && selectedStyleProfile && ' '}
+                      {selectedStyleProfile && 
+                        `Style profile "${selectedStyleProfile.name}" will guide the writing tone.`}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 <Button type="submit" disabled={loading} size="lg">
                 {loading ? (
                     <>
@@ -392,9 +432,21 @@ export default function CoAuthorWorkspacePage() {
 
       {result && !isEditing && (
         <Card>
-            <CardHeader>
-                <CardTitle className="font-headline">Select Your Blueprint</CardTitle>
-                <CardDescription>Review the three AI-generated outlines below. Choose the one that best fits your vision to proceed.</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                    <CardTitle className="font-headline">Select Your Blueprint</CardTitle>
+                    <CardDescription>Review the three AI-generated outlines below. Choose the one that best fits your vision to proceed.</CardDescription>
+                </div>
+                <Button 
+                    variant="outline" 
+                    onClick={() => {
+                        setResult(null);
+                        setSelectedOutline(null);
+                        setIsEditing(false);
+                    }}
+                >
+                    Try Again
+                </Button>
             </CardHeader>
             <CardContent>
                 <Tabs defaultValue="outlineA" className="w-full">
