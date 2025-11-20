@@ -50,7 +50,7 @@ export async function expandBookContent(input: ExpandBookContentInput): Promise<
 - Full Outline: {{{fullOutline}}}
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
 {{#if researchProfile}}
-- **Audience Research Profile (CRITICAL):** You MUST use this research to inform your writing.
+- **RESEARCH PROFILE (Optional Enhancement):** Use this research to enhance your expanded content when relevant. If the research contains data, studies, or insights that support the points you're expanding on, incorporate them naturally. Only use information explicitly present in the research.
   ---
   {{{researchProfile}}}
   ---

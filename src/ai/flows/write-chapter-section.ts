@@ -143,7 +143,22 @@ Proceed to write the "Coming Up Next" section now.
   **REMEMBER:** The examples show HOW to write. Copy the STYLE and PATTERNS, not the specific content or topics.
 {{/if}}
 {{#if researchProfile}}
-- **Audience Research Profile (CRITICAL):** You MUST use this research to inform your writing.
+- **RESEARCH PROFILE (Use When Relevant):** Below is research containing insights, data, case studies, and expert perspectives about the topic. Use this research intelligently to enhance your writing's credibility and impact.
+  
+  **HOW TO USE THIS RESEARCH:**
+  - **When the research contains specific data/statistics:** Incorporate relevant numbers and percentages to support your points
+  - **When the research mentions studies/findings:** Reference them naturally (e.g., "Research indicates...", "Studies have shown...")
+  - **When the research includes case studies:** Weave in relevant examples to illustrate concepts
+  - **When the research has expert insights:** Include perspectives that add authority to your points
+  - **When the research mentions trends:** Reference current developments to demonstrate relevance
+  
+  **IMPORTANT GUIDELINES:**
+  - Only use data/statistics that are explicitly present in the research - never fabricate numbers
+  - If the research lacks specific data for a point you're making, write from general knowledge without inventing citations
+  - Weave research insights naturally into your narrative rather than forcing them into every paragraph
+  - The goal is credibility and insight, not mandatory citation - write naturally while being evidence-aware
+  
+  **RESEARCH PROFILE:**
   ---
   {{{researchProfile}}}
   ---

@@ -18,6 +18,31 @@ The platform uses Google's Gemini AI via Genkit for all AI operations, Firebase 
 - New prompt instructions guide the AI to study the examples and mimic the demonstrated patterns while writing new content
 - AI now receives clear guidance to match all characteristics: tone, voice, sentence structure, vocabulary, code-mixing patterns, and distinctive techniques
 
+**November 20, 2025 - Deep Research & Evidence-Based Writing Enhancement**:
+- **Enhanced Research Flow** - Topic research now produces comprehensive, data-driven research with:
+  - Concrete statistics (numbers, percentages, growth rates, market sizes)
+  - Research findings from studies and surveys with dates
+  - Real-world case studies with measurable outcomes
+  - Expert insights and quotes from recognized authorities
+  - Current trends with supporting data and future projections
+  - Comparative data and analysis
+- **Structured Research Output** - Research now organized into dedicated sections:
+  - Historical Context with key milestones and impact metrics
+  - Current Landscape with recent statistics (last 2-3 years)
+  - Core Concepts backed by research
+  - Key Data & Statistics section with most important numbers
+  - Expert Perspectives from thought leaders
+  - Trends & Future Outlook with evidence
+  - Success Stories & Case Studies with results
+- **Evidence-Based Chapter Writing** - All writing flows now emphasize incorporating research data:
+  - Chapter sections must include relevant statistics and data points
+  - Reference studies and research findings to support claims
+  - Incorporate case studies and real-world examples
+  - Quote expert insights from the research
+  - Show current trends and projections
+  - Transform generic advice into evidence-based guidance
+- **Result**: Books written with Co-Author Pro now feel authoritative, well-researched, and credible to readers
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

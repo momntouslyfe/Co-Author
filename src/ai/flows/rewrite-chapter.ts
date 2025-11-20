@@ -46,7 +46,7 @@ export async function rewriteChapter(input: RewriteChapterInput): Promise<Rewrit
 **CONTEXT:**
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
 {{#if researchProfile}}
-- Research Profile: Tailor the content to the audience's pain points and interests based on this research:
+- **RESEARCH PROFILE (Optional Enhancement):** Use this research to enhance credibility when relevant. If the research contains data, studies, or insights that strengthen specific points in the rewritten content, incorporate them naturally. Don't force research citations if they don't fit the rewrite context or if the research lacks relevant data.
   ---
   {{{researchProfile}}}
   ---

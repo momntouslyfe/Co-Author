@@ -48,9 +48,33 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
   ### Part 1: Comprehensive Topic Library
 
   **CRITICAL INSTRUCTIONS:**
-  1.  **Go Deep:** Your research must be thorough. Cover the topic's history, key concepts, current state, and future trends. Include relevant data, statistics, and insights from leading experts.
-  2.  **Structure and Formatting (NON-NEGOTIABLE):** Present all information in a highly structured, readable format using Markdown. Use clear headings, subheadings, bullet points, and bold text. This is a structured library, not an essay.
-  3.  **References (NON-NEGOTIABLE):** At the end of this section, you MUST include a "References" heading followed by a bulleted list of all the source URLs you used for your research.
+  1.  **Go Deep and Be Data-Driven (When Available):** Your research should be exceptionally thorough and evidence-based. For each major section, include as much of the following as you have reliable knowledge about:
+      - **Statistics & Data:** Specific numbers, percentages, growth rates, market sizes (include approximate timeframes when citing data)
+      - **Research Findings:** Studies, surveys, and research results (note: if you don't have specific study names or dates, provide general insights)
+      - **Case Studies:** Real-world examples of success/failure with outcomes (can be well-known examples even if you don't have exact metrics)
+      - **Expert Insights:** Perspectives from recognized authorities or common expert consensus
+      - **Trends & Projections:** Current trends with supporting observations and future forecasts
+      - **Comparative Data:** Comparisons between approaches, methods, or timeframes
+      
+      **IMPORTANT - Accuracy Over Fabrication:** If you don't have specific statistics or cannot recall exact numbers, provide conceptual information instead of inventing data. Use qualifiers like "Studies suggest...", "Research indicates...", "According to industry analysis..." rather than citing non-existent specific studies with fabricated numbers.
+      
+  2.  **Structure Your Research:** Organize information under clear sections:
+      - **Historical Context:** Key milestones with dates and impact metrics
+      - **Current Landscape:** Present state with current statistics (within last 2-3 years)
+      - **Core Concepts:** Essential principles backed by research
+      - **Key Data & Statistics:** A dedicated section with the most important numbers
+      - **Expert Perspectives:** Insights from thought leaders and researchers
+      - **Trends & Future Outlook:** Emerging developments with supporting evidence
+      - **Success Stories & Case Studies:** Real examples with measurable results
+      
+  3.  **Formatting (NON-NEGOTIABLE):** Present all information in a highly structured, readable format using Markdown:
+      - Use clear headings (##) and subheadings (###)
+      - Use bullet points for lists
+      - Use **bold** for key terms and statistics
+      - Use > blockquotes for expert quotes
+      - Use tables for comparative data when appropriate
+      
+  4.  **References & Sources:** At the end of this section, include a "References & Notes" heading. If you can recall specific, verifiable source URLs or well-known publications that informed your research, list them. If you cannot recall specific URLs or sources, instead provide a note explaining the general knowledge base (e.g., "Based on general industry knowledge and established research in this field" or "Information synthesized from widely recognized sources in [field]"). **Never invent or fabricate URLs, publication names, or study titles.**
 
   ---
 
