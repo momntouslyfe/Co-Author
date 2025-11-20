@@ -121,11 +121,26 @@ Proceed to write the "Coming Up Next" section now.
   ---
 {{/if}}
 {{#if styleProfile}}
-- **ADHERE TO WRITING STYLE (STYLE ONLY - NOT CONTENT):** You MUST adopt the following writing style characteristics. This profile describes HOW to write (tone, voice, vocabulary level, sentence structure, code-mixing patterns, etc.), NOT WHAT to write about. Apply these stylistic characteristics to the current book topic. DO NOT use any topics or content examples from the style profile itself.
+- **WRITING STYLE GUIDE (CRITICAL - MUST FOLLOW):** Below is a detailed analysis of the author's unique writing style, including concrete examples that demonstrate each characteristic. Your task is to MIMIC these stylistic patterns while writing about the current book topic.
+  
+  **HOW TO USE THIS STYLE GUIDE:**
+  1. **Study the examples** - Each example shows a specific stylistic pattern (tone, voice, sentence structure, vocabulary, code-mixing, etc.)
+  2. **Apply the PATTERNS** - Replicate the STYLE demonstrated by these examples (e.g., if examples show conversational tone with rhetorical questions, use that style)
+  3. **Adapt to NEW content** - Apply these patterns to the current book topic, NOT to the topics mentioned in the examples
+  4. **Match ALL characteristics** - Pay close attention to:
+     - Tone and emotional quality
+     - Voice and perspective (first-person, second-person, etc.)
+     - Sentence structure and rhythm patterns
+     - Vocabulary level and word choice style
+     - Code-mixing patterns (if applicable - mix languages in the same way as shown)
+     - Distinctive techniques (rhetorical questions, metaphors, direct address, etc.)
+  
+  **STYLE PROFILE WITH EXAMPLES:**
   ---
-  **Writing Style Profile:**
   {{{styleProfile}}}
   ---
+  
+  **REMEMBER:** The examples show HOW to write. Copy the STYLE and PATTERNS, not the specific content or topics.
 {{/if}}
 {{#if researchProfile}}
 - **Audience Research Profile (CRITICAL):** You MUST use this research to inform your writing.

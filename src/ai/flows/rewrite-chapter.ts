@@ -72,11 +72,19 @@ export async function rewriteChapter(input: RewriteChapterInput): Promise<Rewrit
 6.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs (3-5 sentences), but you MUST VARY their length for good rhythm. Ensure a double newline (a blank line) exists between every paragraph and section.
 
 {{#if styleProfile}}
-7.  **ADHERE TO WRITING STYLE (STYLE ONLY - NOT CONTENT):** You MUST adopt the following writing style characteristics. This profile describes HOW to write (tone, voice, vocabulary level, sentence structure, code-mixing patterns, etc.), NOT WHAT to write about. Apply these stylistic characteristics to the current chapter content being rewritten. DO NOT use any topics or content examples from the style profile itself.
+7.  **WRITING STYLE GUIDE (CRITICAL - MUST FOLLOW):** Below is a detailed analysis of the author's unique writing style, including concrete examples that demonstrate each characteristic. Your task is to MIMIC these stylistic patterns while rewriting the chapter.
+    
+    **HOW TO USE THIS STYLE GUIDE:**
+    - **Study the examples** - Each example shows a specific stylistic pattern (tone, voice, sentence structure, vocabulary, code-mixing, etc.)
+    - **Apply the PATTERNS** - Replicate the STYLE demonstrated by these examples
+    - **Match ALL characteristics** - Pay close attention to tone, voice, sentence structure, vocabulary level, code-mixing patterns (if applicable), and distinctive techniques
+    
+    **STYLE PROFILE WITH EXAMPLES:**
     ---
-    **Writing Style Profile:**
     {{{styleProfile}}}
     ---
+    
+    **REMEMBER:** The examples show HOW to write. Copy the STYLE and PATTERNS, not the specific content or topics.
 {{/if}}
 
 8.  **RETURN ONLY THE REWRITTEN CONTENT:** Your output should be only the rewritten chapter text. Do not add any extra commentary or apologies.

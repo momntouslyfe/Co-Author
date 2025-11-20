@@ -8,12 +8,15 @@ The platform uses Google's Gemini AI via Genkit for all AI operations, Firebase 
 
 ## Recent Changes
 
-**November 20, 2025 - Writing Style Analysis Enhancement**:
+**November 20, 2025 - Writing Style Analysis & Application Enhancement**:
 - Updated writing style analysis to include concrete examples from the original sample text
 - Analysis now provides 2-4 specific quotes demonstrating each stylistic element
 - For multilingual texts, examples include both original phrases and translations
 - Enhanced code-mixing analysis with detailed examples of language patterns
 - Format aligns with user expectations: shows actual text snippets that demonstrate tone, voice, vocabulary, etc.
+- **FIXED: Style Application in Chapter Writing** - Updated all AI flows (write-chapter-section, rewrite-section, rewrite-chapter, expand-book-content) to properly utilize the example-based style profiles
+- New prompt instructions guide the AI to study the examples and mimic the demonstrated patterns while writing new content
+- AI now receives clear guidance to match all characteristics: tone, voice, sentence structure, vocabulary, code-mixing patterns, and distinctive techniques
 
 ## User Preferences
 
