@@ -58,7 +58,7 @@ Preferred communication style: Simple, everyday language.
 - **Admin system**: Custom claims for role-based access control (admin privileges)
 - **Non-blocking auth**: Special auth patterns to prevent UI blocking during sign-in
 
-**Error Handling Architecture** (Updated: Nov 19, 2025):
+**Error Handling Architecture** (Updated: Nov 20, 2025):
 - **Global error boundary**: `FirebaseErrorListener` component catches permission errors
 - **Event emitter pattern**: Typed event system (`error-emitter.ts`) for cross-component error propagation
 - **Custom error types**: `FirestorePermissionError` with detailed context for debugging
@@ -69,6 +69,11 @@ Preferred communication style: Simple, everyday language.
   - 429 Too Many Requests → "You have exceeded your API quota"
   - Schema validation failures → Helpful retry guidance
   - Null/empty responses → Clear error messages prompting retry
+- **Retry System** (`src/lib/retry-utils.ts`): Exponential backoff retry logic for AI operations
+  - Automatically retries transient failures (network errors, timeouts, rate limits, server overload)
+  - Configurable retry attempts (default: 4 retries) with smart delays (2s to 60s)
+  - Used by all chapter section generation flows
+  - Chapter-level retry: Failed sections automatically retried 2 additional times with progress feedback
 - **Context Validation**: Blueprint generation properly filters out "none" values for research/style profiles before sending to AI
 - **Debug Logging**: Server-side logging tracks AI input context (presence/length) without exposing sensitive data
 
