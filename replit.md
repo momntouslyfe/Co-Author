@@ -8,20 +8,31 @@ The platform uses Google's Gemini AI via Genkit for all AI operations, Firebase 
 
 ## Recent Changes
 
+**November 20, 2025 - Code-Mixing & Multilingual Writing Style Fix**:
+- **CRITICAL FIX: Language Instruction Conflicts** - Resolved conflict between strict language requirements and code-mixing in style profiles
+- Updated all AI writing flows to allow code-mixing when style profile demonstrates it:
+  - write-chapter-section.ts (all 3 prompts: Action Step, Coming Up Next, standard sections)
+  - rewrite-section.ts
+  - rewrite-chapter.ts
+  - expand-book-content.ts
+- Changed language instruction from "You MUST write in {language}" to "Write primarily in {language}. However, if the style profile includes code-mixing patterns, you MUST replicate those exact language-mixing patterns"
+- Action Step prompt now includes style profile (was missing before)
+- **Result**: AI now properly replicates multilingual writing patterns (e.g., English-Tagalog, English-Spanish) exactly as demonstrated in the style profile examples
+
 **November 20, 2025 - Writing Style Analysis & Application Enhancement**:
 - Updated writing style analysis to include concrete examples from the original sample text
 - Analysis now provides 2-4 specific quotes demonstrating each stylistic element
 - For multilingual texts, examples include both original phrases and translations
 - Enhanced code-mixing analysis with detailed examples of language patterns
 - Format aligns with user expectations: shows actual text snippets that demonstrate tone, voice, vocabulary, etc.
-- **FIXED: Style Application in Chapter Writing** - Updated all AI flows (write-chapter-section, rewrite-section, rewrite-chapter, expand-book-content) to properly utilize the example-based style profiles
+- Updated all AI flows to properly utilize the example-based style profiles
 - New prompt instructions guide the AI to study the examples and mimic the demonstrated patterns while writing new content
 - AI now receives clear guidance to match all characteristics: tone, voice, sentence structure, vocabulary, code-mixing patterns, and distinctive techniques
 
 **November 20, 2025 - Deep Research & Evidence-Based Writing Enhancement**:
 - **Enhanced Research Flow** - Topic research now produces comprehensive, data-driven research with:
-  - Concrete statistics (numbers, percentages, growth rates, market sizes)
-  - Research findings from studies and surveys with dates
+  - Concrete statistics (numbers, percentages, growth rates, market sizes) when available
+  - Research findings from studies and surveys with timeframes
   - Real-world case studies with measurable outcomes
   - Expert insights and quotes from recognized authorities
   - Current trends with supporting data and future projections
@@ -30,18 +41,19 @@ The platform uses Google's Gemini AI via Genkit for all AI operations, Firebase 
   - Historical Context with key milestones and impact metrics
   - Current Landscape with recent statistics (last 2-3 years)
   - Core Concepts backed by research
-  - Key Data & Statistics section with most important numbers
+  - Key Data & Statistics section with important numbers
   - Expert Perspectives from thought leaders
   - Trends & Future Outlook with evidence
   - Success Stories & Case Studies with results
-- **Evidence-Based Chapter Writing** - All writing flows now emphasize incorporating research data:
-  - Chapter sections must include relevant statistics and data points
-  - Reference studies and research findings to support claims
-  - Incorporate case studies and real-world examples
-  - Quote expert insights from the research
-  - Show current trends and projections
-  - Transform generic advice into evidence-based guidance
-- **Result**: Books written with Co-Author Pro now feel authoritative, well-researched, and credible to readers
+  - References & Sources (flexible - allows acknowledging when specific sources aren't available)
+- **Intelligent Research Usage** - All writing flows use research data intelligently:
+  - Incorporate statistics and data when explicitly present in research
+  - Reference studies naturally without fabricating citations
+  - Use case studies and examples when relevant
+  - Include expert insights to add authority
+  - Write from general knowledge when research lacks specific data
+  - **CRITICAL**: Never fabricate data, URLs, or citations - accuracy over forced citation
+- **Result**: Books written with Co-Author Pro feel authoritative, well-researched, and credible to readers without containing fabricated information
 
 ## User Preferences
 
