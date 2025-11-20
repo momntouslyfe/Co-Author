@@ -15,6 +15,7 @@
 import {z} from 'genkit';
 
 import { getUserGenkitInstance } from '@/lib/genkit-user';
+import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
 
 const WriteChapterSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -38,9 +39,13 @@ const WriteChapterSectionOutputSchema = z.object({
 export type WriteChapterSectionOutput = z.infer<typeof WriteChapterSectionOutputSchema>;
 
 export async function writeChapterSection(input: WriteChapterSectionInput): Promise<WriteChapterSectionOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
+  const context = `Section: "${input.sectionTitle}" in Chapter: "${input.chapterTitle}"`;
   
-  let chosenPrompt;
+  return retryWithBackoff(
+    async () => {
+      const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
+      
+      let chosenPrompt;
   
   if (input.sectionTitle === "Your Action Step") {
     chosenPrompt = ai.definePrompt({
@@ -147,30 +152,34 @@ Proceed to write the section content now.
     });
   }
   
-  try {
-    const { output } = await chosenPrompt(input, { ...(input.model && { model: input.model }) });
+      try {
+        const { output } = await chosenPrompt(input, { ...(input.model && { model: input.model }) });
 
-    if (!output || !output.sectionContent) {
-      throw new Error("AI failed to generate the section content.");
-    }
-    
-    return {
-      sectionContent: output.sectionContent,
-    };
-  } catch (error: any) {
-    console.error('Error generating section content:', error);
-    
-    // Provide a more helpful error message
-    if (error.message?.includes('Schema validation failed') || error.message?.includes('must be object')) {
-      throw new Error(
-        'The AI returned an unexpected response format. This could be due to:\n' +
-        '- API rate limits or quota exceeded\n' +
-        '- Network connectivity issues\n' +
-        '- Invalid or expired API key\n\n' +
-        'Please try again in a moment. If the problem persists, check your API key settings.'
-      );
-    }
-    
-    throw error;
-  }
+        if (!output || !output.sectionContent) {
+          throw new Error("AI failed to generate the section content.");
+        }
+        
+        return {
+          sectionContent: output.sectionContent,
+        };
+      } catch (error: any) {
+        console.error('Error generating section content:', error);
+        
+        // Provide a more helpful error message for validation errors
+        if (error.message?.includes('Schema validation failed') || error.message?.includes('must be object')) {
+          throw new Error(
+            'The AI returned an unexpected response format. This could be due to:\n' +
+            '- API rate limits or quota exceeded\n' +
+            '- Network connectivity issues\n' +
+            '- Invalid or expired API key\n\n' +
+            'Retrying automatically...'
+          );
+        }
+        
+        throw error;
+      }
+    },
+    AI_GENERATION_RETRY_CONFIG,
+    context
+  );
 }
