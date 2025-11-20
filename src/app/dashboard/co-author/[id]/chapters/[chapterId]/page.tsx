@@ -282,6 +282,9 @@ const ChapterEditor = ({
         const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
         onContentChange(buildChapterSkeleton());
     
+        const failedSections: Array<{ index: number; title: string; error: any }> = [];
+        const successfulSections: string[] = [];
+    
         for (const [index, sectionTitle] of allSectionTitles.entries()) {
           setIsWritingSection(index);
           try {
@@ -323,17 +326,117 @@ const ChapterEditor = ({
                     }
                     return prevContent;
                 });
+                successfulSections.push(sectionTitle);
             } else {
-              toast({ title: "AI Warning", description: `The AI returned no content for section: "${sectionTitle}".`, variant: "destructive" });
+              failedSections.push({ index, title: sectionTitle, error: new Error("AI returned no content") });
+              toast({ title: "Section Pending", description: `Section "${sectionTitle}" will be retried...`, variant: "default" });
             }
           } catch (sectionError) {
             console.error(`Error generating section "${sectionTitle}":`, sectionError);
-            toast({ title: "AI Section Failed", description: `Could not generate content for: "${sectionTitle}".`, variant: "destructive" });
+            failedSections.push({ index, title: sectionTitle, error: sectionError });
+            toast({ title: "Section Pending", description: `Section "${sectionTitle}" will be retried...`, variant: "default" });
           }
         }
         
+        if (failedSections.length > 0) {
+          toast({ 
+            title: "Retrying Failed Sections", 
+            description: `Retrying ${failedSections.length} section(s) that failed initially...` 
+          });
+          
+          const stillFailedSections: string[] = [];
+          
+          for (const failedSection of failedSections) {
+            setIsWritingSection(failedSection.index);
+            
+            let retrySuccess = false;
+            for (let retryAttempt = 1; retryAttempt <= 2; retryAttempt++) {
+              try {
+                await new Promise(resolve => setTimeout(resolve, 3000 * retryAttempt));
+                
+                const currentContentForContext = await new Promise<string>(resolve => {
+                    onContentChange(prev => {
+                        resolve(prev);
+                        return prev;
+                    });
+                });
+
+                const idToken = await getIdToken(user!);
+                const result = await writeChapterSection({
+                  userId: user!.uid,
+                  idToken,
+                  bookTitle: project.title,
+                  fullOutline: project.outline || '',
+                  chapterTitle: chapterDetails.title,
+                  sectionTitle: failedSection.title,
+                  language: project.language,
+                  previousContent: currentContentForContext,
+                  styleProfile: selectedStyle?.styleAnalysis,
+                  researchProfile: researchPrompt,
+                  storytellingFramework: selectedFramework,
+                });
+        
+                if (result && result.sectionContent) {
+                    onContentChange(prevContent => {
+                        const sections = prevContent.split(/(\$\$[^$]+\$\$)/g);
+                        const titleToFind = `$$${failedSection.title}$$`;
+                        const titleIndex = sections.findIndex(s => s.trim() === titleToFind.trim());
+
+                        if (titleIndex !== -1) {
+                            const contentIndex = titleIndex + 1;
+                             if (contentIndex >= sections.length || sections[contentIndex].startsWith('$$')) {
+                                sections.splice(contentIndex, 0, ''); 
+                            }
+                            sections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
+                            return sections.join('');
+                        }
+                        return prevContent;
+                    });
+                    retrySuccess = true;
+                    successfulSections.push(failedSection.title);
+                    toast({ 
+                      title: "Section Recovered", 
+                      description: `Successfully generated "${failedSection.title}"` 
+                    });
+                    break;
+                }
+              } catch (retryError) {
+                console.error(`Retry ${retryAttempt} failed for "${failedSection.title}":`, retryError);
+                if (retryAttempt === 2) {
+                  stillFailedSections.push(failedSection.title);
+                }
+              }
+            }
+            
+            if (!retrySuccess) {
+              toast({ 
+                title: "Section Failed", 
+                description: `Could not generate "${failedSection.title}" after multiple attempts.`,
+                variant: "destructive"
+              });
+            }
+          }
+          
+          if (stillFailedSections.length > 0) {
+            toast({ 
+              title: "Chapter Partially Complete", 
+              description: `${successfulSections.length} of ${allSectionTitles.length} sections generated. Failed: ${stillFailedSections.join(', ')}. Please try regenerating the failed sections individually.`,
+              variant: "destructive"
+            });
+          } else {
+            toast({ 
+              title: "Chapter Complete", 
+              description: `All ${allSectionTitles.length} sections generated successfully!` 
+            });
+          }
+        } else {
+          toast({ 
+            title: "Chapter Complete", 
+            description: `All ${allSectionTitles.length} sections generated successfully!` 
+          });
+        }
+        
         setIsWritingSection(null);
-        toast({ title: "Chapter Generation Complete", description: "The full chapter draft has been written." });
         setIsGenerating(false);
       }, [
         project, chapterDetails, subTopics, buildChapterSkeleton, 

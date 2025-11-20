@@ -165,17 +165,8 @@ Proceed to write the section content now.
       } catch (error: any) {
         console.error('Error generating section content:', error);
         
-        // Provide a more helpful error message for validation errors
-        if (error.message?.includes('Schema validation failed') || error.message?.includes('must be object')) {
-          throw new Error(
-            'The AI returned an unexpected response format. This could be due to:\n' +
-            '- API rate limits or quota exceeded\n' +
-            '- Network connectivity issues\n' +
-            '- Invalid or expired API key\n\n' +
-            'Retrying automatically...'
-          );
-        }
-        
+        // Re-throw the original error to preserve retry detection
+        // The retry utility will handle these errors based on their original message
         throw error;
       }
     },
