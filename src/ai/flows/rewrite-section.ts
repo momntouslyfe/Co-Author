@@ -65,7 +65,7 @@ export async function rewriteSection(input: RewriteSectionInput): Promise<Rewrit
     Your instruction is to rewrite the section to improve clarity, flow, and impact.
     {{/if}}
 
-2.  **LANGUAGE:** You MUST write the entire response in **{{{language}}}**.
+2.  **LANGUAGE:** Write primarily in **{{{language}}}**. However, if the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those exact language-mixing patterns as demonstrated in the style examples.
 
 3.  **REWRITE, DON'T JUST EDIT (NON-NEGOTIABLE):** You are not an editor making minor changes. Your task is to **completely rewrite** the text from scratch. Do not simply copy or slightly rephrase sentences. You MUST produce a new version of the text that conveys the same core ideas but with entirely new sentence structures, vocabulary, and flow. Preserving the original meaning is key, but preserving the original text is a failure.
 

@@ -63,7 +63,7 @@ export async function rewriteChapter(input: RewriteChapterInput): Promise<Rewrit
 
 2.  **SINGLE, COMPLETE OUTPUT:** You MUST rewrite and return the entire chapter in one single operation. Do not stop prematurely. Partial responses are a failure.
 
-3.  **LANGUAGE:** You MUST write the entire response in **{{{language}}}**.
+3.  **LANGUAGE:** Write primarily in **{{{language}}}**. However, if the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those exact language-mixing patterns as demonstrated in the style examples.
 
 4.  **PRESERVE STRUCTURE:** The chapter is divided into sections with titles like \`$$Section Title$$\`. You MUST preserve these section titles and their surrounding double dollar signs exactly as they are. Rewrite the content *within* each section, but do not alter the titles or remove the \`$$\` markers.
 

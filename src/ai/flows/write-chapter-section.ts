@@ -59,13 +59,28 @@ export async function writeChapterSection(input: WriteChapterSectionInput): Prom
   ---
   {{{previousContent}}}
   ---
+{{#if styleProfile}}
+- **WRITING STYLE GUIDE (CRITICAL - MUST FOLLOW):** Below is a detailed analysis of the author's unique writing style, including concrete examples that demonstrate each characteristic. Your task is to MIMIC these stylistic patterns while writing the action step summary.
+  
+  **HOW TO USE THIS STYLE GUIDE:**
+  - **Study the examples** - Each example shows a specific stylistic pattern (tone, voice, sentence structure, vocabulary, code-mixing, etc.)
+  - **Apply the PATTERNS** - Replicate the STYLE demonstrated by these examples
+  - **Match ALL characteristics** - Pay close attention to tone, voice, sentence structure, vocabulary level, code-mixing patterns (if applicable), and distinctive techniques
+  
+  **STYLE PROFILE WITH EXAMPLES:**
+  ---
+  {{{styleProfile}}}
+  ---
+  
+  **REMEMBER:** The examples show HOW to write. Copy the STYLE and PATTERNS, not the specific content or topics.
+{{/if}}
 
 **YOUR TASK:**
 Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
 **CRITICAL INSTRUCTIONS (Read Carefully):**
 
-1.  **LANGUAGE:** You MUST write in **{{{language}}}**.
+1.  **LANGUAGE:** Write primarily in **{{{language}}}**. However, if the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those exact language-mixing patterns as demonstrated in the style examples.
 2.  **ACTION STEP FORMAT (NON-NEGOTIABLE):** You are writing the "Action Step" section. You MUST follow this format precisely:
     1.  Start with a single, concise paragraph that summarizes the core lesson or takeaway of the entire chapter based on the provided content.
     2.  After the summary paragraph, create a bulleted or numbered list containing 5 to 7 single-sentence action items that the reader can implement. These action items must be direct, clear, and derived from the chapter's main points. Use standard Markdown for the list (e.g., '-' for bullets, '1.' for numbers). Do NOT use HTML tags.
@@ -94,7 +109,7 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
 **CRITICAL INSTRUCTIONS (Read Carefully):**
 
-1.  **LANGUAGE:** You MUST write in **{{{language}}}**.
+1.  **LANGUAGE:** Write primarily in **{{{language}}}**. However, if the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those exact language-mixing patterns as demonstrated in the style examples.
 2.  **"COMING UP NEXT" FORMAT (NON-NEGOTIABLE):** You are writing the "Coming Up Next" section. You MUST write one or two short paragraphs that act as a summary or teaser for the *next* chapter in the outline. Keep it brief and intriguing. Do not write more than two paragraphs.
 3.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs and ensure a double newline (a blank line) exists between them if you write more than one.
 4.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the teaser paragraphs. Do not add the section title.
@@ -169,13 +184,15 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
 **CRITICAL INSTRUCTIONS (Read Carefully):**
 
-1.  **FOCUSED CONTENT:** All content must be directly related to the provided section title.
+1.  **LANGUAGE:** Write primarily in **{{{language}}}**. However, if the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those exact language-mixing patterns as demonstrated in the style examples.
 
-2.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs (3-5 sentences), but VARY their length for good rhythm. Ensure a double newline (a blank line) exists between paragraphs.
+2.  **FOCUSED CONTENT:** All content must be directly related to the provided section title.
 
-3.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the text for the new section. Do not add the section title or any other formatting; return only the paragraphs.
+3.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs (3-5 sentences), but VARY their length for good rhythm. Ensure a double newline (a blank line) exists between paragraphs.
 
-4.  **SUBSTANTIAL CONTENT (STRICT REQUIREMENT):** You MUST write at least 400 words for this section. This is a non-negotiable instruction. Generate multiple, well-developed, and insightful paragraphs to meet this word count.
+4.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the text for the new section. Do not add the section title or any other formatting; return only the paragraphs.
+
+5.  **SUBSTANTIAL CONTENT (STRICT REQUIREMENT):** You MUST write at least 400 words for this section. This is a non-negotiable instruction. Generate multiple, well-developed, and insightful paragraphs to meet this word count.
 
 Proceed to write the section content now.
 `,
