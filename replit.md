@@ -6,6 +6,15 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 The platform uses Google's Gemini AI via Genkit for all AI operations, Firebase Authentication for user management, and Firestore for data persistence. The UI is built with shadcn/ui components and styled with Tailwind CSS.
 
+## Recent Changes
+
+**November 20, 2025 - Writing Style Analysis Enhancement**:
+- Updated writing style analysis to include concrete examples from the original sample text
+- Analysis now provides 2-4 specific quotes demonstrating each stylistic element
+- For multilingual texts, examples include both original phrases and translations
+- Enhanced code-mixing analysis with detailed examples of language patterns
+- Format aligns with user expectations: shows actual text snippets that demonstrate tone, voice, vocabulary, etc.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -47,7 +56,7 @@ Preferred communication style: Simple, everyday language.
   - Book blueprint/outline generation (3 variants)
   - Chapter content generation (section-by-section)
   - Content expansion and rewriting
-  - Writing style analysis
+  - Writing style analysis (includes concrete examples from original text)
   - Book title generation
 - **Model flexibility**: Flows accept optional model parameter for future multi-model support
 - **Development mode**: Dedicated Genkit dev server for testing flows (`genkit:dev` script)
