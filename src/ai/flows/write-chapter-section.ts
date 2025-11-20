@@ -121,7 +121,7 @@ Proceed to write the "Coming Up Next" section now.
   ---
 {{/if}}
 {{#if styleProfile}}
-- **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
+- **ADHERE TO WRITING STYLE (STYLE ONLY - NOT CONTENT):** You MUST adopt the following writing style characteristics. This profile describes HOW to write (tone, voice, vocabulary level, sentence structure, code-mixing patterns, etc.), NOT WHAT to write about. Apply these stylistic characteristics to the current book topic. DO NOT use any topics or content examples from the style profile itself.
   ---
   **Writing Style Profile:**
   {{{styleProfile}}}

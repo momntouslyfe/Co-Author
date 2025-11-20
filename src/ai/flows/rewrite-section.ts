@@ -72,7 +72,7 @@ export async function rewriteSection(input: RewriteSectionInput): Promise<Rewrit
 4.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs (3-5 sentences), but you MUST VARY their length for good rhythm. Ensure a double newline (a blank line) exists between every paragraph.
 
 {{#if styleProfile}}
-5.  **ADHERE TO WRITING STYLE (NON-NEGOTIABLE):** You MUST adopt the following writing style. This includes matching the tone, voice, vocabulary, sentence structure, and especially any code-mixing (use of multiple languages, e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট') described.
+5.  **ADHERE TO WRITING STYLE (STYLE ONLY - NOT CONTENT):** You MUST adopt the following writing style characteristics. This profile describes HOW to write (tone, voice, vocabulary level, sentence structure, code-mixing patterns, etc.), NOT WHAT to write about. Apply these stylistic characteristics to the current section content being rewritten. DO NOT use any topics or content examples from the style profile itself.
     ---
     **Writing Style Profile:**
     {{{styleProfile}}}

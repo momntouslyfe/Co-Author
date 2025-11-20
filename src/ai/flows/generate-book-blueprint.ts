@@ -76,8 +76,8 @@ The following research provides deep insights into the target audience, their pa
 {{/if}}
 
 {{#if styleProfile}}
-**Writing Style Profile Context (MUST USE THIS GUIDANCE):**
-The following style profile defines the desired writing tone and voice. Your chapter titles and descriptions MUST reflect this style:
+**Writing Style Guidance (STYLE ONLY - NOT CONTENT):**
+The following style profile describes HOW to write, NOT WHAT to write about. Apply this writing style (tone, voice, sentence patterns, vocabulary level, etc.) to your chapter titles and descriptions. DO NOT use any topics or content mentioned in the style profile - focus solely on mimicking the stylistic characteristics:
 {{{styleProfile}}}
 {{/if}}
 

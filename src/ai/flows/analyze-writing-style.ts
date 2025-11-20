@@ -36,32 +36,57 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
       name: 'analyzeWritingStylePrompt',
       input: {schema: AnalyzeWritingStyleInputSchema},
       output: {schema: AnalyzeWritingStyleOutputSchema},
-      prompt: `You are an expert writing analyst. Your task is to first extract the text from the following file, and then perform a deep analysis of the extracted writing sample.
+      prompt: `You are an expert writing analyst. Your task is to first extract the text from the following file, and then perform a deep analysis of the WRITING STYLE ONLY.
 
   File: {{media url=fileDataUri}}
 
-  After extracting the text, analyze the writing style and provide a detailed analysis in a well-structured listicle format.
+  **CRITICAL INSTRUCTION - READ CAREFULLY:**
+  You are analyzing STYLE ONLY, not content. This style profile will be used to guide future writing on COMPLETELY DIFFERENT topics. Therefore:
   
-  **IMPORTANT FORMATTING RULES:**
+  ❌ FORBIDDEN - DO NOT include any example sentences or quotes from the sample text
+  ❌ FORBIDDEN - DO NOT reference the specific topics, subjects, or themes in the sample
+  ❌ FORBIDDEN - DO NOT mention what the sample is about (e.g., "The author writes about freelancing/business/relationships...")
+  ❌ FORBIDDEN - DO NOT say things like "uses metaphors related to X topic" or "draws examples from Y domain"
+  
+  ✅ CORRECT - Describe stylistic characteristics in completely abstract, transferable terms
+  ✅ CORRECT - Focus exclusively on HOW the author writes, never on WHAT they write about
+  ✅ CORRECT - Provide guidance that applies equally to ANY topic (cooking, science, history, fiction, etc.)
+  
+  **Examples of WRONG analysis (content-contaminated):**
+  ❌ "The author uses business terminology and frequently references workplace scenarios"
+  ❌ "Writing style employs metaphors from everyday office life"
+  ❌ "Discusses freelancing in a conversational tone"
+  
+  **Examples of CORRECT analysis (pure style):**
+  ✅ "Uses predominantly conversational tone with occasional formal phrases for emphasis"
+  ✅ "Employs concrete metaphors drawn from everyday life to clarify abstract concepts"
+  ✅ "Structures arguments using numbered points followed by explanatory paragraphs"
+  
+  **FORMATTING RULES:**
   - For each point in the listicle, provide a clear heading and explanation.
   - Ensure there is a blank line (a double newline) between each numbered list item to add space and improve readability.
   - Keep paragraphs within each section concise. If a point requires a longer explanation, break it into smaller paragraphs with a blank line between them.
+  - Describe patterns and characteristics, not specific content examples.
 
-  Here are the specifications for your analysis:
+  **Analyze the following stylistic dimensions:**
 
-  1.  **Tone & Mood:** Analyze the overall feeling (e.g., Formal, Informal, Humorous, Serious, Optimistic).
+  1.  **Tone & Mood:** Describe the overall emotional quality and atmosphere (e.g., Formal, Informal, Humorous, Serious, Optimistic, Conversational, Professional). Focus on the feeling the writing creates, not what it's about.
 
-  2.  **Voice:** Describe the narrator's personality and perspective (e.g., First-person, Third-person omniscient).
+  2.  **Voice & Perspective:** Describe the narrator's personality and point of view (e.g., First-person personal, Third-person authoritative, Second-person instructional, Friendly advisor, Expert teacher). How does the author position themselves relative to the reader?
 
-  3.  **Sentence Structure & Rhythm:** Examine the sentence complexity and flow (e.g., Short and punchy, Long and flowing).
+  3.  **Sentence Structure & Rhythm:** Examine the sentence patterns and flow (e.g., Predominantly short and punchy, Mix of short and long sentences, Complex with multiple clauses, Rhythmic and repetitive patterns). Describe the structural patterns without quoting examples.
 
-  4.  **Vocabulary & Diction:** Assess the word choice (e.g., Simple, Advanced, Technical, Figurative).
+  4.  **Vocabulary & Diction:** Assess the word choice patterns (e.g., Simple and accessible, Advanced and sophisticated, Technical and specialized, Metaphorical and figurative, Colloquial and casual). What level of language complexity is typical?
 
-  5.  **Pacing:** Describe the flow of information (e.g., Fast, Slow, Deliberate).
+  5.  **Pacing:** Describe how information is delivered (e.g., Fast-paced with quick transitions, Slow and deliberate with detailed explanations, Builds gradually, Varies between quick and detailed). How does the author control the flow of ideas?
 
-  6.  **Code-Mixing Analysis:** Identify and analyze the use of mixed-language phrases (e.g., 'আপনার 'ফ্রিল্যান্সিং' 'ক্যারিয়ারের'-এর জন্য এটা খুব ইম্পরট্যান্ট'). Comment on its frequency, purpose, and the specific languages being mixed. This is a critical component of the author's voice.
+  6.  **Code-Mixing & Language Patterns:** If applicable, identify patterns of mixed-language usage or linguistic features (e.g., "Frequently mixes English technical terms into native language sentences", "Uses bilingual phrases for emphasis", "Alternates between languages for different purposes"). Describe the PATTERN of code-mixing, not specific examples. Note the languages involved and typical purposes (emphasis, technical precision, cultural connection, etc.).
 
-  7.  **Overall Summary:** Conclude with a brief summary of the author's unique stylistic signature, placing special emphasis on how all the above elements, including code-mixing, create a cohesive voice.
+  7.  **Distinctive Stylistic Elements:** Note any unique characteristics (e.g., "Frequently uses rhetorical questions to engage readers", "Employs numbered lists for clarity", "Uses metaphors from everyday life", "Includes direct address to the reader", "Repeats key phrases for emphasis"). Describe the techniques, not the content they're applied to.
+
+  8.  **Overall Stylistic Signature:** Summarize the author's unique writing identity in abstract terms that can be applied to any subject matter. Focus on the transferable essence of their style.
+
+  **REMEMBER:** This analysis will guide writing on completely different topics. Describe HOW the author writes, not WHAT they write about. The style should be portable to any content.
 
   Return only the detailed analysis, following all formatting rules.`,
     });
