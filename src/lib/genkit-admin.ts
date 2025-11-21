@@ -9,6 +9,14 @@ interface GenkitInstanceResult {
   model: string;
 }
 
+if (typeof window !== 'undefined') {
+  throw new Error(
+    'SECURITY ERROR: genkit-admin.ts is being imported on the client-side. ' +
+    'This module contains server-only code and must never be bundled for the browser. ' +
+    'Only use this module in server-side code (API routes, Server Components, Server Actions).'
+  );
+}
+
 async function createGenkitInstance(provider: AIProvider, apiKey: string, model?: string): Promise<GenkitInstanceResult> {
   let plugin;
   let defaultModel = model;

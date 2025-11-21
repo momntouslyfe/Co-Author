@@ -33,14 +33,19 @@ export function AIIntegrationSettings() {
 
   async function checkAdminSettings() {
     try {
-      const response = await fetch('/api/admin/settings');
+      const response = await fetch('/api/settings/public');
       if (response.ok) {
         const settings = await response.json();
         setAdminManagedKeys(settings.useAdminKeys || false);
         setAllowUserKeys(settings.allowUserKeys !== false);
+      } else {
+        setAdminManagedKeys(false);
+        setAllowUserKeys(true);
       }
     } catch (error) {
       console.error('Error checking admin settings:', error);
+      setAdminManagedKeys(false);
+      setAllowUserKeys(true);
     }
   }
 

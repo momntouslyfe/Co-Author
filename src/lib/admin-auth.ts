@@ -38,7 +38,12 @@ export function verifyAdminCredentials(email: string, password: string): AdminAu
 }
 
 export function generateAdminToken(email: string): string {
-  const secret = process.env.ENCRYPTION_KEY || 'default-secret';
+  const secret = process.env.ENCRYPTION_KEY;
+  
+  if (!secret) {
+    throw new Error('ENCRYPTION_KEY environment variable is not set. Cannot generate admin token.');
+  }
+  
   const timestamp = Date.now();
   const data = `${email}:${timestamp}`;
   
@@ -52,6 +57,13 @@ export function generateAdminToken(email: string): string {
 
 export function verifyAdminToken(token: string): { valid: boolean; email?: string } {
   try {
+    const secret = process.env.ENCRYPTION_KEY;
+    
+    if (!secret) {
+      console.error('ENCRYPTION_KEY environment variable is not set. Cannot verify admin token.');
+      return { valid: false };
+    }
+    
     const decoded = Buffer.from(token, 'base64').toString('utf-8');
     const [email, timestampStr, signature] = decoded.split(':');
     
@@ -63,7 +75,6 @@ export function verifyAdminToken(token: string): { valid: boolean; email?: strin
       return { valid: false };
     }
     
-    const secret = process.env.ENCRYPTION_KEY || 'default-secret';
     const data = `${email}:${timestampStr}`;
     const hmac = crypto.createHmac('sha256', secret);
     hmac.update(data);

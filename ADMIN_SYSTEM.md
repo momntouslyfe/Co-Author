@@ -116,13 +116,28 @@ The admin system uses these Firestore collections:
 
 ## API Routes
 
+### Public Routes (No Authentication Required)
+- `GET /api/settings/public`: Get public admin settings (useAdminKeys, allowUserKeys)
+
+### Admin Routes (Require Authentication)
 - `POST /api/admin/login`: Admin authentication
-- `GET /api/admin/settings`: Get global settings
-- `PUT /api/admin/settings`: Update global settings
-- `GET /api/admin/api-keys`: List all API keys (sanitized)
-- `POST /api/admin/api-keys`: Add/update API key
-- `DELETE /api/admin/api-keys`: Delete API key
-- `PATCH /api/admin/api-keys`: Toggle API key active status
-- `GET /api/admin/users`: List all users
-- `PATCH /api/admin/users`: Enable/disable user
-- `DELETE /api/admin/users`: Delete user account
+- `GET /api/admin/settings`: Get full admin settings (admin only)
+- `PUT /api/admin/settings`: Update global settings (admin only)
+- `GET /api/admin/api-keys`: List all API keys (sanitized, admin only)
+- `POST /api/admin/api-keys`: Add/update API key (admin only)
+- `DELETE /api/admin/api-keys`: Delete API key (admin only)
+- `PATCH /api/admin/api-keys`: Toggle API key active status (admin only)
+- `GET /api/admin/users`: List all users (admin only)
+- `PATCH /api/admin/users`: Enable/disable user (admin only)
+- `DELETE /api/admin/users`: Delete user account (admin only)
+
+## Important Security Notes
+
+1. **Server-Side Only**: The `getGenkitInstanceForFunction` helper and `genkit-admin.ts` module must ONLY be imported in server-side code (API routes, Server Components, Server Actions). The module includes a client-side check that throws an error if accidentally bundled for the browser.
+
+2. **Required Environment Variables**:
+   - `ENCRYPTION_KEY`: Required for admin token generation and API key encryption. The system will throw an error if this is not configured.
+   - `ADMIN_EMAIL`: Admin login email
+   - `ADMIN_PASSWORD`: Admin login password
+
+3. **Token Expiration**: Admin authentication tokens expire after 24 hours for security.
