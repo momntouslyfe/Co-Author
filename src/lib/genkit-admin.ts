@@ -29,7 +29,10 @@ async function createGenkitInstance(provider: AIProvider, apiKey: string, model?
       break;
     
     case 'openai':
-      throw new Error('OpenAI integration not yet implemented. Please configure OpenAI plugin.');
+      const { openAI } = await import('@genkit-ai/compat-oai/openai');
+      plugin = openAI({ apiKey });
+      defaultModel = model || 'openai/gpt-4o';
+      break;
     
     case 'claude':
       throw new Error('Claude integration not yet implemented. Please configure Anthropic plugin.');
