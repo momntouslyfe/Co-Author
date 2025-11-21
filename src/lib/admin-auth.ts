@@ -1,0 +1,84 @@
+import * as crypto from 'crypto';
+
+export interface AdminAuthResult {
+  success: boolean;
+  error?: string;
+}
+
+function hashPassword(password: string): string {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+export function verifyAdminCredentials(email: string, password: string): AdminAuthResult {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    return {
+      success: false,
+      error: 'Admin credentials not configured',
+    };
+  }
+
+  if (email !== adminEmail) {
+    return {
+      success: false,
+      error: 'Invalid email or password',
+    };
+  }
+
+  if (password !== adminPassword) {
+    return {
+      success: false,
+      error: 'Invalid email or password',
+    };
+  }
+
+  return { success: true };
+}
+
+export function generateAdminToken(email: string): string {
+  const secret = process.env.ENCRYPTION_KEY || 'default-secret';
+  const timestamp = Date.now();
+  const data = `${email}:${timestamp}`;
+  
+  const hmac = crypto.createHmac('sha256', secret);
+  hmac.update(data);
+  const signature = hmac.digest('hex');
+  
+  const token = Buffer.from(`${data}:${signature}`).toString('base64');
+  return token;
+}
+
+export function verifyAdminToken(token: string): { valid: boolean; email?: string } {
+  try {
+    const decoded = Buffer.from(token, 'base64').toString('utf-8');
+    const [email, timestampStr, signature] = decoded.split(':');
+    
+    const timestamp = parseInt(timestampStr, 10);
+    const now = Date.now();
+    const oneDay = 24 * 60 * 60 * 1000;
+    
+    if (now - timestamp > oneDay) {
+      return { valid: false };
+    }
+    
+    const secret = process.env.ENCRYPTION_KEY || 'default-secret';
+    const data = `${email}:${timestampStr}`;
+    const hmac = crypto.createHmac('sha256', secret);
+    hmac.update(data);
+    const expectedSignature = hmac.digest('hex');
+    
+    if (signature !== expectedSignature) {
+      return { valid: false };
+    }
+    
+    if (email !== process.env.ADMIN_EMAIL) {
+      return { valid: false };
+    }
+    
+    return { valid: true, email };
+  } catch (error) {
+    return { valid: false };
+  }
+}

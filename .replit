@@ -49,3 +49,9 @@ externalPort = 3000
 deploymentTarget = "autoscale"
 run = ["npm", "run", "start"]
 build = ["npm", "run", "build"]
+
+[userenv]
+
+[userenv.shared]
+ADMIN_EMAIL = "momentouslyfe@gmail.com"
+ADMIN_PASSWORD = "%#Blue2firmament1!"

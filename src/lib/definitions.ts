@@ -52,3 +52,47 @@ export type StyleProfile = {
     createdAt: string;
 };
 
+export type AIProvider = 'gemini' | 'openai' | 'claude';
+
+export type AIFunction = 
+  | 'research' 
+  | 'blueprint' 
+  | 'title' 
+  | 'chapter' 
+  | 'rewrite' 
+  | 'expand' 
+  | 'style_analysis';
+
+export type AdminAPIKey = {
+  id: string;
+  provider: AIProvider;
+  apiKey: string;
+  model?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AIRouting = {
+  functionName: AIFunction;
+  provider: AIProvider;
+  model?: string;
+};
+
+export type AdminSettings = {
+  id: string;
+  useAdminKeys: boolean;
+  allowUserKeys: boolean;
+  aiRouting: AIRouting[];
+  updatedAt: string;
+};
+
+export type UserManagement = {
+  id: string;
+  email: string;
+  displayName: string;
+  isDisabled: boolean;
+  createdAt: string;
+  lastLogin?: string;
+};
+
