@@ -210,12 +210,23 @@ export function APIKeysManager() {
             </div>
 
             <div className="space-y-2">
-              <Label>Model (Optional)</Label>
+              <Label>Default Model (Optional)</Label>
               <Input
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                placeholder="e.g., googleai/gemini-2.5-flash"
+                placeholder={
+                  provider === 'gemini'
+                    ? 'e.g., googleai/gemini-2.5-flash'
+                    : provider === 'openai'
+                    ? 'e.g., openai/gpt-4o, openai/gpt-4o-mini'
+                    : provider === 'claude'
+                    ? 'Claude not yet implemented'
+                    : 'Enter model name'
+                }
               />
+              <p className="text-xs text-muted-foreground">
+                For reference only. Configure actual model routing in the AI Function Routing section below.
+              </p>
             </div>
 
             <div className="flex gap-2">
