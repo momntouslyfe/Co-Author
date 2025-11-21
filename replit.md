@@ -2,7 +2,7 @@
 
 ## Overview
 
-Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and Firebase, designed to assist authors from concept to completion. It offers AI-assisted topic research, blueprint generation, and interactive chapter-by-chapter writing. The platform supports a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It leverages Google's Gemini AI via Genkit for all AI operations, Firebase Authentication for user management, and Firestore for data persistence. The user interface is crafted with shadcn/ui and styled using Tailwind CSS. A key ambition is to provide an authoritative, well-researched, and credible writing experience without fabricating data or citations. An administrative panel allows for centralized API key management, user management, and global application settings, enhancing security and operational control.
+Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and Firebase, designed to assist authors from concept to completion. It offers AI-assisted topic research, blueprint generation, and interactive chapter-by-chapter writing. The platform supports a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It leverages Google's Gemini AI via Genkit for all AI operations, Firebase Authentication for user management, and Firestore for data persistence. The user interface is crafted with shadcn/ui and styled using Tailwind CSS. A key ambition is to provide an authoritative, well-researched, and credible writing experience without fabricating data or citations. An administrative panel allows for centralized API key management with test-before-save functionality, user management, and global application settings, enhancing security and operational control.
 
 ## User Preferences
 
@@ -35,6 +35,16 @@ Preferred communication style: Simple, everyday language.
 **Authentication Flow**: Standard Google sign-in via Firebase Auth, creating/updating user documents in Firestore.
 **Authorization Levels**: Differentiates between regular users and admin users, with admin access to specific routes and functionalities.
 **Session Management**: Firebase handles session tokens, with auth state persisting via `FirebaseProvider` context and protected routes enforcing authentication.
+
+### Admin Features
+
+**API Key Management**:
+- **Test Connection Feature**: Admin can test API keys before saving via `/api/admin/api-keys/test` endpoint that makes minimal 5-token API calls to verify credentials.
+- **Encryption**: API keys stored encrypted in Firestore using AES-256-GCM with `ENCRYPTION_KEY` environment variable.
+- **Provider Support**: Currently supports Gemini and OpenAI; Claude integration planned.
+- **Model Normalization**: Test endpoint handles standard model names (e.g., `gemini-2.5-flash`, `gpt-4o`) and namespaced formats (e.g., `googleai/gemini-2.5-flash`).
+- **Safety Handling**: Gemini safety blocks treated as valid API key confirmations.
+- **Scope**: Designed for standard model configurations; complex multi-namespace routing may require direct validation.
 
 ## External Dependencies
 
