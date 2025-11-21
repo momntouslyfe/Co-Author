@@ -15,6 +15,7 @@ export function APIKeysManager() {
   const [apiKeys, setApiKeys] = useState<AdminAPIKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [provider, setProvider] = useState<AIProvider>('gemini');
   const [apiKey, setApiKey] = useState('');
@@ -47,6 +48,63 @@ export function APIKeysManager() {
   useEffect(() => {
     loadAPIKeys();
   }, []);
+
+  const handleTestAPIKey = async () => {
+    if (!apiKey) {
+      toast({
+        title: 'Error',
+        description: 'API key is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsTesting(true);
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch('/api/admin/api-keys/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ provider, apiKey, model: model || undefined }),
+      });
+
+      if (response.status === 401) {
+        toast({
+          title: 'Session Expired',
+          description: 'Your admin session has expired. Please log in again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast({
+          title: 'Success',
+          description: data.message || 'API key is valid and working',
+        });
+      } else {
+        toast({
+          title: 'Connection Failed',
+          description: data.error || 'Failed to connect to AI provider',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to test API key',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   const handleSaveAPIKey = async () => {
     if (!apiKey) {
@@ -230,6 +288,20 @@ export function APIKeysManager() {
             </div>
 
             <div className="flex gap-2">
+              <Button 
+                onClick={handleTestAPIKey} 
+                disabled={isTesting || !apiKey}
+                variant="secondary"
+              >
+                {isTesting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  'Test Connection'
+                )}
+              </Button>
               <Button onClick={handleSaveAPIKey} disabled={isSaving}>
                 {isSaving ? (
                   <>
