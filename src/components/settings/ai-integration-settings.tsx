@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, Check, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Check, AlertCircle, Info } from 'lucide-react';
 import { useAuthUser } from '@/firebase';
 import { saveUserApiKey, hasUserApiKey } from '@/lib/user-api-keys';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -21,12 +21,28 @@ export function AIIntegrationSettings() {
   const [isTesting, setIsTesting] = useState(false);
   const [hasKey, setHasKey] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [adminManagedKeys, setAdminManagedKeys] = useState(false);
+  const [allowUserKeys, setAllowUserKeys] = useState(true);
 
   useEffect(() => {
     if (user) {
+      checkAdminSettings();
       checkForExistingKey();
     }
   }, [user]);
+
+  async function checkAdminSettings() {
+    try {
+      const response = await fetch('/api/admin/settings');
+      if (response.ok) {
+        const settings = await response.json();
+        setAdminManagedKeys(settings.useAdminKeys || false);
+        setAllowUserKeys(settings.allowUserKeys !== false);
+      }
+    } catch (error) {
+      console.error('Error checking admin settings:', error);
+    }
+  }
 
   async function checkForExistingKey() {
     if (!user) return;
@@ -140,6 +156,28 @@ export function AIIntegrationSettings() {
     );
   }
 
+  if (adminManagedKeys && !allowUserKeys) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>AI Integration</CardTitle>
+          <CardDescription>
+            API keys are managed by the administrator
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Admin Managed:</strong> API keys are centrally managed by the administrator. 
+              You can use all AI features without configuring your own API key.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -149,13 +187,23 @@ export function AIIntegrationSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Important:</strong> You need to provide your own Google AI API key to use any AI functionality in this app. 
-            Get your free API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline text-primary">Google AI Studio</a>.
-          </AlertDescription>
-        </Alert>
+        {adminManagedKeys ? (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Note:</strong> The administrator has configured API keys for this application. 
+              You can optionally provide your own API key as a fallback or to use your preferred model.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Important:</strong> You need to provide your own Google AI API key to use any AI functionality in this app. 
+              Get your free API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline text-primary">Google AI Studio</a>.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {hasKey && (
           <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
