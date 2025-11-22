@@ -38,7 +38,7 @@ localPort = 33095
 externalPort = 3001
 
 [[ports]]
-localPort = 34115
+localPort = 33551
 externalPort = 3003
 
 [[ports]]
@@ -58,4 +58,3 @@ build = ["npm", "run", "build"]
 
 [userenv.shared]
 ADMIN_EMAIL = "momentouslyfe@gmail.com"
-ADMIN_PASSWORD = "%#Blue2firmament1!"
