@@ -12,12 +12,28 @@ export type ModelOption = {
 
 /**
  * Google Gemini Models
+ * Source: https://ai.google.dev/gemini-api/docs/models
+ * Last updated: November 2025
  */
 export const GEMINI_MODELS: ModelOption[] = [
-  { value: 'googleai/gemini-2.5-flash', label: 'Gemini 2.5 Flash (Recommended)', category: 'Latest' },
-  { value: 'googleai/gemini-2.0-flash', label: 'Gemini 2.0 Flash', category: 'Latest' },
-  { value: 'googleai/gemini-1.5-pro', label: 'Gemini 1.5 Pro', category: 'Pro' },
-  { value: 'googleai/gemini-1.5-flash', label: 'Gemini 1.5 Flash', category: 'Fast' },
+  // Gemini 3 Series (Latest - Preview)
+  { value: 'googleai/gemini-3-pro', label: 'Gemini 3 Pro (Preview)', category: 'Gemini 3' },
+  
+  // Gemini 2.5 Series (Latest - Stable)
+  { value: 'googleai/gemini-2.5-pro', label: 'Gemini 2.5 Pro', category: 'Gemini 2.5' },
+  { value: 'googleai/gemini-2.5-flash', label: 'Gemini 2.5 Flash (Recommended)', category: 'Gemini 2.5' },
+  { value: 'googleai/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite', category: 'Gemini 2.5' },
+  
+  // Gemini 2.0 Series
+  { value: 'googleai/gemini-2.0-flash', label: 'Gemini 2.0 Flash', category: 'Gemini 2.0' },
+  { value: 'googleai/gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite', category: 'Gemini 2.0' },
+  
+  // Gemini 1.5 Series
+  { value: 'googleai/gemini-1.5-pro', label: 'Gemini 1.5 Pro', category: 'Gemini 1.5' },
+  { value: 'googleai/gemini-1.5-flash', label: 'Gemini 1.5 Flash', category: 'Gemini 1.5' },
+  
+  // Custom entry option
+  { value: 'custom', label: '(Enter custom model manually)', category: 'Custom' },
 ];
 
 /**
@@ -29,9 +45,14 @@ export const GEMINI_MODELS: ModelOption[] = [
  * complex planning and analysis. Use custom entry for any unlisted models.
  */
 export const OPENAI_MODELS: ModelOption[] = [
+  // GPT-5.1 Series (Latest with Codex)
+  { value: 'openai/gpt-5.1', label: 'GPT-5.1 (Adaptive Reasoning)', category: 'GPT-5.1' },
+  { value: 'openai/gpt-5.1-codex', label: 'GPT-5.1 Codex', category: 'GPT-5.1' },
+  { value: 'openai/gpt-5.1-codex-mini', label: 'GPT-5.1 Codex Mini', category: 'GPT-5.1' },
+  { value: 'openai/gpt-5.1-codex-max', label: 'GPT-5.1 Codex Max', category: 'GPT-5.1' },
+  
   // GPT-5 Series (Frontier)
-  { value: 'openai/gpt-5.1', label: 'GPT-5.1 (Frontier)', category: 'GPT-5' },
-  { value: 'openai/gpt-5', label: 'GPT-5', category: 'GPT-5' },
+  { value: 'openai/gpt-5', label: 'GPT-5 (Recommended)', category: 'GPT-5' },
   { value: 'openai/gpt-5-mini', label: 'GPT-5 Mini', category: 'GPT-5' },
   { value: 'openai/gpt-5-nano', label: 'GPT-5 Nano', category: 'GPT-5' },
   
@@ -81,7 +102,7 @@ export function getModelsForProvider(provider: 'gemini' | 'openai' | 'claude'): 
  */
 export const RECOMMENDED_MODELS = {
   gemini: 'googleai/gemini-2.5-flash',
-  openai: 'openai/gpt-4o',
+  openai: 'openai/gpt-5',
   claude: '',
 };
 
