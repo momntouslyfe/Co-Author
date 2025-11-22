@@ -10,7 +10,7 @@
 
 import {z} from 'genkit';
 
-import { getUserGenkitInstance } from '@/lib/genkit-user';
+import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 
 const ResearchBookTopicInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -30,7 +30,7 @@ const ResearchBookTopicOutputSchema = z.object({
 export type ResearchBookTopicOutput = z.infer<typeof ResearchBookTopicOutputSchema>;
 
 export async function researchBookTopic(input: ResearchBookTopicInput): Promise<ResearchBookTopicOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
+  const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
   
   try {
     const prompt = ai.definePrompt({
@@ -89,7 +89,7 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
   You must provide the entire response in the specified **{{{language}}}**, organized into the three requested output fields: \`deepTopicResearch\`, \`painPointAnalysis\`, and \`targetAudienceSuggestion\`. Proceed with generating the two parts now.`,
     });
     
-    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
+    const {output} = await prompt(input, { model: input.model || routedModel });
     
     if (!output) {
       throw new Error('The AI did not return any research data. Please try again.');

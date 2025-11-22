@@ -10,7 +10,7 @@
 
 import {z} from 'genkit';
 
-import { getUserGenkitInstance } from '@/lib/genkit-user';
+import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 
 const RewriteSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -32,7 +32,7 @@ const RewriteSectionOutputSchema = z.object({
 export type RewriteSectionOutput = z.infer<typeof RewriteSectionOutputSchema>;
 
 export async function rewriteSection(input: RewriteSectionInput): Promise<RewriteSectionOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
+  const { ai, model: routedModel } = await getGenkitInstanceForFunction('rewrite', input.userId, input.idToken);
   
   const rewriteSectionPrompt = ai.definePrompt({
     name: 'rewriteSectionPrompt',
@@ -96,7 +96,7 @@ export async function rewriteSection(input: RewriteSectionInput): Promise<Rewrit
 `,
   });
   
-  const { output } = await rewriteSectionPrompt(input, { ...(input.model && { model: input.model }) });
+  const { output } = await rewriteSectionPrompt(input, { model: input.model || routedModel });
   if (!output) {
     throw new Error("AI failed to rewrite the section.");
   }

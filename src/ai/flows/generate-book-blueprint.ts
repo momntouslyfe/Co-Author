@@ -11,7 +11,7 @@
 
 import {z} from 'genkit';
 
-import { getUserGenkitInstance } from '@/lib/genkit-user';
+import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 
 const GenerateBookBlueprintInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -53,7 +53,7 @@ export async function generateBookBlueprint(
     styleProfilePreview: input.styleProfile?.substring(0, 200),
   });
   
-  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
+  const { ai, model: routedModel } = await getGenkitInstanceForFunction('blueprint', input.userId, input.idToken);
   
   try {
     const prompt = ai.definePrompt({
@@ -102,7 +102,7 @@ The following style profile describes HOW to write, NOT WHAT to write about. App
 
 4.  **Content Rules:**
     *   Be an outliner, not a writer. The output must be a structural outline only.
-    *   Sub-topics should be short phrases or questions. Do NOT write paragraphs for sub-topics.
+    *   Sub-topics should be short phrases or questions. DO NOT write paragraphs for sub-topics.
     *   Ensure each of the three outlines (A, B, and C) offers a genuinely different angle or structure for the book.
 
 **Example Structure for ONE outline:**
@@ -126,7 +126,7 @@ Return ONLY the three formatted, concise outlines, following all rules precisely
 `,
     });
     
-    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
+    const {output} = await prompt(input, { model: input.model || routedModel });
     
     if (!output) {
       throw new Error('The AI did not return any blueprint data. Please try again.');

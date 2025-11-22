@@ -13,7 +13,7 @@
 
 import {z} from 'genkit';
 
-import { getUserGenkitInstance } from '@/lib/genkit-user';
+import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 
 const ExpandBookContentInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -36,7 +36,7 @@ const ExpandBookContentOutputSchema = z.object({
 export type ExpandBookContentOutput = z.infer<typeof ExpandBookContentOutputSchema>;
 
 export async function expandBookContent(input: ExpandBookContentInput): Promise<ExpandBookContentOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
+  const { ai, model: routedModel } = await getGenkitInstanceForFunction('expand', input.userId, input.idToken);
   
   const prompt = ai.definePrompt({
     name: 'expandBookContentPrompt',
@@ -91,6 +91,6 @@ Just write more. Expand on the ideas presented in the starting paragraph.
 `,
   });
   
-  const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
+  const {output} = await prompt(input, { model: input.model || routedModel });
   return output!;
 }

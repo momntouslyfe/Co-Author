@@ -10,7 +10,7 @@
 
 import {z} from 'genkit';
 
-import { getUserGenkitInstance } from '@/lib/genkit-user';
+import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 
 const GenerateBookTitlesInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -34,7 +34,7 @@ export type GenerateBookTitlesOutput = z.infer<
 export async function generateBookTitles(
   input: GenerateBookTitlesInput
 ): Promise<GenerateBookTitlesOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
+  const { ai, model: routedModel } = await getGenkitInstanceForFunction('title', input.userId, input.idToken);
   
   try {
     const prompt = ai.definePrompt({
@@ -59,7 +59,7 @@ export async function generateBookTitles(
 `,
     });
     
-    const {output} = await prompt(input, { ...(input.model && { model: input.model }) });
+    const {output} = await prompt(input, { model: input.model || routedModel });
     
     if (!output || !output.titles || output.titles.length === 0) {
       throw new Error('The AI did not return any title suggestions. Please try again.');

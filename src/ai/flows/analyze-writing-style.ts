@@ -13,7 +13,7 @@
 
 import {z} from 'genkit';
 
-import { getUserGenkitInstance } from '@/lib/genkit-user';
+import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 
 const AnalyzeWritingStyleInputSchema = z.object({
     userId: z.string().describe('The user ID for API key retrieval.'),
@@ -29,7 +29,7 @@ const AnalyzeWritingStyleOutputSchema = z.object({
 export type AnalyzeWritingStyleOutput = z.infer<typeof AnalyzeWritingStyleOutputSchema>;
 
 export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Promise<AnalyzeWritingStyleOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
+  const { ai, model: routedModel } = await getGenkitInstanceForFunction('style_analysis', input.userId, input.idToken);
   
   try {
     const prompt = ai.definePrompt({
@@ -86,7 +86,8 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
     });
     
     const {output} = await prompt(
-      { fileDataUri: input.fileDataUri, userId: input.userId, idToken: input.idToken, ...(input.model && { model: input.model }) },
+      { fileDataUri: input.fileDataUri, userId: input.userId, idToken: input.idToken },
+      { model: input.model || routedModel }
     );
     
     if (!output || !output.styleAnalysis) {

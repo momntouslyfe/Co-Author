@@ -14,7 +14,7 @@
 
 import {z} from 'genkit';
 
-import { getUserGenkitInstance } from '@/lib/genkit-user';
+import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
 
 const WriteChapterSectionInputSchema = z.object({
@@ -43,7 +43,7 @@ export async function writeChapterSection(input: WriteChapterSectionInput): Prom
   
   return retryWithBackoff(
     async () => {
-      const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
+      const { ai, model: routedModel } = await getGenkitInstanceForFunction('chapter', input.userId, input.idToken);
       
       let chosenPrompt;
   
@@ -200,7 +200,7 @@ Proceed to write the section content now.
   }
   
       try {
-        const { output } = await chosenPrompt(input, { ...(input.model && { model: input.model }) });
+        const { output } = await chosenPrompt(input, { model: input.model || routedModel });
 
         if (!output || !output.sectionContent) {
           throw new Error("AI failed to generate the section content.");

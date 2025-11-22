@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import type { AdminAPIKey, AIProvider } from '@/lib/definitions';
+import { getModelsForProvider, getDefaultModel } from '@/lib/ai-models';
 
 export function APIKeysManager() {
   const [apiKeys, setApiKeys] = useState<AdminAPIKey[]>([]);
@@ -269,21 +270,40 @@ export function APIKeysManager() {
 
             <div className="space-y-2">
               <Label>Default Model (Optional)</Label>
-              <Input
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                placeholder={
-                  provider === 'gemini'
-                    ? 'e.g., googleai/gemini-2.5-flash'
-                    : provider === 'openai'
-                    ? 'e.g., openai/gpt-4o, openai/gpt-4o-mini'
-                    : provider === 'claude'
-                    ? 'Claude not yet implemented'
-                    : 'Enter model name'
-                }
-              />
+              {(model === 'custom' || (model && model !== '' && !getModelsForProvider(provider).find(m => m.value === model && m.value !== 'custom'))) ? (
+                <div className="space-y-2">
+                  <Input
+                    value={model === 'custom' ? '' : model}
+                    onChange={(e) => setModel(e.target.value || 'custom')}
+                    placeholder={`Enter custom ${provider} model (e.g., ${provider === 'openai' ? 'openai/gpt-4o' : provider === 'gemini' ? 'googleai/gemini-2.0-flash' : 'model name'})`}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setModel('')}
+                  >
+                    Back to model selection
+                  </Button>
+                </div>
+              ) : (
+                <Select 
+                  value={model} 
+                  onValueChange={setModel}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={`Select ${provider} model or enter custom`} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {getModelsForProvider(provider).map((modelOption) => (
+                      <SelectItem key={modelOption.value} value={modelOption.value}>
+                        {modelOption.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <p className="text-xs text-muted-foreground">
-                For reference only. Configure actual model routing in the AI Function Routing section below.
+                Select a common model or enter a custom one. You can override this per AI function in the routing configuration below.
               </p>
             </div>
 

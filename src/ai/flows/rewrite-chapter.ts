@@ -14,7 +14,7 @@
 
 import {z} from 'genkit';
 
-import { getUserGenkitInstance } from '@/lib/genkit-user';
+import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 
 const RewriteChapterInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -35,7 +35,7 @@ const RewriteChapterOutputSchema = z.object({
 export type RewriteChapterOutput = z.infer<typeof RewriteChapterOutputSchema>;
 
 export async function rewriteChapter(input: RewriteChapterInput): Promise<RewriteChapterOutput> {
-  const { ai, model } = await getUserGenkitInstance(input.userId, input.idToken);
+  const { ai, model: routedModel } = await getGenkitInstanceForFunction('rewrite', input.userId, input.idToken);
   
   const rewriteChapterPrompt = ai.definePrompt({
     name: 'rewriteChapterPrompt',
@@ -98,7 +98,7 @@ Proceed to rewrite the entire chapter now. You must not stop until all sections 
 `,
   });
   
-  const { output } = await rewriteChapterPrompt(input, { ...(input.model && { model: input.model }) });
+  const { output } = await rewriteChapterPrompt(input, { model: input.model || routedModel });
 
   if (!output || !output.rewrittenContent) {
     throw new Error("AI failed to rewrite the chapter content.");
