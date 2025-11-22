@@ -30,6 +30,8 @@ import type { StyleProfile } from '@/lib/definitions';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { getIdToken } from '@/lib/client-auth';
 import { addDoc, collection, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { useCreditSummary } from '@/contexts/credit-summary-context';
+import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -69,6 +71,7 @@ export default function StyleProfilePage() {
 
   const { user } = useAuthUser();
   const firestore = useFirestore();
+  const { refreshCredits } = useCreditSummary();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -147,6 +150,7 @@ export default function StyleProfilePage() {
         fileDataUri: values.fileDataUri 
       });
       setAnalysisResult(result.styleAnalysis);
+      refreshCredits();
       toast({
         title: 'Analysis Complete',
         description: 'Your writing style has been analyzed.',
@@ -215,9 +219,11 @@ export default function StyleProfilePage() {
 
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-bold font-headline">Your Writing Style Profiles</h1>
+    <>
+      <FloatingCreditWidget />
+      <div className="space-y-8">
+        <header>
+          <h1 className="text-3xl font-bold font-headline">Your Writing Style Profiles</h1>
         <p className="text-muted-foreground">
           Create and manage multiple writing style profiles. The AI will use these to learn your unique voice.
         </p>
@@ -379,6 +385,7 @@ export default function StyleProfilePage() {
             </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </>
   );
 }

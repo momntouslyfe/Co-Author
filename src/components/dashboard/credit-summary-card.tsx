@@ -109,14 +109,14 @@ export function CreditSummaryCard() {
           <div className="space-y-1">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">
-                {creditSummary.bookCreditsAvailable.toLocaleString()} of{' '}
-                {creditSummary.bookCreditsTotal.toLocaleString()} available
+                {creditSummary.bookCreditsAvailable.toLocaleString()} remaining of{' '}
+                {creditSummary.bookCreditsTotal.toLocaleString()} total
               </span>
               <span className="font-medium">
                 {creditSummary.bookCreditsUsed.toLocaleString()} used
               </span>
             </div>
-            <Progress value={100 - bookUsagePercent} className="h-2" />
+            <Progress value={bookUsagePercent} className="h-2" />
           </div>
         </div>
 
@@ -136,14 +136,14 @@ export function CreditSummaryCard() {
           <div className="space-y-1">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">
-                {creditSummary.wordCreditsAvailable.toLocaleString()} of{' '}
-                {creditSummary.wordCreditsTotal.toLocaleString()} available
+                {creditSummary.wordCreditsAvailable.toLocaleString()} remaining of{' '}
+                {creditSummary.wordCreditsTotal.toLocaleString()} total
               </span>
               <span className="font-medium">
                 {creditSummary.wordCreditsUsed.toLocaleString()} used
               </span>
             </div>
-            <Progress value={100 - wordUsagePercent} className="h-2" />
+            <Progress value={wordUsagePercent} className="h-2" />
           </div>
         </div>
 

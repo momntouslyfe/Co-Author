@@ -25,6 +25,8 @@ import { useAuthUser } from '@/firebase/auth/use-user';
 import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { getIdToken } from '@/lib/client-auth';
+import { useCreditSummary } from '@/contexts/credit-summary-context';
+import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 
 const formSchema = z.object({
   topic: z.string().min(3, 'Topic must be at least 3 characters.'),
@@ -51,6 +53,7 @@ export default function ResearchPage() {
   const [currentValues, setCurrentValues] = useState<FormValues | null>(null);
   const { user } = useAuthUser();
   const firestore = useFirestore();
+  const { refreshCredits } = useCreditSummary();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -81,6 +84,7 @@ export default function ResearchPage() {
         ...values
       });
       setResult(researchData);
+      refreshCredits();
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
@@ -120,13 +124,15 @@ export default function ResearchPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold font-headline tracking-tighter">AI Topic Research Assistant</h1>
-        <p className="text-muted-foreground">
-          Generate a comprehensive topic library and market analysis to build a foundation for your book.
-        </p>
-      </header>
+    <>
+      <FloatingCreditWidget />
+      <div className="space-y-6">
+        <header>
+          <h1 className="text-3xl font-bold font-headline tracking-tighter">AI Topic Research Assistant</h1>
+          <p className="text-muted-foreground">
+            Generate a comprehensive topic library and market analysis to build a foundation for your book.
+          </p>
+        </header>
 
       <Card>
         <CardContent className="pt-6">
@@ -243,6 +249,7 @@ export default function ResearchPage() {
             </Card>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

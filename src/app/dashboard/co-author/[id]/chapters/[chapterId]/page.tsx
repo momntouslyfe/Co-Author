@@ -23,6 +23,8 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { getIdToken } from '@/lib/client-auth';
+import { useCreditSummary } from '@/contexts/credit-summary-context';
+import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 
 
 // Allow up to 5 minutes for AI chapter generation
@@ -96,6 +98,7 @@ const ChapterEditor = ({
     setIsGenerating,
     onRewriteChapter,
     user,
+    refreshCredits,
 }: { 
     project: Project, 
     chapterDetails: Chapter, 
@@ -112,6 +115,7 @@ const ChapterEditor = ({
     setIsGenerating: (isGenerating: boolean) => void;
     onRewriteChapter: (instruction?: string) => void;
     user: any;
+    refreshCredits: () => void;
 }) => {
     
     const [isExtending, setIsExtending] = useState<number | null>(null);
@@ -193,6 +197,7 @@ const ChapterEditor = ({
                 return prevContent;
             });
 
+            refreshCredits();
             toast({ title: "Content Extended", description: "New content has been added." });
 
         } catch (error) {
@@ -260,6 +265,7 @@ const ChapterEditor = ({
                     }
                     return prevContent;
                 });
+                refreshCredits();
                 toast({ title: "Section Written", description: `Successfully generated "${sectionTitle}"` });
             } else {
                 throw new Error("AI returned no content");
@@ -329,6 +335,7 @@ const ChapterEditor = ({
                     }
                     return prevContent;
                 });
+                refreshCredits();
                 toast({ title: "Section Rewritten", description: "The AI has rewritten the section." });
             } else {
                 throw new Error("AI returned empty content during section rewrite.");
@@ -398,6 +405,7 @@ const ChapterEditor = ({
                     }
                     return prevContent;
                 });
+                refreshCredits();
                 successfulSections.push(sectionTitle);
             } else {
               failedSections.push({ index, title: sectionTitle, error: new Error("AI returned no content") });
@@ -464,6 +472,7 @@ const ChapterEditor = ({
                         }
                         return prevContent;
                     });
+                    refreshCredits();
                     retrySuccess = true;
                     successfulSections.push(failedSection.title);
                     toast({ 
@@ -719,6 +728,7 @@ export default function ChapterPage() {
 
   const { user } = useAuthUser();
   const firestore = useFirestore();
+  const { refreshCredits } = useCreditSummary();
   
   const projectDocRef = useMemoFirebase(() => {
     if (!user || !projectId) return null;
@@ -873,6 +883,7 @@ export default function ChapterPage() {
 
         if (result && result.rewrittenContent) {
             setChapterContent(result.rewrittenContent);
+            refreshCredits();
             toast({ title: "Chapter Rewritten", description: "The AI has rewritten the chapter." });
         } else {
             throw new Error("AI returned empty content during rewrite.");
@@ -1026,11 +1037,13 @@ export default function ChapterPage() {
 
 
   return ( 
-    <div className="space-y-6">
-       <Card>
-        <CardHeader className="flex-row items-center justify-between">
-            <div>
-                <CardTitle className="font-headline text-xl">{chapterDetails.title}</CardTitle>
+    <>
+      <FloatingCreditWidget />
+      <div className="space-y-6">
+         <Card>
+          <CardHeader className="flex-row items-center justify-between">
+              <div>
+                  <CardTitle className="font-headline text-xl">{chapterDetails.title}</CardTitle>
                 <CardDescription>Part of: {chapterDetails.part}</CardDescription>
             </div>
             <div className="flex gap-2">
@@ -1068,6 +1081,7 @@ export default function ChapterPage() {
                           setIsGenerating={setIsGenerating}
                           onRewriteChapter={handleRewriteChapter}
                           user={user}
+                          refreshCredits={refreshCredits}
                         />
                     </div>
                     <div className="flex justify-end pt-4 border-t">
@@ -1080,6 +1094,7 @@ export default function ChapterPage() {
             )}
         </CardContent>
        </Card>
-    </div>
+      </div>
+    </>
   );
 }

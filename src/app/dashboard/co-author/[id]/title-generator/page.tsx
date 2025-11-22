@@ -17,6 +17,8 @@ import { Input } from '@/components/ui/input';
 import { getIdToken } from '@/lib/client-auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { WorkflowNavigation } from '@/components/workflow-navigation';
+import { useCreditSummary } from '@/contexts/credit-summary-context';
+import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 
 export default function TitleGeneratorPage() {
   const { toast } = useToast();
@@ -25,6 +27,7 @@ export default function TitleGeneratorPage() {
   const projectId = params.id;
   const { user } = useAuthUser();
   const firestore = useFirestore();
+  const { refreshCredits } = useCreditSummary();
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -83,6 +86,7 @@ export default function TitleGeneratorPage() {
         storytellingFramework: project.storytellingFramework,
       });
       setTitles(result.titles);
+      refreshCredits();
       if (result.titles.length > 0) {
         setSelectedTitle(result.titles[0]);
       }
@@ -168,9 +172,11 @@ export default function TitleGeneratorPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <WorkflowNavigation
-        projectId={projectId}
+    <>
+      <FloatingCreditWidget />
+      <div className="space-y-8">
+        <WorkflowNavigation
+          projectId={projectId}
         currentStep="title"
         projectHasOutline={!!project?.outline}
         projectHasTitle={!!project?.title}
@@ -332,6 +338,7 @@ export default function TitleGeneratorPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </>
   );
 }

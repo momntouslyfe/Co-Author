@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Bell, Loader2 } from "lucide-react";
 import { useAuthUser } from '@/firebase/auth/use-user';
+import { CreditSummaryProvider } from '@/contexts/credit-summary-context';
 
 
 export default function DashboardLayout({
@@ -41,33 +42,35 @@ export default function DashboardLayout({
   }
   
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <Logo />
-        </SidebarHeader>
-        <SidebarContent>
-          <MainNav />
-        </SidebarContent>
-        <SidebarFooter>
-          <UserNav />
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-            <SidebarTrigger className="sm:hidden" />
-            {/* We can add breadcrumbs here if needed */}
-            <div className="ml-auto flex items-center gap-2">
-                <Button variant="outline" size="icon" className="h-8 w-8">
-                    <Bell className="h-4 w-4" />
-                    <span className="sr-only">Toggle notifications</span>
-                </Button>
-            </div>
-        </header>
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
-            {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <CreditSummaryProvider>
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarHeader>
+            <Logo />
+          </SidebarHeader>
+          <SidebarContent>
+            <MainNav />
+          </SidebarContent>
+          <SidebarFooter>
+            <UserNav />
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+              <SidebarTrigger className="sm:hidden" />
+              {/* We can add breadcrumbs here if needed */}
+              <div className="ml-auto flex items-center gap-2">
+                  <Button variant="outline" size="icon" className="h-8 w-8">
+                      <Bell className="h-4 w-4" />
+                      <span className="sr-only">Toggle notifications</span>
+                  </Button>
+              </div>
+          </header>
+          <main className="flex-1 overflow-auto p-4 sm:p-6">
+              {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </CreditSummaryProvider>
   );
 }

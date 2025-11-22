@@ -31,6 +31,8 @@ import Link from 'next/link';
 import { getIdToken } from '@/lib/client-auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { WorkflowNavigation } from '@/components/workflow-navigation';
+import { useCreditSummary } from '@/contexts/credit-summary-context';
+import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 
 
 const formSchema = z.object({
@@ -67,6 +69,7 @@ export default function CoAuthorWorkspacePage() {
   const { user } = useAuthUser();
   const firestore = useFirestore();
   const params = useParams<{ id: string }>();
+  const { refreshCredits } = useCreditSummary();
   const projectId = params.id;
 
   const [result, setResult] = useState<GenerateBookBlueprintOutput | null>(null);
@@ -195,6 +198,7 @@ export default function CoAuthorWorkspacePage() {
         styleProfile: styleProfileContent,
       });
       setResult(blueprint);
+      refreshCredits();
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
@@ -262,9 +266,11 @@ export default function CoAuthorWorkspacePage() {
 
 
   return (
-    <div className="space-y-8">
-      <WorkflowNavigation
-        projectId={projectId}
+    <>
+      <FloatingCreditWidget />
+      <div className="space-y-8">
+        <WorkflowNavigation
+          projectId={projectId}
         currentStep="blueprint"
         projectHasOutline={!!project?.outline}
         projectHasTitle={!!project?.title}
@@ -535,7 +541,8 @@ export default function CoAuthorWorkspacePage() {
         </Card>
        )}
 
-    </div>
+      </div>
+    </>
   );
 }
 
