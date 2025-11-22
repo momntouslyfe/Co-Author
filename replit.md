@@ -46,6 +46,19 @@ Preferred communication style: Simple, everyday language.
 - **Safety Handling**: Gemini safety blocks treated as valid API key confirmations.
 - **Scope**: Designed for standard model configurations; complex multi-namespace routing may require direct validation.
 
+**Admin Authentication Security**:
+- **Password Hashing**: Uses bcrypt for secure password hashing (backwards compatible with plain text for migration).
+- **Token-Based Auth**: HMAC SHA-256 signed tokens with 24-hour expiration.
+- **Centralized Auth**: `getAuthToken()` and `verifyAdminToken()` functions in `src/lib/admin-auth.ts`.
+- **Environment Variables**: Requires `ADMIN_EMAIL`, `ADMIN_PASSWORD` (hashed), and `ENCRYPTION_KEY` (secret).
+- **Migration Path**: System supports both bcrypt-hashed and plain text passwords (with warnings) for gradual migration.
+
+**Subscription Management**:
+- **Credit System**: Complete subscription and credit tracking system implemented (see CREDIT_SYSTEM.md).
+- **Admin Controls**: Full CRUD operations for subscription plans and addon credit packages.
+- **Payment Integration**: Currently uses placeholder UI. Stripe integration available but requires setup.
+- **Security**: All admin routes protected with token verification and proper error handling.
+
 ## External Dependencies
 
 **AI Services**:

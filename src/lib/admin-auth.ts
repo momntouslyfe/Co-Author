@@ -58,14 +58,15 @@ export function verifyAdminCredentials(email: string, password: string): AdminAu
 }
 
 export function generateAdminToken(email: string): string {
-  const secret = process.env.ENCRYPTION_KEY;
+  const secret = process.env.ADMIN_TOKEN_SECRET;
   
   if (!secret) {
-    throw new Error('ENCRYPTION_KEY environment variable is not set. Cannot generate admin token.');
+    throw new Error('ADMIN_TOKEN_SECRET environment variable is not set. This is required for secure token generation. Please configure ADMIN_TOKEN_SECRET as a separate secret from ENCRYPTION_KEY.');
   }
   
   const timestamp = Date.now();
-  const data = `${email}:${timestamp}`;
+  const nonce = crypto.randomBytes(16).toString('hex');
+  const data = `${email}:${timestamp}:${nonce}`;
   
   const hmac = crypto.createHmac('sha256', secret);
   hmac.update(data);
@@ -77,15 +78,21 @@ export function generateAdminToken(email: string): string {
 
 export function verifyAdminToken(token: string): { valid: boolean; email?: string } {
   try {
-    const secret = process.env.ENCRYPTION_KEY;
+    const secret = process.env.ADMIN_TOKEN_SECRET;
     
     if (!secret) {
-      console.error('ENCRYPTION_KEY environment variable is not set. Cannot verify admin token.');
+      console.error('ADMIN_TOKEN_SECRET environment variable is not set. Cannot verify admin token.');
       return { valid: false };
     }
     
     const decoded = Buffer.from(token, 'base64').toString('utf-8');
-    const [email, timestampStr, signature] = decoded.split(':');
+    const parts = decoded.split(':');
+    
+    if (parts.length !== 4) {
+      return { valid: false };
+    }
+    
+    const [email, timestampStr, nonce, signature] = parts;
     
     const timestamp = parseInt(timestampStr, 10);
     const now = Date.now();
@@ -95,7 +102,7 @@ export function verifyAdminToken(token: string): { valid: boolean; email?: strin
       return { valid: false };
     }
     
-    const data = `${email}:${timestampStr}`;
+    const data = `${email}:${timestampStr}:${nonce}`;
     const hmac = crypto.createHmac('sha256', secret);
     hmac.update(data);
     const expectedSignature = hmac.digest('hex');

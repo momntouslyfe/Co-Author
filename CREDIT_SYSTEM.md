@@ -138,6 +138,8 @@ Before AI operations:
 
 AI workflow functions currently accept `userId` and `idToken` as parameters. The `getGenkitInstanceForFunction` validates the idToken internally. For additional security, future enhancements could derive userId server-side from the verified token rather than accepting it as a parameter.
 
+**Admin Route Security**: All admin routes use bcrypt password hashing and token-based authentication with 24-hour expiration. See `SECURITY_SETUP.md` for complete security configuration and best practices.
+
 ## Book Creation Credits
 
 Book creation credits are tracked separately:
