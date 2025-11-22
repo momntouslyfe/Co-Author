@@ -38,14 +38,16 @@ export function verifyAdminCredentials(email: string, password: string): AdminAu
     };
   }
 
-  let isPasswordValid = false;
-
-  if (adminPassword.startsWith('$2a$') || adminPassword.startsWith('$2b$') || adminPassword.startsWith('$2y$')) {
-    isPasswordValid = bcrypt.compareSync(password, adminPassword);
-  } else {
-    console.warn('WARNING: Admin password is stored in plain text. Please update to use bcrypt hashed password for security.');
-    isPasswordValid = password === adminPassword;
+  if (!adminPassword.startsWith('$2a$') && !adminPassword.startsWith('$2b$') && !adminPassword.startsWith('$2y$')) {
+    console.error('SECURITY ERROR: ADMIN_PASSWORD must be bcrypt-hashed. Plain text passwords are no longer accepted.');
+    console.error('Please hash your password using the instructions in SECURITY_SETUP.md');
+    return {
+      success: false,
+      error: 'Admin authentication is not properly configured. Contact system administrator.',
+    };
   }
+
+  const isPasswordValid = bcrypt.compareSync(password, adminPassword);
 
   if (!isPasswordValid) {
     return {
