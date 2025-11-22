@@ -11,6 +11,7 @@
 import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
+import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
 
 const GenerateBookTitlesInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -34,6 +35,8 @@ export type GenerateBookTitlesOutput = z.infer<
 export async function generateBookTitles(
   input: GenerateBookTitlesInput
 ): Promise<GenerateBookTitlesOutput> {
+  await preflightCheckWordCredits(input.userId, 200);
+  
   const { ai, model: routedModel } = await getGenkitInstanceForFunction('title', input.userId, input.idToken);
   
   try {
@@ -64,6 +67,13 @@ export async function generateBookTitles(
     if (!output || !output.titles || output.titles.length === 0) {
       throw new Error('The AI did not return any title suggestions. Please try again.');
     }
+    
+    await trackAIUsage(
+      input.userId,
+      output.titles.join('\n'),
+      'generateBookTitles',
+      { titleCount: output.titles.length }
+    );
     
     return output;
   } catch (error: any) {

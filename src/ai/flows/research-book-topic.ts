@@ -11,6 +11,7 @@
 import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
+import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
 
 const ResearchBookTopicInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -30,6 +31,8 @@ const ResearchBookTopicOutputSchema = z.object({
 export type ResearchBookTopicOutput = z.infer<typeof ResearchBookTopicOutputSchema>;
 
 export async function researchBookTopic(input: ResearchBookTopicInput): Promise<ResearchBookTopicOutput> {
+  await preflightCheckWordCredits(input.userId, 2000);
+  
   const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
   
   try {
@@ -94,6 +97,13 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
     if (!output) {
       throw new Error('The AI did not return any research data. Please try again.');
     }
+    
+    await trackAIUsage(
+      input.userId,
+      output.deepTopicResearch + '\n' + output.painPointAnalysis + '\n' + output.targetAudienceSuggestion,
+      'researchBookTopic',
+      { topic: input.topic }
+    );
     
     return output;
   } catch (error: any) {

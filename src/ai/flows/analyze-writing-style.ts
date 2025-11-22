@@ -14,6 +14,7 @@
 import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
+import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
 
 const AnalyzeWritingStyleInputSchema = z.object({
     userId: z.string().describe('The user ID for API key retrieval.'),
@@ -29,6 +30,8 @@ const AnalyzeWritingStyleOutputSchema = z.object({
 export type AnalyzeWritingStyleOutput = z.infer<typeof AnalyzeWritingStyleOutputSchema>;
 
 export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Promise<AnalyzeWritingStyleOutput> {
+  await preflightCheckWordCredits(input.userId, 1000);
+  
   const { ai, model: routedModel } = await getGenkitInstanceForFunction('style_analysis', input.userId, input.idToken);
   
   try {
@@ -93,6 +96,13 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
     if (!output || !output.styleAnalysis) {
       throw new Error('The AI did not return any style analysis. Please try again.');
     }
+    
+    await trackAIUsage(
+      input.userId,
+      output.styleAnalysis,
+      'analyzeWritingStyle',
+      {}
+    );
     
     return output;
   } catch (error: any) {

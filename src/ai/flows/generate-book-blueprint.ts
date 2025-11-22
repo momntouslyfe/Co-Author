@@ -12,6 +12,7 @@
 import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
+import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
 
 const GenerateBookBlueprintInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -39,6 +40,8 @@ export type GenerateBookBlueprintOutput = z.infer<
 export async function generateBookBlueprint(
   input: GenerateBookBlueprintInput
 ): Promise<GenerateBookBlueprintOutput> {
+  await preflightCheckWordCredits(input.userId, 1500);
+  
   // Log what the AI flow actually receives
   console.log('AI Flow - Blueprint Generation Input:', {
     topic: input.topic,
@@ -131,6 +134,13 @@ Return ONLY the three formatted, concise outlines, following all rules precisely
     if (!output) {
       throw new Error('The AI did not return any blueprint data. Please try again.');
     }
+    
+    await trackAIUsage(
+      input.userId,
+      output.outlineA + '\n' + output.outlineB + '\n' + output.outlineC,
+      'generateBookBlueprint',
+      { topic: input.topic }
+    );
     
     return output;
   } catch (error: any) {

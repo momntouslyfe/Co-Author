@@ -106,10 +106,15 @@ Credit tracking is integrated into AI workflows:
 
 ### Automatic Word Credit Deduction
 
-The following AI functions automatically deduct word credits:
-- `writeChapterSection` - Writing chapter sections
-- `expandBookContent` - Expanding book content
-- `rewriteSection` - Rewriting content sections
+All AI functions automatically deduct word credits based on actual output:
+- `writeChapterSection` - Writing chapter sections (~500 words estimated)
+- `expandBookContent` - Expanding book content (~300 words estimated)
+- `rewriteSection` - Rewriting content sections (~400 words estimated)
+- `rewriteChapter` - Rewriting entire chapters (~3000 words estimated)
+- `generateBookTitles` - Generating book title suggestions (~200 words estimated)
+- `generateBookBlueprint` - Generating book outlines/blueprints (~1500 words estimated)
+- `analyzeWritingStyle` - Analyzing writing style from samples (~1000 words estimated)
+- `researchBookTopic` - Researching topics with AI (~2000 words estimated)
 
 ### How It Works
 
@@ -171,9 +176,14 @@ Book creation credits are tracked separately:
 - `src/app/dashboard/credits/purchase/page.tsx`
 
 ### AI Flows (with credit tracking)
-- `src/ai/flows/write-chapter-section.ts`
-- `src/ai/flows/expand-book-content.ts`
-- `src/ai/flows/rewrite-section.ts`
+- `src/ai/flows/write-chapter-section.ts` - Write individual chapter sections
+- `src/ai/flows/expand-book-content.ts` - Expand existing content
+- `src/ai/flows/rewrite-section.ts` - Rewrite individual sections
+- `src/ai/flows/rewrite-chapter.ts` - Rewrite entire chapters
+- `src/ai/flows/generate-book-titles.ts` - Generate book title suggestions
+- `src/ai/flows/generate-book-blueprint.ts` - Generate book outlines/blueprints
+- `src/ai/flows/analyze-writing-style.ts` - Analyze writing style from samples
+- `src/ai/flows/research-book-topic.ts` - Research topics with AI
 
 ## Usage Examples
 
