@@ -60,27 +60,70 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows public read and write access to coupon data. **THIS IS INSECURE FOR PRODUCTION.**
+     * @description Coupons can be read by anyone but only admins can modify them (server-side).
      * @path /coupons/{couponId}
-     * @allow (get, list, create, update, delete) Any unauthenticated user can read and write any coupon document.
-     * @deny (none) Since the application has no auth, there are no scenarios to deny.
-     * @principle No security is enforced due to lack of authentication.
+     * @allow (get, list) Public read access for coupon codes
+     * @allow (create, update, delete) Admin-only operations (handled server-side)
      */
     match /coupons/{couponId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
 
     /**
-     * @description Allows public read and write access to blog data. **THIS IS INSECURE FOR PRODUCTION.**
+     * @description Blog posts can be read by anyone, modifications handled server-side.
      * @path /blogs/{blogId}
-     * @allow (get, list, create, update, delete) Any unauthenticated user can read and write any blog document.
-     * @deny (none) Since the application has no auth, there are no scenarios to deny.
-     * @principle No security is enforced due to lack of authentication.
+     * @allow (get, list) Public read access for blog content
+     * @allow (create, update, delete) Handled server-side with admin privileges
      */
     match /blogs/{blogId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Subscription plans can be read by anyone, but only admins can modify them.
+     * @path /subscriptionPlans/{planId}
+     * @allow (get, list) Any authenticated user can view subscription plans.
+     * @allow (create, update, delete) Reserved for admin operations (handled server-side).
+     */
+    match /subscriptionPlans/{planId} {
+      allow get, list: if request.auth != null;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Addon credit plans can be read by anyone, but only admins can modify them.
+     * @path /addonCreditPlans/{planId}
+     * @allow (get, list) Any authenticated user can view addon credit plans.
+     * @allow (create, update, delete) Reserved for admin operations (handled server-side).
+     */
+    match /addonCreditPlans/{planId} {
+      allow get, list: if request.auth != null;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description User subscriptions can only be accessed by the owning user or admin (server-side).
+     * @path /userSubscriptions/{userId}
+     * @allow (get, create, update) Only if the authenticated user's UID matches the document ID.
+     * @deny (list, delete) To prevent enumeration and accidental deletion.
+     */
+    match /userSubscriptions/{userId} {
+      allow get, create, update: if request.auth != null && request.auth.uid == userId;
+      allow list, delete: if false;
+    }
+
+    /**
+     * @description Credit transactions are managed server-side via Firebase Admin SDK.
+     * @path /creditTransactions/{transactionId}
+     * @allow (get) Users can view individual transactions if they own them.
+     * @deny (list, create, update, delete) All modifications handled server-side.
+     * @principle Transactions are created/queried server-side with admin privileges.
+     */
+    match /creditTransactions/{transactionId} {
+      allow get: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow list, create, update, delete: if false;
     }
   }
 }

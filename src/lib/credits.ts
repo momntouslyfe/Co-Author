@@ -1,22 +1,5 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  addDoc,
-  limit,
-  Firestore,
-  runTransaction,
-  increment,
-} from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import * as admin from 'firebase-admin';
+import { initializeFirebaseAdmin } from './firebase-admin';
 import type {
   SubscriptionPlan,
   AddonCreditPlan,
@@ -32,11 +15,11 @@ import type {
   CreditTransactionType,
 } from '@/types/subscription';
 
-let db: Firestore;
-function getDb(): Firestore {
+let db: admin.firestore.Firestore;
+function getDb(): admin.firestore.Firestore {
   if (!db) {
-    const { firestore } = initializeFirebase();
-    db = firestore;
+    initializeFirebaseAdmin();
+    db = admin.firestore();
   }
   return db;
 }
@@ -49,10 +32,10 @@ const COLLECTIONS = {
 };
 
 export async function getSubscriptionPlan(planId: string): Promise<SubscriptionPlan | null> {
-  const docRef = doc(getDb(), COLLECTIONS.SUBSCRIPTION_PLANS, planId);
-  const docSnap = await getDoc(docRef);
+  const docRef = getDb().collection(COLLECTIONS.SUBSCRIPTION_PLANS).doc(planId);
+  const docSnap = await docRef.get();
   
-  if (!docSnap.exists()) {
+  if (!docSnap.exists) {
     return null;
   }
   
@@ -60,20 +43,20 @@ export async function getSubscriptionPlan(planId: string): Promise<SubscriptionP
 }
 
 export async function getAllSubscriptionPlans(activeOnly = false): Promise<SubscriptionPlan[]> {
-  const plansRef = collection(getDb(), COLLECTIONS.SUBSCRIPTION_PLANS);
+  const plansRef = getDb().collection(COLLECTIONS.SUBSCRIPTION_PLANS);
   const q = activeOnly 
-    ? query(plansRef, where('isActive', '==', true), orderBy('price', 'asc'))
-    : query(plansRef, orderBy('createdAt', 'desc'));
+    ? plansRef.where('isActive', '==', true).orderBy('price', 'asc')
+    : plansRef.orderBy('createdAt', 'desc');
     
-  const snapshot = await getDocs(q);
+  const snapshot = await q.get();
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubscriptionPlan));
 }
 
 export async function createSubscriptionPlan(input: CreateSubscriptionPlanInput): Promise<string> {
-  const now = Timestamp.now();
-  const docRef = doc(collection(getDb(), COLLECTIONS.SUBSCRIPTION_PLANS));
+  const now = admin.firestore.Timestamp.now();
+  const docRef = getDb().collection(COLLECTIONS.SUBSCRIPTION_PLANS).doc();
   
-  await setDoc(docRef, {
+  await docRef.set({
     ...input,
     createdAt: now,
     updatedAt: now,
@@ -86,45 +69,45 @@ export async function updateSubscriptionPlan(
   planId: string,
   input: UpdateSubscriptionPlanInput
 ): Promise<void> {
-  const docRef = doc(getDb(), COLLECTIONS.SUBSCRIPTION_PLANS, planId);
-  await updateDoc(docRef, {
+  const docRef = getDb().collection(COLLECTIONS.SUBSCRIPTION_PLANS).doc(planId);
+  await docRef.update({
     ...input,
-    updatedAt: Timestamp.now(),
+    updatedAt: admin.firestore.Timestamp.now(),
   });
 }
 
 export async function deleteSubscriptionPlan(planId: string): Promise<void> {
-  const docRef = doc(getDb(), COLLECTIONS.SUBSCRIPTION_PLANS, planId);
-  await deleteDoc(docRef);
+  const docRef = getDb().collection(COLLECTIONS.SUBSCRIPTION_PLANS).doc(planId);
+  await docRef.delete();
 }
 
 export async function getAllAddonCreditPlans(
   type?: 'words' | 'books',
   activeOnly = false
 ): Promise<AddonCreditPlan[]> {
-  const plansRef = collection(getDb(), COLLECTIONS.ADDON_CREDIT_PLANS);
+  const plansRef = getDb().collection(COLLECTIONS.ADDON_CREDIT_PLANS);
   
-  let q = query(plansRef);
+  let q: admin.firestore.Query = plansRef;
   
   if (type && activeOnly) {
-    q = query(plansRef, where('type', '==', type), where('isActive', '==', true), orderBy('price', 'asc'));
+    q = plansRef.where('type', '==', type).where('isActive', '==', true).orderBy('price', 'asc');
   } else if (type) {
-    q = query(plansRef, where('type', '==', type), orderBy('price', 'asc'));
+    q = plansRef.where('type', '==', type).orderBy('createdAt', 'desc');
   } else if (activeOnly) {
-    q = query(plansRef, where('isActive', '==', true), orderBy('createdAt', 'desc'));
+    q = plansRef.where('isActive', '==', true).orderBy('price', 'asc');
   } else {
-    q = query(plansRef, orderBy('createdAt', 'desc'));
+    q = plansRef.orderBy('createdAt', 'desc');
   }
   
-  const snapshot = await getDocs(q);
+  const snapshot = await q.get();
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AddonCreditPlan));
 }
 
 export async function createAddonCreditPlan(input: CreateAddonCreditPlanInput): Promise<string> {
-  const now = Timestamp.now();
-  const docRef = doc(collection(getDb(), COLLECTIONS.ADDON_CREDIT_PLANS));
+  const now = admin.firestore.Timestamp.now();
+  const docRef = getDb().collection(COLLECTIONS.ADDON_CREDIT_PLANS).doc();
   
-  await setDoc(docRef, {
+  await docRef.set({
     ...input,
     createdAt: now,
     updatedAt: now,
@@ -137,23 +120,23 @@ export async function updateAddonCreditPlan(
   planId: string,
   input: UpdateAddonCreditPlanInput
 ): Promise<void> {
-  const docRef = doc(getDb(), COLLECTIONS.ADDON_CREDIT_PLANS, planId);
-  await updateDoc(docRef, {
+  const docRef = getDb().collection(COLLECTIONS.ADDON_CREDIT_PLANS).doc(planId);
+  await docRef.update({
     ...input,
-    updatedAt: Timestamp.now(),
+    updatedAt: admin.firestore.Timestamp.now(),
   });
 }
 
 export async function deleteAddonCreditPlan(planId: string): Promise<void> {
-  const docRef = doc(getDb(), COLLECTIONS.ADDON_CREDIT_PLANS, planId);
-  await deleteDoc(docRef);
+  const docRef = getDb().collection(COLLECTIONS.ADDON_CREDIT_PLANS).doc(planId);
+  await docRef.delete();
 }
 
 export async function getUserSubscription(userId: string): Promise<UserSubscription | null> {
-  const docRef = doc(getDb(), COLLECTIONS.USER_SUBSCRIPTIONS, userId);
-  const docSnap = await getDoc(docRef);
+  const docRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
+  const docSnap = await docRef.get();
   
-  if (!docSnap.exists()) {
+  if (!docSnap.exists) {
     return null;
   }
   
@@ -164,11 +147,11 @@ export async function initializeUserSubscription(
   userId: string,
   subscriptionPlanId: string | null = null
 ): Promise<void> {
-  const now = Timestamp.now();
+  const now = admin.firestore.Timestamp.now();
   const nowDate = now.toDate();
   
   const billingCycleStart = now;
-  const billingCycleEnd = Timestamp.fromDate(
+  const billingCycleEnd = admin.firestore.Timestamp.fromDate(
     new Date(
       nowDate.getFullYear(),
       nowDate.getMonth() + 1,
@@ -180,8 +163,8 @@ export async function initializeUserSubscription(
   const planEffectiveStart = now;
   const planEffectiveEnd = billingCycleEnd;
   
-  const docRef = doc(getDb(), COLLECTIONS.USER_SUBSCRIPTIONS, userId);
-  await setDoc(docRef, {
+  const docRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
+  await docRef.set({
     userId,
     subscriptionPlanId,
     planEffectiveStart,
@@ -260,11 +243,11 @@ function calculateCreditSummary(
 }
 
 async function resetBillingCycle(userId: string): Promise<void> {
-  const now = Timestamp.now();
+  const now = admin.firestore.Timestamp.now();
   const nowDate = now.toDate();
   
   const cycleStart = now;
-  const cycleEnd = Timestamp.fromDate(
+  const cycleEnd = admin.firestore.Timestamp.fromDate(
     new Date(
       nowDate.getFullYear(),
       nowDate.getMonth() + 1,
@@ -273,8 +256,8 @@ async function resetBillingCycle(userId: string): Promise<void> {
     )
   );
   
-  const docRef = doc(getDb(), COLLECTIONS.USER_SUBSCRIPTIONS, userId);
-  await updateDoc(docRef, {
+  const docRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
+  await docRef.update({
     bookCreditsUsedThisCycle: 0,
     wordCreditsUsedThisCycle: 0,
     billingCycleStart: cycleStart,
@@ -291,12 +274,12 @@ export async function deductCredits(
   description: string,
   metadata?: Record<string, any>
 ): Promise<void> {
-  const userSubRef = doc(getDb(), COLLECTIONS.USER_SUBSCRIPTIONS, userId);
+  const userSubRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
   
-  await runTransaction(getDb(), async (transaction) => {
+  await getDb().runTransaction(async (transaction: admin.firestore.Transaction) => {
     const userSubDoc = await transaction.get(userSubRef);
     
-    if (!userSubDoc.exists()) {
+    if (!userSubDoc.exists) {
       throw new Error('User subscription not found');
     }
     
@@ -307,7 +290,7 @@ export async function deductCredits(
     
     if (now > cycleEnd) {
       const effectiveStart = userSub.planEffectiveStart.toDate();
-      const nowTimestamp = Timestamp.fromDate(now);
+      const nowTimestamp = admin.firestore.Timestamp.fromDate(now);
       
       const dayOfMonth = effectiveStart.getDate();
       let newCycleStart = new Date(now.getFullYear(), now.getMonth(), dayOfMonth);
@@ -322,8 +305,8 @@ export async function deductCredits(
         23, 59, 59, 999
       );
       
-      const newCycleStartTimestamp = Timestamp.fromDate(newCycleStart);
-      const newCycleEndTimestamp = Timestamp.fromDate(newCycleEnd);
+      const newCycleStartTimestamp = admin.firestore.Timestamp.fromDate(newCycleStart);
+      const newCycleEndTimestamp = admin.firestore.Timestamp.fromDate(newCycleEnd);
       
       transaction.update(userSubRef, {
         bookCreditsUsedThisCycle: 0,
@@ -335,8 +318,8 @@ export async function deductCredits(
       
       userSub.bookCreditsUsedThisCycle = 0;
       userSub.wordCreditsUsedThisCycle = 0;
-      userSub.billingCycleStart = newCycleStartTimestamp;
-      userSub.billingCycleEnd = newCycleEndTimestamp;
+      userSub.billingCycleStart = newCycleStartTimestamp as any;
+      userSub.billingCycleEnd = newCycleEndTimestamp as any;
     }
     
     const plan = userSub.subscriptionPlanId 
@@ -345,7 +328,7 @@ export async function deductCredits(
       
     const summary = calculateCreditSummary(userSub, plan);
     
-    const updateData: any = { updatedAt: Timestamp.now() };
+    const updateData: any = { updatedAt: admin.firestore.Timestamp.now() };
     let remainingToDeduct = amount;
     
     if (creditType === 'words') {
@@ -355,18 +338,18 @@ export async function deductCredits(
       
       if (userSub.remainingWordCreditsFromAddons > 0 && remainingToDeduct > 0) {
         const addonDeduction = Math.min(remainingToDeduct, userSub.remainingWordCreditsFromAddons);
-        updateData.remainingWordCreditsFromAddons = increment(-addonDeduction);
+        updateData.remainingWordCreditsFromAddons = admin.firestore.FieldValue.increment(-addonDeduction);
         remainingToDeduct -= addonDeduction;
       }
       
       if (userSub.remainingWordCreditsFromAdmin > 0 && remainingToDeduct > 0) {
         const adminDeduction = Math.min(remainingToDeduct, userSub.remainingWordCreditsFromAdmin);
-        updateData.remainingWordCreditsFromAdmin = increment(-adminDeduction);
+        updateData.remainingWordCreditsFromAdmin = admin.firestore.FieldValue.increment(-adminDeduction);
         remainingToDeduct -= adminDeduction;
       }
       
       if (remainingToDeduct > 0) {
-        updateData.wordCreditsUsedThisCycle = increment(remainingToDeduct);
+        updateData.wordCreditsUsedThisCycle = admin.firestore.FieldValue.increment(remainingToDeduct);
       }
     } else if (creditType === 'books') {
       if (summary.bookCreditsAvailable < amount) {
@@ -375,18 +358,18 @@ export async function deductCredits(
       
       if (userSub.remainingBookCreditsFromAddons > 0 && remainingToDeduct > 0) {
         const addonDeduction = Math.min(remainingToDeduct, userSub.remainingBookCreditsFromAddons);
-        updateData.remainingBookCreditsFromAddons = increment(-addonDeduction);
+        updateData.remainingBookCreditsFromAddons = admin.firestore.FieldValue.increment(-addonDeduction);
         remainingToDeduct -= addonDeduction;
       }
       
       if (userSub.remainingBookCreditsFromAdmin > 0 && remainingToDeduct > 0) {
         const adminDeduction = Math.min(remainingToDeduct, userSub.remainingBookCreditsFromAdmin);
-        updateData.remainingBookCreditsFromAdmin = increment(-adminDeduction);
+        updateData.remainingBookCreditsFromAdmin = admin.firestore.FieldValue.increment(-adminDeduction);
         remainingToDeduct -= adminDeduction;
       }
       
       if (remainingToDeduct > 0) {
-        updateData.bookCreditsUsedThisCycle = increment(remainingToDeduct);
+        updateData.bookCreditsUsedThisCycle = admin.firestore.FieldValue.increment(remainingToDeduct);
       }
     }
     
@@ -416,29 +399,29 @@ export async function addCredits(
     await initializeUserSubscription(userId);
   }
   
-  const userSubRef = doc(getDb(), COLLECTIONS.USER_SUBSCRIPTIONS, userId);
+  const userSubRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
   const isAddonPurchase = transactionType === 'word_purchase' || transactionType === 'book_purchase';
   
-  await runTransaction(getDb(), async (transaction) => {
+  await getDb().runTransaction(async (transaction: admin.firestore.Transaction) => {
     const userSubDoc = await transaction.get(userSubRef);
     
-    if (!userSubDoc.exists()) {
+    if (!userSubDoc.exists) {
       throw new Error('User subscription not found');
     }
     
-    const updateData: any = { updatedAt: Timestamp.now() };
+    const updateData: any = { updatedAt: admin.firestore.Timestamp.now() };
     
     if (creditType === 'words') {
       if (isAddonPurchase) {
-        updateData.remainingWordCreditsFromAddons = increment(amount);
+        updateData.remainingWordCreditsFromAddons = admin.firestore.FieldValue.increment(amount);
       } else {
-        updateData.remainingWordCreditsFromAdmin = increment(amount);
+        updateData.remainingWordCreditsFromAdmin = admin.firestore.FieldValue.increment(amount);
       }
     } else {
       if (isAddonPurchase) {
-        updateData.remainingBookCreditsFromAddons = increment(amount);
+        updateData.remainingBookCreditsFromAddons = admin.firestore.FieldValue.increment(amount);
       } else {
-        updateData.remainingBookCreditsFromAdmin = increment(amount);
+        updateData.remainingBookCreditsFromAdmin = admin.firestore.FieldValue.increment(amount);
       }
     }
     
@@ -463,15 +446,15 @@ async function logCreditTransaction(
   description: string,
   metadata?: Record<string, any>
 ): Promise<void> {
-  const docRef = collection(getDb(), COLLECTIONS.CREDIT_TRANSACTIONS);
-  await addDoc(docRef, {
+  const collectionRef = getDb().collection(COLLECTIONS.CREDIT_TRANSACTIONS);
+  await collectionRef.add({
     userId,
     type,
     amount,
     creditType,
     description,
     metadata: metadata || {},
-    createdAt: Timestamp.now(),
+    createdAt: admin.firestore.Timestamp.now(),
   });
 }
 
@@ -479,15 +462,13 @@ export async function getCreditTransactions(
   userId: string,
   limitCount = 50
 ): Promise<CreditTransaction[]> {
-  const transactionsRef = collection(getDb(), COLLECTIONS.CREDIT_TRANSACTIONS);
-  const q = query(
-    transactionsRef,
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc'),
-    limit(limitCount)
-  );
+  const transactionsRef = getDb().collection(COLLECTIONS.CREDIT_TRANSACTIONS);
+  const q = transactionsRef
+    .where('userId', '==', userId)
+    .orderBy('createdAt', 'desc')
+    .limit(limitCount);
   
-  const snapshot = await getDocs(q);
+  const snapshot = await q.get();
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditTransaction));
 }
 
@@ -506,10 +487,10 @@ export async function updateUserSubscriptionPlan(
   userId: string,
   subscriptionPlanId: string | null
 ): Promise<void> {
-  const docRef = doc(getDb(), COLLECTIONS.USER_SUBSCRIPTIONS, userId);
-  await updateDoc(docRef, {
+  const docRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
+  await docRef.update({
     subscriptionPlanId,
-    updatedAt: Timestamp.now(),
+    updatedAt: admin.firestore.Timestamp.now(),
   });
 }
 
@@ -518,20 +499,20 @@ export async function refundBookCredit(
   projectId: string,
   description: string = 'Book project deleted - credit refunded'
 ): Promise<void> {
-  const userSubRef = doc(getDb(), COLLECTIONS.USER_SUBSCRIPTIONS, userId);
+  const userSubRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
   
-  await runTransaction(getDb(), async (transaction) => {
+  await getDb().runTransaction(async (transaction: admin.firestore.Transaction) => {
     const userSubDoc = await transaction.get(userSubRef);
     
-    if (!userSubDoc.exists()) {
+    if (!userSubDoc.exists) {
       throw new Error('User subscription not found');
     }
     
     const userSub = userSubDoc.data() as UserSubscription;
-    const updateData: any = { updatedAt: Timestamp.now() };
+    const updateData: any = { updatedAt: admin.firestore.Timestamp.now() };
     
     if (userSub.bookCreditsUsedThisCycle > 0) {
-      updateData.bookCreditsUsedThisCycle = increment(-1);
+      updateData.bookCreditsUsedThisCycle = admin.firestore.FieldValue.increment(-1);
     }
     
     transaction.update(userSubRef, updateData);
