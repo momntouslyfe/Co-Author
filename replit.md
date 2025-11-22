@@ -47,11 +47,11 @@ Preferred communication style: Simple, everyday language.
 - **Scope**: Designed for standard model configurations; complex multi-namespace routing may require direct validation.
 
 **Admin Authentication Security**:
-- **Password Hashing**: Uses bcrypt for secure password hashing (backwards compatible with plain text for migration).
-- **Token-Based Auth**: HMAC SHA-256 signed tokens with 24-hour expiration.
+- **Password Hashing**: Enforces bcrypt for secure password hashing (plain text passwords rejected).
+- **Token-Based Auth**: HMAC SHA-256 signed tokens with 24-hour expiration and random nonces to prevent replay attacks.
 - **Centralized Auth**: `getAuthToken()` and `verifyAdminToken()` functions in `src/lib/admin-auth.ts`.
-- **Environment Variables**: Requires `ADMIN_EMAIL`, `ADMIN_PASSWORD` (hashed), and `ENCRYPTION_KEY` (secret).
-- **Migration Path**: System supports both bcrypt-hashed and plain text passwords (with warnings) for gradual migration.
+- **Environment Variables**: Requires `ADMIN_EMAIL`, `ADMIN_PASSWORD` (bcrypt hash), `ADMIN_TOKEN_SECRET` (signing), and `ENCRYPTION_KEY` (data encryption).
+- **Secret Separation**: `ADMIN_TOKEN_SECRET` is separate from `ENCRYPTION_KEY` to prevent key reuse vulnerabilities.
 
 **Subscription Management**:
 - **Credit System**: Complete subscription and credit tracking system implemented (see CREDIT_SYSTEM.md).

@@ -4,7 +4,7 @@
 
 ### Overview
 
-The admin authentication system uses bcrypt for secure password hashing. The system is backwards compatible, supporting both bcrypt-hashed and plain text passwords to allow for gradual migration.
+The admin authentication system enforces bcrypt for secure password hashing. **Plain text passwords are not accepted** - all admin passwords must be properly hashed for security.
 
 ### Initial Setup
 
@@ -63,10 +63,11 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ### Security Best Practices
 
-1. **Always Use Bcrypt-Hashed Passwords**
-   - Plain text passwords are supported only for migration purposes
-   - The system logs a warning when plain text passwords are detected
-   - Update to bcrypt as soon as possible
+1. **Bcrypt-Hashed Passwords Are Mandatory**
+   - **Plain text passwords are NOT accepted** - the system will reject login attempts
+   - Admin password MUST be bcrypt-hashed (starts with `$2a$`, `$2b$`, or `$2y$`)
+   - If you try to use a plain text password, you'll see: "Admin authentication is not properly configured"
+   - This is a strict security requirement with no exceptions
 
 2. **Strong Password Requirements**
    - Use at least 12 characters
@@ -92,14 +93,24 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    - Use exponential backoff for repeated failures
    - Consider IP-based and email-based lockouts
 
-### Migration from Plain Text
+### Upgrading to Bcrypt (Required)
 
-If you currently have a plain text password:
+**IMPORTANT: Plain text passwords are no longer supported.**
 
-1. Generate a bcrypt hash using the method above
-2. Replace `ADMIN_PASSWORD` environment variable with the hash
+If you're upgrading from an older version that used plain text passwords:
+
+1. Generate a bcrypt hash of your current password:
+   ```bash
+   node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('YOUR_PASSWORD_HERE', 10));"
+   ```
+2. Update the `ADMIN_PASSWORD` secret with the bcrypt hash
 3. Restart the application
-4. The system will automatically detect and use bcrypt verification
+4. Login with your original password (the hash is transparent to users)
+
+**What happens if you don't upgrade:**
+- Admin login will fail with "Admin authentication is not properly configured"
+- Server logs will show: "SECURITY ERROR: ADMIN_PASSWORD must be bcrypt-hashed"
+- This is intentional - plain text passwords are a security vulnerability
 
 ### Troubleshooting
 
@@ -170,14 +181,15 @@ The application supports Stripe for payment processing but requires setup:
 
 ## Best Practices Summary
 
-1. ✅ Use bcrypt-hashed passwords for admin authentication
-2. ✅ Store all sensitive credentials as secrets
-3. ✅ Use HTTPS in production
-4. ✅ Regularly rotate encryption keys and API keys
-5. ✅ Monitor authentication logs for suspicious activity
-6. ✅ Keep dependencies updated for security patches
-7. ✅ Implement rate limiting on authentication endpoints (future enhancement)
-8. ✅ Use Content Security Policy headers (future enhancement)
+1. ✅ **MANDATORY:** Use bcrypt-hashed passwords (plain text rejected)
+2. ✅ **MANDATORY:** Separate ADMIN_TOKEN_SECRET from ENCRYPTION_KEY
+3. ✅ Store all sensitive credentials as secrets
+4. ✅ Use HTTPS in production
+5. ✅ Regularly rotate encryption keys and API keys
+6. ✅ Monitor authentication logs for suspicious activity
+7. ✅ Keep dependencies updated for security patches
+8. ⏳ Implement rate limiting on authentication endpoints (recommended - future enhancement)
+9. ⏳ Use Content Security Policy headers (recommended - future enhancement)
 
 ## Recent Security Improvements (November 2025)
 
