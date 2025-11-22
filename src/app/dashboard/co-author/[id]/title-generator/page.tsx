@@ -6,13 +6,14 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
-import { Loader2, Sparkles, Save, Lightbulb, CheckCircle2 } from 'lucide-react';
+import { Loader2, Sparkles, Save, Lightbulb, CheckCircle2, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { generateBookTitles } from '@/ai/flows/generate-book-titles';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { getIdToken } from '@/lib/client-auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { WorkflowNavigation } from '@/components/workflow-navigation';
@@ -30,6 +31,7 @@ export default function TitleGeneratorPage() {
   const [keeping, setKeeping] = useState(false);
   const [titles, setTitles] = useState<string[]>([]);
   const [selectedTitle, setSelectedTitle] = useState<string>('');
+  const [customTitle, setCustomTitle] = useState<string>('');
 
   const projectDocRef = useMemoFirebase(() => {
     if (!user || !projectId) return null;
@@ -98,10 +100,11 @@ export default function TitleGeneratorPage() {
   };
 
   const handleSaveTitle = async () => {
-    if (!selectedTitle) {
+    const trimmedTitle = selectedTitle?.trim();
+    if (!trimmedTitle) {
       toast({
         title: 'No Title Selected',
-        description: 'Please select a title to save.',
+        description: 'Please select or enter a title to save.',
         variant: 'destructive',
       });
       return;
@@ -110,7 +113,7 @@ export default function TitleGeneratorPage() {
     try {
       if (!projectDocRef) throw new Error('Project reference not found.');
       await updateDoc(projectDocRef, {
-        title: selectedTitle,
+        title: trimmedTitle,
         currentStep: 'chapters',
         lastUpdated: serverTimestamp(),
       });
@@ -118,7 +121,6 @@ export default function TitleGeneratorPage() {
         title: 'Title Saved!',
         description: 'Your new project title has been saved.',
       });
-      // Navigate to the next step, e.g., the chapter list
       router.push(`/dashboard/co-author/${projectId}/chapters`);
     } catch (error) {
       console.error('Error saving title:', error);
@@ -233,14 +235,69 @@ export default function TitleGeneratorPage() {
         </div>
       )}
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <Edit3 className="w-5 h-5 text-primary" />
+            Enter Your Custom Title
+          </CardTitle>
+          <CardDescription>Type your own book title or generate suggestions using AI below.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="custom-title-input" className="sr-only">Custom Title</Label>
+              <Input
+                id="custom-title-input"
+                type="text"
+                placeholder="Type your custom book title here..."
+                value={customTitle}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCustomTitle(value);
+                  if (value.trim()) {
+                    setSelectedTitle(value.trim());
+                  } else if (titles.length > 0) {
+                    setSelectedTitle(titles[0]);
+                  } else {
+                    setSelectedTitle('');
+                  }
+                }}
+                className="text-lg"
+              />
+              <p className="text-sm text-muted-foreground mt-2">
+                You can save this custom title directly or generate AI suggestions first.
+              </p>
+            </div>
+            {customTitle.trim() && (
+              <div className="flex justify-end">
+                <Button onClick={handleSaveTitle} disabled={saving}>
+                  {saving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Custom Title
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {titles.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2">
               <Lightbulb className="w-5 h-5 text-primary" />
-              Select Your Favorite Title
+              Or Select an AI-Generated Title
             </CardTitle>
-            <CardDescription>Choose the title that best captures the essence of your book.</CardDescription>
+            <CardDescription>Choose from the AI-generated suggestions below.</CardDescription>
           </CardHeader>
           <CardContent>
             <RadioGroup

@@ -201,6 +201,67 @@ const ChapterEditor = ({
         return null;
     };
 
+    const handleWriteSection = async (sectionIndex: number, sectionTitle: string) => {
+        if (!user) return;
+        if (!project.language) {
+            toast({ title: "Language not set", description: "Project language is required to write.", variant: "destructive" });
+            return;
+        }
+    
+        setIsWritingSection(sectionIndex);
+    
+        try {
+            const currentContentForContext = await new Promise<string>(resolve => {
+                onContentChange(prev => {
+                    resolve(prev);
+                    return prev;
+                });
+            });
+
+            const idToken = await getIdToken(user);
+            const result = await writeChapterSection({
+                userId: user.uid,
+                idToken,
+                bookTitle: project.title,
+                fullOutline: project.outline || '',
+                chapterTitle: chapterDetails.title,
+                sectionTitle: sectionTitle,
+                language: project.language,
+                previousContent: currentContentForContext,
+                styleProfile: selectedStyle?.styleAnalysis,
+                researchProfile: researchPrompt,
+                storytellingFramework: selectedFramework,
+            });
+    
+            if (result && result.sectionContent) {
+                onContentChange(prevContent => {
+                    const sections = prevContent.split(/(\$\$[^$]+\$\$)/g);
+                    const titleToFind = `$$${sectionTitle}$$`;
+                    const titleIndex = sections.findIndex(s => s.trim() === titleToFind.trim());
+
+                    if (titleIndex !== -1) {
+                        const contentIndex = titleIndex + 1;
+                        if (contentIndex >= sections.length || sections[contentIndex].startsWith('$$')) {
+                            sections.splice(contentIndex, 0, ''); 
+                        }
+                        sections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
+                        return sections.join('');
+                    }
+                    return prevContent;
+                });
+                toast({ title: "Section Written", description: `Successfully generated "${sectionTitle}"` });
+            } else {
+                throw new Error("AI returned no content");
+            }
+    
+        } catch (error) {
+            console.error("Error writing section:", error);
+            toast({ title: "AI Write Failed", variant: "destructive", description: `Could not generate the section. ${error}` });
+        } finally {
+            setIsWritingSection(null);
+        }
+    };
+
     const handleRewriteSection = async (sectionIndex: number, sectionContentToRewrite: string, instruction?: string) => {
         if (!user) return;
         if (!project.language) {
@@ -446,16 +507,29 @@ const ChapterEditor = ({
 
     const renderSection = (sectionIndex: number, title: string, sectionContent: string) => {
         const hasContent = sectionContent.trim().length > 0;
+        const isPartialContent = hasContent && sectionContent.trim().length < 100;
         const isWriting = isWritingSection === sectionIndex;
         const isRewriting = isRewritingSection === sectionIndex;
         const isProcessing = isWriting || isRewriting || isGenerating;
+        const shouldShowWriteButton = !hasContent || isPartialContent;
 
         return (
             <div key={`section-container-${sectionIndex}`} className="group/section relative pt-4">
                 <div className="flex items-center justify-between gap-4 border-b pb-2">
                      <h3 className={`font-headline font-bold ${sectionIndex === 0 ? 'text-2xl' : 'text-xl'}`}>{title}</h3>
                      <div className="flex items-center gap-2 opacity-0 group-hover/section:opacity-100 transition-opacity">
-                        {hasContent && (
+                        {shouldShowWriteButton && (
+                            <Button 
+                                variant="default" 
+                                size="sm" 
+                                onClick={() => handleWriteSection(sectionIndex, title)}
+                                disabled={isProcessing}
+                            >
+                                {isWriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                                {isWriting ? 'Writing...' : isPartialContent ? 'Regenerate Section' : 'Write Section'}
+                            </Button>
+                        )}
+                        {hasContent && !isPartialContent && (
                             <>
                             <Popover open={openRewritePopoverIndex === sectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? sectionIndex : null)}>
                                 <PopoverTrigger asChild>
@@ -529,8 +603,9 @@ const ChapterEditor = ({
                             </div>
                         ))
                     ) : (
-                        <div className="flex items-center justify-center h-24 text-sm text-muted-foreground border-2 border-dashed rounded-md">
-                           Click "Write Full Chapter" to generate the content for your book.
+                        <div className="flex flex-col items-center justify-center h-24 gap-3 border-2 border-dashed rounded-md bg-muted/20">
+                           <p className="text-sm text-muted-foreground">This section is empty or was skipped</p>
+                           <p className="text-xs text-muted-foreground">Use the button above to generate content</p>
                         </div>
                     )}
                 </div>
