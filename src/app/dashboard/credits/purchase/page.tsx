@@ -1,0 +1,162 @@
+'use client';
+
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Check } from 'lucide-react';
+import { useAuthUser } from '@/firebase';
+import { Badge } from '@/components/ui/badge';
+import type { AddonCreditPlan, AddonCreditType } from '@/types/subscription';
+
+function PurchaseCreditsContent() {
+  const [plans, setPlans] = useState<AddonCreditPlan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const creditType = (searchParams.get('type') || 'words') as AddonCreditType;
+  const { user } = useAuthUser();
+  const { toast } = useToast();
+
+  const loadPlans = async () => {
+    try {
+      const response = await fetch(`/api/user/addon-credit-plans?type=${creditType}`);
+
+      if (!response.ok) throw new Error('Failed to load credit plans');
+
+      const data = await response.json();
+      setPlans(data);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPlans();
+  }, [creditType]);
+
+  const handlePurchase = async (planId: string) => {
+    toast({
+      title: 'Coming Soon',
+      description: 'Payment integration will be available soon. Contact admin for credit purchases.',
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold font-headline mb-2">
+          Purchase {creditType === 'words' ? 'Word' : 'Book Creation'} Credits
+        </h1>
+        <p className="text-muted-foreground">
+          Select a credit package to continue your writing journey
+        </p>
+      </div>
+
+      {plans.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground">
+              No {creditType === 'words' ? 'word' : 'book creation'} credit plans are currently available.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {plans.map((plan) => (
+            <Card key={plan.id} className="flex flex-col">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="font-headline">{plan.name}</CardTitle>
+                    {plan.description && (
+                      <CardDescription className="mt-2">{plan.description}</CardDescription>
+                    )}
+                  </div>
+                  <Badge variant="secondary">
+                    {plan.creditAmount.toLocaleString()} credits
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col justify-between">
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold">{plan.price.toFixed(2)}</span>
+                    <span className="text-xl text-muted-foreground">{plan.currency}</span>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span>{plan.creditAmount.toLocaleString()} {creditType === 'words' ? 'words' : 'book projects'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span>Never expires</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span>Use anytime</span>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  className="w-full"
+                  onClick={() => handlePurchase(plan.id)}
+                  disabled={!user}
+                >
+                  {!user ? 'Login to Purchase' : 'Purchase Now'}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>Payment Integration Coming Soon</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            The payment gateway will be integrated in the next phase. For now, please contact the administrator
+            to purchase additional credits manually.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function PurchaseCreditsPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <PurchaseCreditsContent />
+    </Suspense>
+  );
+}

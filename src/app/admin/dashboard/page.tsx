@@ -7,6 +7,9 @@ import { APIKeysManager } from '@/components/admin/api-keys-manager';
 import { AIRoutingManager } from '@/components/admin/ai-routing-manager';
 import { UserManagement } from '@/components/admin/user-management';
 import { GlobalSettings } from '@/components/admin/global-settings';
+import { SubscriptionPlanManager } from '@/components/admin/subscription-plan-manager';
+import { AddonCreditPlanManager } from '@/components/admin/addon-credit-plan-manager';
+import { CreditAllocator } from '@/components/admin/credit-allocator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AdminDashboard() {
@@ -31,11 +34,14 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="settings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="api-keys">API Keys</TabsTrigger>
             <TabsTrigger value="routing">AI Routing</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
+            <TabsTrigger value="addon-credits">Addon Credits</TabsTrigger>
+            <TabsTrigger value="allocate">Allocate Credits</TabsTrigger>
           </TabsList>
 
           <TabsContent value="settings">
@@ -52,6 +58,18 @@ export default function AdminDashboard() {
 
           <TabsContent value="users">
             <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="subscriptions">
+            <SubscriptionPlanManager />
+          </TabsContent>
+
+          <TabsContent value="addon-credits">
+            <AddonCreditPlanManager />
+          </TabsContent>
+
+          <TabsContent value="allocate">
+            <CreditAllocator />
           </TabsContent>
         </Tabs>
       </div>

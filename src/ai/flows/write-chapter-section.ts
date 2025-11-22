@@ -16,6 +16,7 @@ import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
+import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
 
 const WriteChapterSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -41,7 +42,9 @@ export type WriteChapterSectionOutput = z.infer<typeof WriteChapterSectionOutput
 export async function writeChapterSection(input: WriteChapterSectionInput): Promise<WriteChapterSectionOutput> {
   const context = `Section: "${input.sectionTitle}" in Chapter: "${input.chapterTitle}"`;
   
-  return retryWithBackoff(
+  await preflightCheckWordCredits(input.userId, 500);
+  
+  const result = await retryWithBackoff(
     async () => {
       const { ai, model: routedModel } = await getGenkitInstanceForFunction('chapter', input.userId, input.idToken);
       
@@ -220,4 +223,16 @@ Proceed to write the section content now.
     AI_GENERATION_RETRY_CONFIG,
     context
   );
+  
+  await trackAIUsage(
+    input.userId,
+    result.sectionContent,
+    'writeChapterSection',
+    {
+      chapterTitle: input.chapterTitle,
+      sectionTitle: input.sectionTitle,
+    }
+  );
+  
+  return result;
 }

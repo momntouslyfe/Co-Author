@@ -14,6 +14,7 @@
 import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
+import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
 
 const ExpandBookContentInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -36,6 +37,8 @@ const ExpandBookContentOutputSchema = z.object({
 export type ExpandBookContentOutput = z.infer<typeof ExpandBookContentOutputSchema>;
 
 export async function expandBookContent(input: ExpandBookContentInput): Promise<ExpandBookContentOutput> {
+  await preflightCheckWordCredits(input.userId, 300);
+  
   const { ai, model: routedModel } = await getGenkitInstanceForFunction('expand', input.userId, input.idToken);
   
   const prompt = ai.definePrompt({
@@ -92,5 +95,17 @@ Just write more. Expand on the ideas presented in the starting paragraph.
   });
   
   const {output} = await prompt(input, { model: input.model || routedModel });
+  
+  if (output) {
+    await trackAIUsage(
+      input.userId,
+      output.expandedContent,
+      'expandBookContent',
+      {
+        chapterTitle: input.chapterTitle,
+      }
+    );
+  }
+  
   return output!;
 }

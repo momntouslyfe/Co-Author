@@ -74,8 +74,24 @@ export default function CoAuthorPage() {
 
         setIsCreating(true);
         try {
+            const token = await user.getIdToken();
+            
+            const checkResponse = await fetch('/api/user/check-book-credit', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            
+            if (!checkResponse.ok) {
+                const error = await checkResponse.json();
+                toast({
+                    title: "Insufficient Credits",
+                    description: error.error || "You don't have enough book creation credits.",
+                    variant: "destructive",
+                });
+                setIsCreating(false);
+                return;
+            }
+            
             const projectCollection = collection(firestore, 'users', user.uid, 'projects');
-            // Await the addDoc to ensure the write is complete before redirecting
             const newProjectDoc = await addDoc(projectCollection, {
                 userId: user.uid,
                 title: newProjectName,
@@ -85,6 +101,19 @@ export default function CoAuthorPage() {
                 imageUrl: `https://picsum.photos/seed/${Math.random()}/600/800`,
                 imageHint: 'book cover'
             });
+            
+            await fetch('/api/user/track-book-creation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    projectId: newProjectDoc.id,
+                    projectTitle: newProjectName,
+                }),
+            });
+            
             toast({
                 title: "Project Created",
                 description: `Successfully created "${newProjectName}".`,
@@ -108,10 +137,27 @@ export default function CoAuthorPage() {
         if (!user) return;
         setIsDeleting(projectId);
         try {
+            const project = projects?.find(p => p.id === projectId);
             await deleteDoc(doc(firestore, 'users', user.uid, 'projects', projectId));
+            
+            if (project) {
+                const token = await user.getIdToken();
+                await fetch('/api/user/refund-book-credit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        projectId,
+                        projectTitle: project.title,
+                    }),
+                });
+            }
+            
             toast({
                 title: 'Project Deleted',
-                description: 'Your project has been successfully deleted.'
+                description: 'Your project has been successfully deleted and credit refunded.'
             });
         } catch (error) {
             console.error("Error deleting project:", error);
