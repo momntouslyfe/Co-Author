@@ -57,7 +57,7 @@ export async function expandBookContent(input: ExpandBookContentInput): Promise<
 {{/if}}
 
 **CRITICAL INSTRUCTIONS:**
-1.  **LANGUAGE & STYLE:** Match the language and style of the starting paragraph. If the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those exact language-mixing patterns as demonstrated in the style examples.
+1.  **LANGUAGE & CODE-MIXING:** Match the language and style of the starting paragraph. If the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those language-mixing patterns BUT WITHOUT adding English translations in parentheses. The style profile examples show translations like "ডিজিটাল লাইফ (Digital Life)" for documentation purposes only. When writing actual content, use ONLY the original language words naturally mixed in, like: "ডিজিটাল লাইফ, স্মার্টফোন, ল্যাপটপ" - NOT "ডিজিটাল লাইফ (Digital Life)".
 2.  Use the "Starting Paragraph" below as the primary context.
 3.  Follow the "User's Instruction" to guide what you write next. If no instruction is provided, your default task is to simply expand upon the ideas in the starting paragraph.
 4.  Generate AT LEAST ONE, and preferably two to three, new paragraphs.

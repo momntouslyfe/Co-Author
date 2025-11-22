@@ -80,7 +80,7 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
 **CRITICAL INSTRUCTIONS (Read Carefully):**
 
-1.  **LANGUAGE:** Write primarily in **{{{language}}}**. However, if the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those exact language-mixing patterns as demonstrated in the style examples.
+1.  **LANGUAGE & CODE-MIXING:** Write primarily in **{{{language}}}**. If the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those language-mixing patterns BUT WITHOUT adding English translations in parentheses. The style profile examples show translations like "ডিজিটাল লাইফ (Digital Life)" for documentation purposes only. When writing actual content, use ONLY the original language words naturally mixed in, like: "ডিজিটাল লাইফ, স্মার্টফোন, ল্যাপটপ" - NOT "ডিজিটাল লাইফ (Digital Life)".
 2.  **ACTION STEP FORMAT (NON-NEGOTIABLE):** You are writing the "Action Step" section. You MUST follow this format precisely:
     1.  Start with a single, concise paragraph that summarizes the core lesson or takeaway of the entire chapter based on the provided content.
     2.  After the summary paragraph, create a bulleted or numbered list containing 5 to 7 single-sentence action items that the reader can implement. These action items must be direct, clear, and derived from the chapter's main points. Use standard Markdown for the list (e.g., '-' for bullets, '1.' for numbers). Do NOT use HTML tags.
@@ -109,7 +109,7 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
 **CRITICAL INSTRUCTIONS (Read Carefully):**
 
-1.  **LANGUAGE:** Write primarily in **{{{language}}}**. However, if the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those exact language-mixing patterns as demonstrated in the style examples.
+1.  **LANGUAGE & CODE-MIXING:** Write primarily in **{{{language}}}**. If the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those language-mixing patterns BUT WITHOUT adding English translations in parentheses. The style profile examples show translations like "ডিজিটাল লাইফ (Digital Life)" for documentation purposes only. When writing actual content, use ONLY the original language words naturally mixed in, like: "ডিজিটাল লাইফ, স্মার্টফোন, ল্যাপটপ" - NOT "ডিজিটাল লাইফ (Digital Life)".
 2.  **"COMING UP NEXT" FORMAT (NON-NEGOTIABLE):** You are writing the "Coming Up Next" section. You MUST write one or two short paragraphs that act as a summary or teaser for the *next* chapter in the outline. Keep it brief and intriguing. Do not write more than two paragraphs.
 3.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs and ensure a double newline (a blank line) exists between them if you write more than one.
 4.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the teaser paragraphs. Do not add the section title.
@@ -184,7 +184,7 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
 **CRITICAL INSTRUCTIONS (Read Carefully):**
 
-1.  **LANGUAGE:** Write primarily in **{{{language}}}**. However, if the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those exact language-mixing patterns as demonstrated in the style examples.
+1.  **LANGUAGE & CODE-MIXING:** Write primarily in **{{{language}}}**. If the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those language-mixing patterns BUT WITHOUT adding English translations in parentheses. The style profile examples show translations like "ডিজিটাল লাইফ (Digital Life)" for documentation purposes only. When writing actual content, use ONLY the original language words naturally mixed in, like: "ডিজিটাল লাইফ, স্মার্টফোন, ল্যাপটপ" - NOT "ডিজিটাল লাইফ (Digital Life)".
 
 2.  **FOCUSED CONTENT:** All content must be directly related to the provided section title.
 

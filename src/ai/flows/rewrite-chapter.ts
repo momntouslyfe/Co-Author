@@ -63,7 +63,7 @@ export async function rewriteChapter(input: RewriteChapterInput): Promise<Rewrit
 
 2.  **SINGLE, COMPLETE OUTPUT:** You MUST rewrite and return the entire chapter in one single operation. Do not stop prematurely. Partial responses are a failure.
 
-3.  **LANGUAGE:** Write primarily in **{{{language}}}**. However, if the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those exact language-mixing patterns as demonstrated in the style examples.
+3.  **LANGUAGE & CODE-MIXING:** Write primarily in **{{{language}}}**. If the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those language-mixing patterns BUT WITHOUT adding English translations in parentheses. The style profile examples show translations like "ডিজিটাল লাইফ (Digital Life)" for documentation purposes only. When writing actual content, use ONLY the original language words naturally mixed in, like: "ডিজিটাল লাইফ, স্মার্টফোন, ল্যাপটপ" - NOT "ডিজিটাল লাইফ (Digital Life)".
 
 4.  **PRESERVE STRUCTURE:** The chapter is divided into sections with titles like \`$$Section Title$$\`. You MUST preserve these section titles and their surrounding double dollar signs exactly as they are. Rewrite the content *within* each section, but do not alter the titles or remove the \`$$\` markers.
 

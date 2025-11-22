@@ -127,6 +127,17 @@ const ChapterEditor = ({
     const [rewriteChapterInstruction, setRewriteChapterInstruction] = useState('');
     const [isRewriteChapterPopoverOpen, setRewriteChapterPopoverOpen] = useState(false);
 
+    // Utility function to count words in content
+    const countWords = (text: string): number => {
+        // Remove section markers ($$...$$)
+        const cleanedText = text.replace(/\$\$[^$]+\$\$/g, '');
+        // Remove extra whitespace and split by whitespace
+        const words = cleanedText.trim().split(/\s+/).filter(word => word.length > 0);
+        return words.length;
+    };
+
+    const wordCount = useMemo(() => countWords(content), [content]);
+
     const buildChapterSkeleton = useCallback(() => {
         let skeleton = `$$Introduction$$\n\n\n\n`;
         subTopics.forEach(topic => {
@@ -675,9 +686,14 @@ const ChapterEditor = ({
                         </div>
                     </PopoverContent>
                 </Popover>
-                <Button variant="outline" size="sm" onClick={onCopyContent}>
-                    <Copy className="mr-2 h-4 w-4" /> Copy Text
-                </Button>
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                        {wordCount} {wordCount === 1 ? 'word' : 'words'}
+                    </span>
+                    <Button variant="outline" size="sm" onClick={onCopyContent}>
+                        <Copy className="mr-2 h-4 w-4" /> Copy Text
+                    </Button>
+                </div>
             </div>
             {renderContent()}
         </div>
