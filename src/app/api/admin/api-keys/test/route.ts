@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminToken } from '@/lib/admin-auth';
+import { verifyAdminToken, getAuthToken } from '@/lib/admin-auth';
 import type { AIProvider } from '@/lib/definitions';
-
-function getAuthToken(request: NextRequest): string | null {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  return authHeader.substring(7);
-}
 
 async function testAPIKey(provider: AIProvider, apiKey: string, model?: string): Promise<{ success: boolean; error?: string }> {
   try {

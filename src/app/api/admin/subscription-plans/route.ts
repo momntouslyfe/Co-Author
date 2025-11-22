@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminToken } from '@/lib/admin-auth';
+import { verifyAdminToken, getAuthToken } from '@/lib/admin-auth';
 import {
   getAllSubscriptionPlans,
   createSubscriptionPlan,
@@ -7,14 +7,6 @@ import {
   deleteSubscriptionPlan,
 } from '@/lib/credits';
 import type { CreateSubscriptionPlanInput, UpdateSubscriptionPlanInput } from '@/types/subscription';
-
-function getAuthToken(request: NextRequest): string | null {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  return authHeader.substring(7);
-}
 
 export async function GET(request: NextRequest) {
   try {

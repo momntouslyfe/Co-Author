@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminToken } from '@/lib/admin-auth';
+import { verifyAdminToken, getAuthToken } from '@/lib/admin-auth';
 import { addCredits } from '@/lib/credits';
 import type { AllocateCreditsInput } from '@/types/subscription';
-
-function getAuthToken(request: NextRequest): string | null {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  return authHeader.substring(7);
-}
 
 export async function POST(request: NextRequest) {
   try {

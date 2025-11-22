@@ -1,12 +1,23 @@
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
+import { NextRequest } from 'next/server';
 
 export interface AdminAuthResult {
   success: boolean;
   error?: string;
 }
 
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password).digest('hex');
+export function getAuthToken(request: NextRequest): string | null {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  return authHeader.substring(7);
+}
+
+export function hashPasswordWithBcrypt(password: string): string {
+  const saltRounds = 10;
+  return bcrypt.hashSync(password, saltRounds);
 }
 
 export function verifyAdminCredentials(email: string, password: string): AdminAuthResult {
@@ -27,7 +38,16 @@ export function verifyAdminCredentials(email: string, password: string): AdminAu
     };
   }
 
-  if (password !== adminPassword) {
+  let isPasswordValid = false;
+
+  if (adminPassword.startsWith('$2a$') || adminPassword.startsWith('$2b$') || adminPassword.startsWith('$2y$')) {
+    isPasswordValid = bcrypt.compareSync(password, adminPassword);
+  } else {
+    console.warn('WARNING: Admin password is stored in plain text. Please update to use bcrypt hashed password for security.');
+    isPasswordValid = password === adminPassword;
+  }
+
+  if (!isPasswordValid) {
     return {
       success: false,
       error: 'Invalid email or password',

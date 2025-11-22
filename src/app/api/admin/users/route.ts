@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminToken } from '@/lib/admin-auth';
+import { verifyAdminToken, getAuthToken } from '@/lib/admin-auth';
 import * as admin from 'firebase-admin';
 import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
-
-function getAuthToken(request: NextRequest): string | null {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  return authHeader.substring(7);
-}
 
 export async function GET(request: NextRequest) {
   try {
