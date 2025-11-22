@@ -45,37 +45,21 @@ export const GEMINI_MODELS: ModelOption[] = [
  * complex planning and analysis. Use custom entry for any unlisted models.
  */
 export const OPENAI_MODELS: ModelOption[] = [
-  // GPT-5.1 Series (Latest with Codex)
-  { value: 'openai/gpt-5.1', label: 'GPT-5.1 (Adaptive Reasoning)', category: 'GPT-5.1' },
-  { value: 'openai/gpt-5.1-codex', label: 'GPT-5.1 Codex', category: 'GPT-5.1' },
-  { value: 'openai/gpt-5.1-codex-mini', label: 'GPT-5.1 Codex Mini', category: 'GPT-5.1' },
-  { value: 'openai/gpt-5.1-codex-max', label: 'GPT-5.1 Codex Max', category: 'GPT-5.1' },
-  
-  // GPT-5 Series (Frontier)
-  { value: 'openai/gpt-5', label: 'GPT-5 (Recommended)', category: 'GPT-5' },
+  // GPT-5 Series (Latest - Verified from platform.openai.com/docs)
+  { value: 'openai/gpt-5.1', label: 'GPT-5.1 (Recommended)', category: 'GPT-5' },
+  { value: 'openai/gpt-5', label: 'GPT-5', category: 'GPT-5' },
   { value: 'openai/gpt-5-mini', label: 'GPT-5 Mini', category: 'GPT-5' },
   { value: 'openai/gpt-5-nano', label: 'GPT-5 Nano', category: 'GPT-5' },
   
-  // GPT-4.1 Series
-  { value: 'openai/gpt-4.1', label: 'GPT-4.1', category: 'GPT-4.1' },
-  { value: 'openai/gpt-4.1-mini', label: 'GPT-4.1 Mini', category: 'GPT-4.1' },
-  { value: 'openai/gpt-4.1-nano', label: 'GPT-4.1 Nano', category: 'GPT-4.1' },
-  
   // GPT-4o Series
   { value: 'openai/gpt-4o', label: 'GPT-4o', category: 'GPT-4o' },
-  { value: 'openai/gpt-4o-2024-05-13', label: 'GPT-4o (May 2024)', category: 'GPT-4o' },
   { value: 'openai/gpt-4o-mini', label: 'GPT-4o Mini', category: 'GPT-4o' },
+  { value: 'openai/chatgpt-4o-latest', label: 'ChatGPT-4o Latest', category: 'GPT-4o' },
   
-  // O-Series Reasoning Models (slower, more expensive, better at complex tasks)
-  { value: 'openai/o4-mini', label: 'O4 Mini', category: 'Reasoning' },
-  { value: 'openai/o4-mini-deep-research', label: 'O4 Mini Deep Research', category: 'Reasoning' },
-  { value: 'openai/o3-pro', label: 'O3 Pro', category: 'Reasoning' },
-  { value: 'openai/o3', label: 'O3', category: 'Reasoning' },
-  { value: 'openai/o3-deep-research', label: 'O3 Deep Research', category: 'Reasoning' },
-  { value: 'openai/o3-mini', label: 'O3 Mini', category: 'Reasoning' },
+  // O-Series Reasoning Models
   { value: 'openai/o1', label: 'O1', category: 'Reasoning' },
   { value: 'openai/o1-mini', label: 'O1 Mini', category: 'Reasoning' },
-  { value: 'openai/o1-pro', label: 'O1 Pro', category: 'Reasoning' },
+  { value: 'openai/o1-preview', label: 'O1 Preview', category: 'Reasoning' },
   
   // Custom entry option
   { value: 'custom', label: '(Enter custom model manually)', category: 'Custom' },
@@ -102,7 +86,7 @@ export function getModelsForProvider(provider: 'gemini' | 'openai' | 'claude'): 
  */
 export const RECOMMENDED_MODELS = {
   gemini: 'googleai/gemini-2.5-flash',
-  openai: 'openai/gpt-5',
+  openai: 'openai/gpt-5.1',
   claude: '',
 };
 
