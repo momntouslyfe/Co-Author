@@ -59,7 +59,10 @@ Preferred communication style: Simple, everyday language.
 - **Payment Integration**: Uddoktapay payment gateway integrated for Bangladesh. Automatic credit granting upon payment approval.
 - **Security**: All admin routes protected with token verification and proper error handling.
 - **User Billing Section**: Comprehensive billing management in Settings page showing current subscription status, available plans, and payment history. Users must have an active subscription to use AI features.
-- **Subscription Enforcement**: AI functions and workflows require active monthly subscriptions. Expired subscriptions block AI operations with clear user-facing error messages directing users to the Billing section.
+- **Subscription Enforcement**: AI functions and workflows require active monthly subscriptions. Expired subscriptions block AI operations with custom `SubscriptionRequiredError` class providing clear user-facing error messages directing users to the Billing section.
+- **Credit Rollover**: `activateSubscriptionPlan()` function properly preserves addon and admin credits when users purchase new subscription plans after expiration, ensuring credits carry over between billing cycles.
+- **Monthly Credits**: Subscription plan credits (book and word credits) are calculated dynamically based on active subscription plan ID, not stored separately. Credits become available immediately upon plan activation.
+- **Currency Display**: All pricing displays show currency symbols (৳ for BDT, $ for USD) instead of currency codes. Credit terminology uses "AI Words Credit" for user-facing components.
 
 **Payment Gateway Integration (Uddoktapay)**:
 - **Provider**: Uddoktapay - Bangladesh payment automation platform supporting MFS and global payment methods.
