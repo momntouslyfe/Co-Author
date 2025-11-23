@@ -9,7 +9,7 @@ export function FloatingCreditWidget() {
 
   if (isLoading) {
     return (
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed top-1/2 -translate-y-1/2 right-6 z-50">
         <Card className="p-3 shadow-lg border-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <Loader2 className="h-4 w-4 animate-spin" />
         </Card>
@@ -22,7 +22,7 @@ export function FloatingCreditWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed top-1/2 -translate-y-1/2 right-6 z-50">
       <Card className="p-4 shadow-lg border-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="space-y-3">
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">

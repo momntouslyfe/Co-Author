@@ -63,11 +63,11 @@ export function CreditSummaryCard() {
   }
 
   const bookUsagePercent = creditSummary.bookCreditsTotal > 0
-    ? (creditSummary.bookCreditsUsed / creditSummary.bookCreditsTotal) * 100
+    ? ((creditSummary.bookCreditsTotal - creditSummary.bookCreditsAvailable) / creditSummary.bookCreditsTotal) * 100
     : 0;
 
   const wordUsagePercent = creditSummary.wordCreditsTotal > 0
-    ? (creditSummary.wordCreditsUsed / creditSummary.wordCreditsTotal) * 100
+    ? ((creditSummary.wordCreditsTotal - creditSummary.wordCreditsAvailable) / creditSummary.wordCreditsTotal) * 100
     : 0;
 
   const formatDate = (date: Date) => {
