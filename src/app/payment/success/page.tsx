@@ -39,16 +39,40 @@ function PaymentSuccessContent() {
           body: JSON.stringify({ invoiceId }),
         });
 
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Payment verification failed');
-        }
-
         const data = await response.json();
 
+        // Handle rejected, failed, or cancelled payments
+        if (!data.success) {
+          setPaymentStatus({
+            success: false,
+            message: data.error || 'Payment was rejected or failed.',
+            orderId: data.payment?.orderId,
+          });
+          setVerifying(false);
+          return;
+        }
+
+        // Redirect to pending page if payment is still processing
+        if (data.payment.status === 'processing' && data.payment.approvalStatus === 'pending') {
+          router.push(`/payment/pending?invoice_id=${invoiceId}&order_id=${data.payment.orderId}`);
+          return;
+        }
+
+        // Show success only for completed/approved payments
+        if (data.payment.status === 'completed' || data.payment.approvalStatus === 'approved') {
+          setPaymentStatus({
+            success: true,
+            message: data.payment.message || 'Payment successful! Your credits have been added to your account.',
+            orderId: data.payment.orderId,
+          });
+          setVerifying(false);
+          return;
+        }
+
+        // Any other status should be treated as an error or unknown state
         setPaymentStatus({
-          success: true,
-          message: data.payment.message || 'Payment successful! Your credits will be added once approved by admin.',
+          success: false,
+          message: `Unexpected payment status: ${data.payment.status}. Please contact support if you need assistance.`,
           orderId: data.payment.orderId,
         });
       } catch (error: any) {
@@ -62,7 +86,7 @@ function PaymentSuccessContent() {
     };
 
     verifyPayment();
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   if (verifying) {
     return (
@@ -90,7 +114,7 @@ function PaymentSuccessContent() {
             )}
           </div>
           <CardTitle className="text-center text-2xl">
-            {paymentStatus?.success ? 'Payment Received!' : 'Payment Verification Issue'}
+            {paymentStatus?.success ? 'Payment Successful!' : 'Payment Verification Issue'}
           </CardTitle>
           <CardDescription className="text-center">
             {paymentStatus?.message}
@@ -102,7 +126,7 @@ function PaymentSuccessContent() {
               <AlertDescription>
                 <strong>Order ID:</strong> {paymentStatus.orderId}
                 <br />
-                Your payment has been received and is awaiting admin approval. You will receive your credits once the payment is approved.
+                Your payment has been successfully processed and credits have been added to your account. You can start using them now!
               </AlertDescription>
             </Alert>
           )}

@@ -81,18 +81,63 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Update payment record with verification details (now validated)
-    await paymentRef.update({
+    const currentStatus = paymentDoc.data()?.status;
+    const currentApprovalStatus = paymentDoc.data()?.approvalStatus;
+
+    // Only update to processing/pending if payment is in initial state
+    // This prevents downgrading approved payments back to pending
+    const shouldUpdateStatus = currentStatus === 'pending' || !currentStatus;
+    
+    const updateData: any = {
       invoiceId: result.invoice_id,
       paymentMethod: result.payment_method || '',
       senderNumber: result.sender_number || '',
       transactionId: result.transaction_id || '',
       fee: result.fee || '0',
       chargedAmount: result.charged_amount || result.amount || '0',
-      status: 'processing',
       updatedAt: new Date(),
       metadata: result.metadata || {},
-    });
+    };
+
+    if (shouldUpdateStatus) {
+      updateData.status = 'processing';
+      updateData.approvalStatus = 'pending';
+    }
+
+    await paymentRef.update(updateData);
+
+    // Get the updated document to return current status
+    const updatedDoc = await paymentRef.get();
+    const updatedData = updatedDoc.data();
+
+    const paymentStatus = updatedData?.status;
+    const approvalStatus = updatedData?.approvalStatus;
+
+    // Handle rejected or failed payments
+    if (paymentStatus === 'failed' || approvalStatus === 'rejected') {
+      return NextResponse.json({
+        success: false,
+        error: updatedData?.rejectionReason || 'Payment was rejected or failed',
+        payment: {
+          orderId,
+          status: paymentStatus,
+          approvalStatus: approvalStatus,
+          rejectionReason: updatedData?.rejectionReason,
+        },
+      });
+    }
+
+    // Handle cancelled payments
+    if (paymentStatus === 'cancelled') {
+      return NextResponse.json({
+        success: false,
+        error: 'Payment was cancelled',
+        payment: {
+          orderId,
+          status: paymentStatus,
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -100,8 +145,11 @@ export async function POST(request: NextRequest) {
         orderId,
         invoiceId: result.invoice_id,
         amount: result.amount,
-        status: 'processing',
-        message: 'Payment verified. Awaiting admin approval.',
+        status: paymentStatus || 'processing',
+        approvalStatus: approvalStatus || 'pending',
+        message: paymentStatus === 'completed' 
+          ? 'Payment approved! Your credits have been added to your account.'
+          : 'Payment verified. Awaiting admin approval.',
       },
     });
   } catch (error) {
