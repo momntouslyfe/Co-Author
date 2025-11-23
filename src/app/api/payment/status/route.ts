@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
       success: true,
       payment: {
         orderId: paymentDoc.id,
+        invoiceId: paymentData?.invoiceId,
         status: paymentStatus,
         approvalStatus: approvalStatus,
         amount: paymentData?.chargedAmount || paymentData?.amount,
