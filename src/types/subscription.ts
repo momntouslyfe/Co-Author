@@ -9,6 +9,7 @@ export interface SubscriptionPlan {
   price: number;
   currency: string;
   isActive: boolean;
+  allowCreditRollover: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

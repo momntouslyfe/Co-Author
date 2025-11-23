@@ -240,20 +240,39 @@ export async function activateSubscriptionPlan(
     } else {
       const userSub = userSubDoc.data() as UserSubscription;
       
-      transaction.update(userSubRef, {
-        subscriptionPlanId,
-        planEffectiveStart,
-        planEffectiveEnd,
-        billingCycleStart,
-        billingCycleEnd,
-        bookCreditsUsedThisCycle: 0,
-        wordCreditsUsedThisCycle: 0,
-        totalBookCreditsFromAddonsThisCycle: userSub.remainingBookCreditsFromAddons || 0,
-        totalWordCreditsFromAddonsThisCycle: userSub.remainingWordCreditsFromAddons || 0,
-        totalBookCreditsFromAdminThisCycle: userSub.remainingBookCreditsFromAdmin || 0,
-        totalWordCreditsFromAdminThisCycle: userSub.remainingWordCreditsFromAdmin || 0,
-        updatedAt: now,
-      });
+      if (plan.allowCreditRollover) {
+        transaction.update(userSubRef, {
+          subscriptionPlanId,
+          planEffectiveStart,
+          planEffectiveEnd,
+          billingCycleStart,
+          billingCycleEnd,
+          bookCreditsUsedThisCycle: 0,
+          wordCreditsUsedThisCycle: 0,
+          totalBookCreditsFromAddonsThisCycle: userSub.remainingBookCreditsFromAddons || 0,
+          totalWordCreditsFromAddonsThisCycle: userSub.remainingWordCreditsFromAddons || 0,
+          totalBookCreditsFromAdminThisCycle: userSub.remainingBookCreditsFromAdmin || 0,
+          totalWordCreditsFromAdminThisCycle: userSub.remainingWordCreditsFromAdmin || 0,
+          updatedAt: now,
+        });
+      } else {
+        transaction.update(userSubRef, {
+          subscriptionPlanId,
+          planEffectiveStart,
+          planEffectiveEnd,
+          billingCycleStart,
+          billingCycleEnd,
+          bookCreditsUsedThisCycle: 0,
+          wordCreditsUsedThisCycle: 0,
+          remainingBookCreditsFromAddons: 0,
+          remainingWordCreditsFromAddons: 0,
+          totalBookCreditsFromAddonsThisCycle: 0,
+          totalWordCreditsFromAddonsThisCycle: 0,
+          totalBookCreditsFromAdminThisCycle: 0,
+          totalWordCreditsFromAdminThisCycle: 0,
+          updatedAt: now,
+        });
+      }
     }
   });
 }

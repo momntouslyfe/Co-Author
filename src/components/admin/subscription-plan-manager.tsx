@@ -37,6 +37,7 @@ interface PlanFormData {
   price: number;
   currency: string;
   isActive: boolean;
+  allowCreditRollover: boolean;
 }
 
 export function SubscriptionPlanManager() {
@@ -56,6 +57,7 @@ export function SubscriptionPlanManager() {
     price: 0,
     currency: 'USD',
     isActive: true,
+    allowCreditRollover: true,
   });
 
   const loadPlans = async () => {
@@ -95,6 +97,7 @@ export function SubscriptionPlanManager() {
         price: plan.price,
         currency: plan.currency,
         isActive: plan.isActive,
+        allowCreditRollover: plan.allowCreditRollover ?? true,
       });
     } else {
       setEditingPlan(null);
@@ -106,6 +109,7 @@ export function SubscriptionPlanManager() {
         price: 0,
         currency: 'USD',
         isActive: true,
+        allowCreditRollover: true,
       });
     }
     setIsDialogOpen(true);
@@ -271,6 +275,13 @@ export function SubscriptionPlanManager() {
                       {plan.description && (
                         <div className="text-xs text-muted-foreground">{plan.description}</div>
                       )}
+                      <div className="text-xs mt-1">
+                        {plan.allowCreditRollover ? (
+                          <span className="text-blue-600">✓ Credit rollover enabled</span>
+                        ) : (
+                          <span className="text-orange-600">✗ No credit rollover</span>
+                        )}
+                      </div>
                     </div>
                     <div>{plan.bookCreditsPerMonth.toLocaleString()}</div>
                     <div>{plan.wordCreditsPerMonth.toLocaleString()}</div>
@@ -393,6 +404,19 @@ export function SubscriptionPlanManager() {
                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
               />
               <Label htmlFor="isActive">Active</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="allowCreditRollover"
+                checked={formData.allowCreditRollover}
+                onCheckedChange={(checked) => setFormData({ ...formData, allowCreditRollover: checked })}
+              />
+              <Label htmlFor="allowCreditRollover">
+                Allow Credit Rollover
+                <span className="block text-xs text-muted-foreground font-normal">
+                  When enabled, addon and admin credits will carry over when users renew this plan
+                </span>
+              </Label>
             </div>
           </div>
           <DialogFooter>
