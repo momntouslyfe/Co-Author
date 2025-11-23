@@ -125,5 +125,17 @@ service cloud.firestore {
       allow get: if request.auth != null && resource.data.userId == request.auth.uid;
       allow list, create, update, delete: if false;
     }
+
+    /**
+     * @description Payment records are managed server-side via Firebase Admin SDK.
+     * @path /payments/{orderId}
+     * @allow (get) Users can view their own payment records.
+     * @deny (list, create, update, delete) All modifications handled server-side.
+     * @principle Payments are created and managed server-side with admin privileges for security.
+     */
+    match /payments/{orderId} {
+      allow get: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow list, create, update, delete: if false;
+    }
   }
 }

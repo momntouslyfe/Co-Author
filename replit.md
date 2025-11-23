@@ -56,8 +56,23 @@ Preferred communication style: Simple, everyday language.
 **Subscription Management**:
 - **Credit System**: Complete subscription and credit tracking system implemented (see CREDIT_SYSTEM.md).
 - **Admin Controls**: Full CRUD operations for subscription plans and addon credit packages.
-- **Payment Integration**: Currently uses placeholder UI. Stripe integration available but requires setup.
+- **Payment Integration**: Uddoktapay payment gateway integrated for Bangladesh. Automatic credit granting upon payment approval.
 - **Security**: All admin routes protected with token verification and proper error handling.
+
+**Payment Gateway Integration (Uddoktapay)**:
+- **Provider**: Uddoktapay - Bangladesh payment automation platform supporting MFS and global payment methods.
+- **API Endpoints**: 
+  - `/api/payment/create` - Initiates payment session and redirects to payment gateway.
+  - `/api/payment/verify` - Verifies payment after user returns from gateway.
+  - `/api/payment/webhook` - Handles instant payment notifications (IPN).
+  - `/api/admin/payment/test-connection` - Admin tool to test API credentials.
+  - `/api/admin/payment/list` - Lists all payment transactions with filters.
+  - `/api/admin/payment/approve` - Approves payment and grants credits to user.
+  - `/api/admin/payment/reject` - Rejects payment with reason.
+- **Payment Flow**: User purchases credits → Redirected to Uddoktapay → Payment completion → Webhook notification → Admin approval → Credits granted.
+- **Admin Features**: Payment management panel to view, approve, or reject payments. Connection testing for API credentials.
+- **Security**: Webhook requests validated using API key header. Payment records tracked in Firestore with approval workflow.
+- **Environment Variables**: `UDDOKTAPAY_API_KEY` (required), `UDDOKTAPAY_BASE_URL` (defaults to sandbox).
 
 ## External Dependencies
 

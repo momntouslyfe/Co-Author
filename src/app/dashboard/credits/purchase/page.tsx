@@ -42,10 +42,62 @@ function PurchaseCreditsContent() {
   }, [creditType]);
 
   const handlePurchase = async (planId: string) => {
-    toast({
-      title: 'Coming Soon',
-      description: 'Payment integration will be available soon. Contact admin for credit purchases.',
-    });
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to purchase credits.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) {
+      toast({
+        title: 'Error',
+        description: 'Plan not found.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const response = await fetch('/api/payment/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          userEmail: user.email,
+          userName: user.displayName || user.email?.split('@')[0] || 'User',
+          addonId: plan.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create payment');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.paymentUrl) {
+        // Redirect to payment gateway
+        window.location.href = data.paymentUrl;
+      } else {
+        throw new Error('Invalid payment response');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Payment Error',
+        description: error.message || 'Failed to initiate payment. Please try again.',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -129,18 +181,6 @@ function PurchaseCreditsContent() {
           ))}
         </div>
       )}
-
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Payment Integration Coming Soon</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            The payment gateway will be integrated in the next phase. For now, please contact the administrator
-            to purchase additional credits manually.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }
