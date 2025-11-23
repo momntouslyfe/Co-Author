@@ -29,16 +29,19 @@ export async function GET(request: NextRequest) {
 
     // Query Firestore for payments
     const admin = getFirebaseAdmin();
-    let query = admin.firestore().collection('payments').orderBy('createdAt', 'desc').limit(limit);
+    let query: any = admin.firestore().collection('payments');
 
     // Apply filters if provided
     if (status) {
-      query = query.where('status', '==', status) as any;
+      query = query.where('status', '==', status);
     }
 
     if (approvalStatus) {
-      query = query.where('approvalStatus', '==', approvalStatus) as any;
+      query = query.where('approvalStatus', '==', approvalStatus);
     }
+
+    // Add ordering and limit
+    query = query.orderBy('createdAt', 'desc').limit(limit);
 
     const snapshot = await query.get();
 

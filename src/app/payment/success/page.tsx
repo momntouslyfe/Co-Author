@@ -40,6 +40,7 @@ function PaymentSuccessContent() {
         });
 
         const data = await response.json();
+        console.log('Payment verification response:', data);
 
         // Handle rejected, failed, or cancelled payments
         if (!data.success) {
@@ -53,7 +54,14 @@ function PaymentSuccessContent() {
         }
 
         // Redirect to pending page if payment is still processing
+        console.log('Checking redirect condition:', {
+          status: data.payment.status,
+          approvalStatus: data.payment.approvalStatus,
+          shouldRedirect: data.payment.status === 'processing' && data.payment.approvalStatus === 'pending'
+        });
+        
         if (data.payment.status === 'processing' && data.payment.approvalStatus === 'pending') {
+          console.log('Redirecting to pending page...');
           router.push(`/payment/pending?invoice_id=${invoiceId}&order_id=${data.payment.orderId}`);
           return;
         }
