@@ -48,7 +48,7 @@ export function FloatingCreditWidget() {
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
-                <span className="text-xs text-muted-foreground">Word Credits</span>
+                <span className="text-xs text-muted-foreground">AI Words Credit</span>
                 <div className="flex items-baseline gap-1">
                   <span className="text-sm font-bold text-primary">
                     {creditSummary.wordCreditsAvailable.toLocaleString()}

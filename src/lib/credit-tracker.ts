@@ -1,6 +1,19 @@
 import { deductCredits, getUserCreditSummary, getUserSubscription } from './credits';
 import type { CreditTypeCategory } from '@/types/subscription';
 
+export class SubscriptionRequiredError extends Error {
+  public readonly code: string;
+  public readonly userMessage: string;
+  
+  constructor(message: string, code: string) {
+    super(message);
+    this.name = 'SubscriptionRequiredError';
+    this.code = code;
+    this.userMessage = message;
+    Object.setPrototypeOf(this, SubscriptionRequiredError.prototype);
+  }
+}
+
 export function countWords(text: string): number {
   if (!text) return 0;
   return text.trim().split(/\s+/).filter(word => word.length > 0).length;
@@ -10,9 +23,9 @@ async function checkActiveSubscription(userId: string): Promise<void> {
   const userSubscription = await getUserSubscription(userId);
   
   if (!userSubscription || !userSubscription.subscriptionPlanId) {
-    throw new Error(
-      'No active subscription found. You need an active monthly subscription to use AI features. ' +
-      'Please subscribe to a plan from the Billing section in Settings.'
+    throw new SubscriptionRequiredError(
+      'You need an active subscription to use AI features. Please subscribe to a plan from the Billing section in Settings to unlock AI-powered writing tools.',
+      'NO_ACTIVE_SUBSCRIPTION'
     );
   }
 
@@ -34,8 +47,9 @@ async function checkActiveSubscription(userId: string): Promise<void> {
   }
   
   if (now > planEffectiveEnd) {
-    throw new Error(
-      'Your subscription has expired. Please renew your subscription from the Billing section in Settings to continue using AI features.'
+    throw new SubscriptionRequiredError(
+      'Your subscription has expired. Please renew your subscription from the Billing section in Settings to continue using AI features.',
+      'SUBSCRIPTION_EXPIRED'
     );
   }
 }

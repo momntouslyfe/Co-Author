@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import type { SubscriptionPlan } from '@/types/subscription';
 import { PaymentStatusCard } from '@/components/dashboard/payment-status-card';
+import { getCurrencySymbol } from '@/lib/currency-utils';
 
 interface SubscriptionStatus {
   hasActiveSubscription: boolean;
@@ -201,7 +202,7 @@ export function BillingSettings() {
                     <span>Monthly Price</span>
                   </div>
                   <p className="font-medium">
-                    {subscriptionStatus.plan.currency} {subscriptionStatus.plan.price.toLocaleString()}
+                    {getCurrencySymbol(subscriptionStatus.plan.currency)}{subscriptionStatus.plan.price.toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -215,7 +216,7 @@ export function BillingSettings() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    {subscriptionStatus.plan.wordCreditsPerMonth.toLocaleString()} word credits per month
+                    {subscriptionStatus.plan.wordCreditsPerMonth.toLocaleString()} AI Words Credit per month
                   </li>
                 </ul>
               </div>
@@ -254,7 +255,7 @@ export function BillingSettings() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="text-3xl font-bold">
-                      {plan.currency} {plan.price.toLocaleString()}
+                      {getCurrencySymbol(plan.currency)}{plan.price.toLocaleString()}
                       <span className="text-sm font-normal text-muted-foreground">/month</span>
                     </div>
 
@@ -265,7 +266,7 @@ export function BillingSettings() {
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        {plan.wordCreditsPerMonth.toLocaleString()} word credits/month
+                        {plan.wordCreditsPerMonth.toLocaleString()} AI Words Credit/month
                       </li>
                     </ul>
 

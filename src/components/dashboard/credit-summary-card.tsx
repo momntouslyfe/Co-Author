@@ -124,7 +124,7 @@ export function CreditSummaryCard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Word Credits</span>
+              <span className="text-sm font-medium">AI Words Credit</span>
             </div>
             <Button variant="outline" size="sm" asChild>
               <Link href="/dashboard/credits/purchase?type=words">

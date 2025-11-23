@@ -186,6 +186,78 @@ export async function initializeUserSubscription(
   });
 }
 
+export async function activateSubscriptionPlan(
+  userId: string,
+  subscriptionPlanId: string
+): Promise<void> {
+  const plan = await getSubscriptionPlan(subscriptionPlanId);
+  if (!plan) {
+    throw new Error(`Subscription plan ${subscriptionPlanId} not found`);
+  }
+  
+  const now = admin.firestore.Timestamp.now();
+  const nowDate = now.toDate();
+  
+  const billingCycleStart = now;
+  const billingCycleEnd = admin.firestore.Timestamp.fromDate(
+    new Date(
+      nowDate.getFullYear(),
+      nowDate.getMonth() + 1,
+      nowDate.getDate(),
+      23, 59, 59, 999
+    )
+  );
+  
+  const planEffectiveStart = now;
+  const planEffectiveEnd = billingCycleEnd;
+  
+  const userSubRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
+  
+  await getDb().runTransaction(async (transaction: admin.firestore.Transaction) => {
+    const userSubDoc = await transaction.get(userSubRef);
+    
+    if (!userSubDoc.exists) {
+      transaction.set(userSubRef, {
+        userId,
+        subscriptionPlanId,
+        planEffectiveStart,
+        planEffectiveEnd,
+        billingCycleStart,
+        billingCycleEnd,
+        bookCreditsUsedThisCycle: 0,
+        wordCreditsUsedThisCycle: 0,
+        remainingBookCreditsFromAddons: 0,
+        remainingWordCreditsFromAddons: 0,
+        remainingBookCreditsFromAdmin: 0,
+        remainingWordCreditsFromAdmin: 0,
+        totalBookCreditsFromAddonsThisCycle: 0,
+        totalWordCreditsFromAddonsThisCycle: 0,
+        totalBookCreditsFromAdminThisCycle: 0,
+        totalWordCreditsFromAdminThisCycle: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+    } else {
+      const userSub = userSubDoc.data() as UserSubscription;
+      
+      transaction.update(userSubRef, {
+        subscriptionPlanId,
+        planEffectiveStart,
+        planEffectiveEnd,
+        billingCycleStart,
+        billingCycleEnd,
+        bookCreditsUsedThisCycle: 0,
+        wordCreditsUsedThisCycle: 0,
+        totalBookCreditsFromAddonsThisCycle: userSub.remainingBookCreditsFromAddons || 0,
+        totalWordCreditsFromAddonsThisCycle: userSub.remainingWordCreditsFromAddons || 0,
+        totalBookCreditsFromAdminThisCycle: userSub.remainingBookCreditsFromAdmin || 0,
+        totalWordCreditsFromAdminThisCycle: userSub.remainingWordCreditsFromAdmin || 0,
+        updatedAt: now,
+      });
+    }
+  });
+}
+
 export async function getUserCreditSummary(userId: string): Promise<CreditSummary> {
   let userSub = await getUserSubscription(userId);
   

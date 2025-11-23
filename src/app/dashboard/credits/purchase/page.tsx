@@ -9,6 +9,7 @@ import { Loader2, Check } from 'lucide-react';
 import { useAuthUser } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 import type { AddonCreditPlan, AddonCreditType } from '@/types/subscription';
+import { getCurrencySymbol } from '@/lib/currency-utils';
 
 function PurchaseCreditsContent() {
   const [plans, setPlans] = useState<AddonCreditPlan[]>([]);
@@ -115,7 +116,7 @@ function PurchaseCreditsContent() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold font-headline mb-2">
-          Purchase {creditType === 'words' ? 'Word' : 'Book Creation'} Credits
+          Purchase {creditType === 'words' ? 'AI Words Credit' : 'Book Creation Credits'}
         </h1>
         <p className="text-muted-foreground">
           Select a credit package to continue your writing journey
@@ -126,7 +127,7 @@ function PurchaseCreditsContent() {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">
-              No {creditType === 'words' ? 'word' : 'book creation'} credit plans are currently available.
+              No {creditType === 'words' ? 'AI Words Credit' : 'book creation credit'} plans are currently available.
             </p>
           </CardContent>
         </Card>
@@ -143,20 +144,19 @@ function PurchaseCreditsContent() {
                     )}
                   </div>
                   <Badge variant="secondary">
-                    {plan.creditAmount.toLocaleString()} credits
+                    {plan.creditAmount.toLocaleString()} {creditType === 'words' ? 'AI Words' : 'credits'}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col justify-between">
                 <div className="mb-6">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">{plan.price.toFixed(2)}</span>
-                    <span className="text-xl text-muted-foreground">{plan.currency}</span>
+                    <span className="text-4xl font-bold">{getCurrencySymbol(plan.currency)}{plan.price.toFixed(2)}</span>
                   </div>
                   <div className="mt-4 space-y-2">
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary" />
-                      <span>{plan.creditAmount.toLocaleString()} {creditType === 'words' ? 'words' : 'book projects'}</span>
+                      <span>{plan.creditAmount.toLocaleString()} {creditType === 'words' ? 'AI Words' : 'book projects'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary" />

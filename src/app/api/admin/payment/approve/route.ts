@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthToken, verifyAdminToken } from '@/lib/admin-auth';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { addCredits } from '@/lib/credits';
+import { addCredits, activateSubscriptionPlan } from '@/lib/credits';
 import { verifyPayment } from '@/lib/uddoktapay';
 
 export async function POST(request: NextRequest) {
@@ -84,8 +84,55 @@ export async function POST(request: NextRequest) {
     // Use the AUTHORITATIVE charged amount from Uddoktapay, not the stored value
     const authoritativeChargedAmount = parseFloat(verificationResult.charged_amount || verificationResult.amount || '0');
 
-    // SECURITY: Validate payment amount before granting credits
-    if (paymentData?.addonId) {
+    // SECURITY: Validate payment amount before granting credits/subscription
+    if (paymentData?.planId) {
+      try {
+        // Get subscription plan details
+        const subscriptionPlanRef = admin.firestore().collection('subscriptionPlans').doc(paymentData.planId);
+        const subscriptionPlanDoc = await subscriptionPlanRef.get();
+
+        if (!subscriptionPlanDoc.exists) {
+          console.error(`Subscription plan ${paymentData.planId} not found`);
+          return NextResponse.json(
+            { error: 'Referenced subscription plan not found. Cannot approve payment.' },
+            { status: 400 }
+          );
+        }
+
+        const subscriptionPlan = subscriptionPlanDoc.data();
+        const expectedPrice = subscriptionPlan?.price || 0;
+
+        // SECURITY: Validate that AUTHORITATIVE charged amount from Uddoktapay matches expected price
+        if (Math.abs(authoritativeChargedAmount - expectedPrice) > 0.01) {
+          console.error(
+            `SECURITY ALERT - Payment amount mismatch! ` +
+            `Expected: ${expectedPrice}, ` +
+            `Charged (verified with Uddoktapay): ${authoritativeChargedAmount}, ` +
+            `Order: ${orderId}, ` +
+            `Invoice: ${paymentData.invoiceId}`
+          );
+          return NextResponse.json(
+            { 
+              error: `Payment amount mismatch detected. Expected ${expectedPrice} ${paymentData.currency || 'BDT'}, but Uddoktapay verified amount is ${authoritativeChargedAmount} ${paymentData.currency || 'BDT'}. This payment may be fraudulent and cannot be approved.` 
+            },
+            { status: 400 }
+          );
+        }
+
+        await activateSubscriptionPlan(
+          paymentData.userId,
+          paymentData.planId
+        );
+
+        console.log(`Subscription plan ${paymentData.planId} activated for user ${paymentData.userId}`);
+      } catch (activationError) {
+        console.error('Error activating subscription:', activationError);
+        return NextResponse.json(
+          { error: activationError instanceof Error ? activationError.message : 'Failed to activate subscription' },
+          { status: 500 }
+        );
+      }
+    } else if (paymentData?.addonId) {
       try {
         // Get addon plan details
         const addonPlanRef = admin.firestore().collection('addonCreditPlans').doc(paymentData.addonId);
@@ -166,7 +213,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Payment approved and credits granted successfully',
+      message: paymentData?.planId 
+        ? 'Payment approved and subscription activated successfully'
+        : 'Payment approved and credits granted successfully',
     });
   } catch (error) {
     console.error('Approve payment error:', error);
