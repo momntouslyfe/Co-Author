@@ -1,4 +1,4 @@
-import { deductCredits, getUserCreditSummary } from './credits';
+import { deductCredits, getUserCreditSummary, getUserSubscription } from './credits';
 import type { CreditTypeCategory } from '@/types/subscription';
 
 export function countWords(text: string): number {
@@ -6,10 +6,46 @@ export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(word => word.length > 0).length;
 }
 
+async function checkActiveSubscription(userId: string): Promise<void> {
+  const userSubscription = await getUserSubscription(userId);
+  
+  if (!userSubscription || !userSubscription.subscriptionPlanId) {
+    throw new Error(
+      'No active subscription found. You need an active monthly subscription to use AI features. ' +
+      'Please subscribe to a plan from the Billing section in Settings.'
+    );
+  }
+
+  const now = new Date();
+  let planEffectiveEnd: Date;
+  
+  if (typeof userSubscription.planEffectiveEnd === 'object' && userSubscription.planEffectiveEnd !== null) {
+    if ('toDate' in userSubscription.planEffectiveEnd && typeof userSubscription.planEffectiveEnd.toDate === 'function') {
+      planEffectiveEnd = userSubscription.planEffectiveEnd.toDate();
+    } else if (userSubscription.planEffectiveEnd instanceof Date) {
+      planEffectiveEnd = userSubscription.planEffectiveEnd;
+    } else if ('seconds' in userSubscription.planEffectiveEnd) {
+      planEffectiveEnd = new Date((userSubscription.planEffectiveEnd as any).seconds * 1000);
+    } else {
+      planEffectiveEnd = new Date(userSubscription.planEffectiveEnd as any);
+    }
+  } else {
+    planEffectiveEnd = new Date(userSubscription.planEffectiveEnd);
+  }
+  
+  if (now > planEffectiveEnd) {
+    throw new Error(
+      'Your subscription has expired. Please renew your subscription from the Billing section in Settings to continue using AI features.'
+    );
+  }
+}
+
 export async function preflightCheckWordCredits(
   userId: string,
   estimatedWords: number
 ): Promise<void> {
+  await checkActiveSubscription(userId);
+  
   const creditSummary = await getUserCreditSummary(userId);
   
   if (creditSummary.wordCreditsAvailable < estimatedWords) {
@@ -51,6 +87,8 @@ export async function trackAIUsage(
 }
 
 export async function checkBookCreationCredit(userId: string): Promise<void> {
+  await checkActiveSubscription(userId);
+  
   const creditSummary = await getUserCreditSummary(userId);
   
   if (creditSummary.bookCreditsAvailable < 1) {

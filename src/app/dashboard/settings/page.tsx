@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { AIIntegrationSettings } from "@/components/settings/ai-integration-settings";
+import { BillingSettings } from "@/components/settings/billing-settings";
 
 export default function SettingsPage() {
   return (
@@ -39,15 +40,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="billing">
-          <Card>
-            <CardHeader>
-              <CardTitle>Billing & Subscriptions</CardTitle>
-              <CardDescription>Manage your payment methods and subscription plan.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>PAYG and subscription management UI will be here, supporting Stripe, Paddle, and UddoktaPay.</p>
-            </CardContent>
-          </Card>
+          <BillingSettings />
         </TabsContent>
 
         <TabsContent value="blog">

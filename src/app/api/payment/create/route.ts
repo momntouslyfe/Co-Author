@@ -1,20 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPayment } from '@/lib/uddoktapay';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getFirebaseAdmin, initializeFirebaseAdmin } from '@/lib/firebase-admin';
+import * as firebaseAdmin from 'firebase-admin';
 import type { UddoktapayCheckoutRequest } from '@/types/uddoktapay';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { planId, addonId, userId, userEmail, userName } = body;
-
-    // Validate required fields
-    if (!userId || !userEmail || !userName) {
+    // SECURITY: Verify user authentication first
+    const authHeader = request.headers.get('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
       );
     }
+
+    const idToken = authHeader.split('Bearer ')[1];
+    
+    let userId: string;
+    let userEmail: string;
+    let userName: string;
+    
+    try {
+      initializeFirebaseAdmin();
+      const decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken);
+      userId = decodedToken.uid;
+      userEmail = decodedToken.email || '';
+      userName = decodedToken.name || decodedToken.email?.split('@')[0] || 'User';
+    } catch (error: any) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { planId, addonId } = body;
 
     if (!planId && !addonId) {
       return NextResponse.json(

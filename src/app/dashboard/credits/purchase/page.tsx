@@ -63,16 +63,15 @@ function PurchaseCreditsContent() {
 
     try {
       setIsLoading(true);
+      const token = await user.getIdToken();
 
       const response = await fetch('/api/payment/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          userId: user.uid,
-          userEmail: user.email,
-          userName: user.displayName || user.email?.split('@')[0] || 'User',
           addonId: plan.id,
         }),
       });

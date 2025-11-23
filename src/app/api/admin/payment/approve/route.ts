@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const creditType = addonPlan?.creditType || 'words';
+        const creditType = addonPlan?.type || 'words';
         const creditAmount = addonPlan?.creditAmount || 0;
 
         if (creditAmount > 0) {
