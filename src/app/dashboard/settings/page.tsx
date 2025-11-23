@@ -20,7 +20,6 @@ export default function SettingsPage() {
           <TabsTrigger value="ai">AI Integration</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="billing">Billing</TabsTrigger>
-          <TabsTrigger value="blog">Blog/SEO</TabsTrigger>
         </TabsList>
         
         <TabsContent value="ai">
@@ -41,18 +40,6 @@ export default function SettingsPage() {
 
         <TabsContent value="billing">
           <BillingSettings />
-        </TabsContent>
-
-        <TabsContent value="blog">
-          <Card>
-            <CardHeader>
-              <CardTitle>Blog & SEO</CardTitle>
-              <CardDescription>Configure settings for the built-in blog system.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Settings for sitemap generation, Google Search Console integration, and analytics tracking (GA4, Facebook Pixel/CAPI) will be here.</p>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>

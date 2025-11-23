@@ -212,6 +212,12 @@ export async function activateSubscriptionPlan(
   const planEffectiveEnd = billingCycleEnd;
   
   const userSubRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
+  const existingUserSub = await getUserSubscription(userId);
+  
+  let oldPlan: SubscriptionPlan | null = null;
+  if (existingUserSub?.subscriptionPlanId) {
+    oldPlan = await getSubscriptionPlan(existingUserSub.subscriptionPlanId);
+  }
   
   await getDb().runTransaction(async (transaction: admin.firestore.Transaction) => {
     const userSubDoc = await transaction.get(userSubRef);
@@ -240,43 +246,47 @@ export async function activateSubscriptionPlan(
     } else {
       const userSub = userSubDoc.data() as UserSubscription;
       
-      const allowRollover = plan.allowCreditRollover ?? true;
+      let rolloverBookCreditsFromPlan = 0;
+      let rolloverWordCreditsFromPlan = 0;
       
-      if (allowRollover) {
-        transaction.update(userSubRef, {
-          subscriptionPlanId,
-          planEffectiveStart,
-          planEffectiveEnd,
-          billingCycleStart,
-          billingCycleEnd,
-          bookCreditsUsedThisCycle: 0,
-          wordCreditsUsedThisCycle: 0,
-          totalBookCreditsFromAddonsThisCycle: userSub.remainingBookCreditsFromAddons || 0,
-          totalWordCreditsFromAddonsThisCycle: userSub.remainingWordCreditsFromAddons || 0,
-          totalBookCreditsFromAdminThisCycle: userSub.remainingBookCreditsFromAdmin || 0,
-          totalWordCreditsFromAdminThisCycle: userSub.remainingWordCreditsFromAdmin || 0,
-          updatedAt: now,
-        });
-      } else {
-        transaction.update(userSubRef, {
-          subscriptionPlanId,
-          planEffectiveStart,
-          planEffectiveEnd,
-          billingCycleStart,
-          billingCycleEnd,
-          bookCreditsUsedThisCycle: 0,
-          wordCreditsUsedThisCycle: 0,
-          remainingBookCreditsFromAddons: 0,
-          remainingWordCreditsFromAddons: 0,
-          remainingBookCreditsFromAdmin: 0,
-          remainingWordCreditsFromAdmin: 0,
-          totalBookCreditsFromAddonsThisCycle: 0,
-          totalWordCreditsFromAddonsThisCycle: 0,
-          totalBookCreditsFromAdminThisCycle: 0,
-          totalWordCreditsFromAdminThisCycle: 0,
-          updatedAt: now,
-        });
+      if (oldPlan && userSub.subscriptionPlanId) {
+        const oldCycleEnd = userSub.billingCycleEnd.toDate();
+        const isWithinSameBillingPeriod = nowDate <= oldCycleEnd;
+        
+        if (isWithinSameBillingPeriod) {
+          const oldBookCreditsFromPlan = oldPlan.bookCreditsPerMonth || 0;
+          const oldWordCreditsFromPlan = oldPlan.wordCreditsPerMonth || 0;
+          
+          const oldBookCreditsUsed = userSub.bookCreditsUsedThisCycle || 0;
+          const oldWordCreditsUsed = userSub.wordCreditsUsedThisCycle || 0;
+          
+          rolloverBookCreditsFromPlan = Math.max(0, oldBookCreditsFromPlan - oldBookCreditsUsed);
+          rolloverWordCreditsFromPlan = Math.max(0, oldWordCreditsFromPlan - oldWordCreditsUsed);
+        }
       }
+      
+      const updateData: any = {
+        subscriptionPlanId,
+        planEffectiveStart,
+        planEffectiveEnd,
+        billingCycleStart,
+        billingCycleEnd,
+        bookCreditsUsedThisCycle: 0,
+        wordCreditsUsedThisCycle: 0,
+        updatedAt: now,
+      };
+      
+      if (rolloverBookCreditsFromPlan > 0) {
+        updateData.remainingBookCreditsFromAdmin = (userSub.remainingBookCreditsFromAdmin || 0) + rolloverBookCreditsFromPlan;
+        updateData.totalBookCreditsFromAdminThisCycle = admin.firestore.FieldValue.increment(rolloverBookCreditsFromPlan);
+      }
+      
+      if (rolloverWordCreditsFromPlan > 0) {
+        updateData.remainingWordCreditsFromAdmin = (userSub.remainingWordCreditsFromAdmin || 0) + rolloverWordCreditsFromPlan;
+        updateData.totalWordCreditsFromAdminThisCycle = admin.firestore.FieldValue.increment(rolloverWordCreditsFromPlan);
+      }
+      
+      transaction.update(userSubRef, updateData);
     }
   });
 }

@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpRight, BookCopy, FileText, Search, Loader2 } from 'lucide-react';
+import { ArrowUpRight, BookCopy, FileText, Search, Loader2, PenTool } from 'lucide-react';
 import { useAuthUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -77,17 +77,17 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <Link href="/dashboard/projects">View All Projects</Link>
+              <Link href="/dashboard/co-author">View All Projects</Link>
             </Button>
           </CardContent>
         </Card>
         <Card asChild>
-          <Link href="/dashboard/projects">
+          <Link href="/dashboard/co-author">
             <CardHeader>
-              <CardDescription>New Project</CardDescription>
+              <CardDescription>New Book</CardDescription>
               <CardTitle className="text-lg flex items-center gap-2 font-headline">
                 <BookCopy className="w-5 h-5 text-primary" />
-                Start Writing
+                Create New Book
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -98,9 +98,25 @@ export default function Dashboard() {
           </Link>
         </Card>
         <Card asChild>
+          <Link href="/dashboard/style-profile">
+            <CardHeader>
+              <CardDescription>Writing Style</CardDescription>
+              <CardTitle className="text-lg flex items-center gap-2 font-headline">
+                <PenTool className="w-5 h-5 text-primary" />
+                Clone A Writing
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                Replicate your unique writing style with AI.
+              </p>
+            </CardContent>
+          </Link>
+        </Card>
+        <Card asChild>
           <Link href="/dashboard/research">
             <CardHeader>
-              <CardDescription>New Research</CardDescription>
+              <CardDescription>Topic Research</CardDescription>
               <CardTitle className="text-lg flex items-center gap-2 font-headline">
                 <Search className="w-5 h-5 text-primary" />
                 Research a Topic
@@ -109,22 +125,6 @@ export default function Dashboard() {
             <CardContent>
               <p className="text-xs text-muted-foreground">
                 Explore ideas and discover your next book topic.
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-        <Card asChild>
-          <Link href="/dashboard/co-author">
-            <CardHeader>
-              <CardDescription>New Outline</CardDescription>
-              <CardTitle className="text-lg flex items-center gap-2 font-headline">
-                <FileText className="w-5 h-5 text-primary" />
-                Use CO-Author
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                Let AI create a detailed book structure for you.
               </p>
             </CardContent>
           </Link>
