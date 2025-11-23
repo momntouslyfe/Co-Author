@@ -1,8 +1,8 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { AIIntegrationSettings } from "@/components/settings/ai-integration-settings";
 import { BillingSettings } from "@/components/settings/billing-settings";
+import { ProfileSettings } from "@/components/settings/profile-settings";
 
 export default function SettingsPage() {
   return (
@@ -27,15 +27,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>Manage your public profile and account details.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Profile settings form will be here.</p>
-            </CardContent>
-          </Card>
+          <ProfileSettings />
         </TabsContent>
 
         <TabsContent value="billing">
