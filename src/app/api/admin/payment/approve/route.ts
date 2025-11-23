@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
     const paymentData = paymentDoc.data();
 
     // Check if payment is in a state that can be approved
-    if (paymentData?.status !== 'processing') {
+    if (paymentData?.status !== 'processing' && paymentData?.status !== 'pending') {
       return NextResponse.json(
-        { error: 'Payment must be in processing status to approve' },
+        { error: 'Payment must be in pending or processing status to approve' },
         { status: 400 }
       );
     }

@@ -287,7 +287,7 @@ export function PaymentManagement() {
                         </Alert>
                       )}
 
-                      {payment.status === 'processing' && payment.approvalStatus === 'pending' && (
+                      {(payment.status === 'processing' || payment.status === 'pending') && payment.approvalStatus === 'pending' && (
                         <div className="flex gap-2 mt-4">
                           <Button
                             onClick={() => {

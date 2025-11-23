@@ -42,7 +42,7 @@ localPort = 33095
 externalPort = 3001
 
 [[ports]]
-localPort = 35897
+localPort = 35907
 externalPort = 5000
 
 [[ports]]
@@ -66,3 +66,4 @@ build = ["npm", "run", "build"]
 
 [userenv.shared]
 ADMIN_EMAIL = "momentouslyfe@gmail.com"
+NEXT_PUBLIC_APP_URL = "https://39744146-5660-4490-bdc8-13874e64ab5c-00-1455a9xj0826y.riker.replit.dev"
