@@ -60,9 +60,10 @@ Preferred communication style: Simple, everyday language.
 - **Security**: All admin routes protected with token verification and proper error handling.
 - **User Billing Section**: Comprehensive billing management in Settings page showing current subscription status, available plans, and payment history. Users must have an active subscription to use AI features.
 - **Subscription Enforcement**: AI functions and workflows require active monthly subscriptions. Expired subscriptions block AI operations with custom `SubscriptionRequiredError` class providing clear user-facing error messages directing users to the Billing section.
-- **Credit Rollover**: `activateSubscriptionPlan()` function properly preserves addon and admin credits when users purchase new subscription plans after expiration, ensuring credits carry over between billing cycles.
+- **Credit Rollover Control**: Admins can enable or disable credit rollover on a per-plan basis via `allowCreditRollover` field in SubscriptionPlan. When enabled (default for legacy plans), addon and admin credits carry over when users renew. When disabled, all credits reset to zero upon plan activation.
 - **Monthly Credits**: Subscription plan credits (book and word credits) are calculated dynamically based on active subscription plan ID, not stored separately. Credits become available immediately upon plan activation.
 - **Currency Display**: All pricing displays show currency symbols (৳ for BDT, $ for USD) instead of currency codes. Credit terminology uses "AI Words Credit" for user-facing components.
+- **Draggable Credit Widget**: The floating credit widget on the dashboard is draggable via mouse. Users can reposition it anywhere on screen, with position persisting in localStorage. Default position is right-side, vertically centered.
 
 **Payment Gateway Integration (Uddoktapay)**:
 - **Provider**: Uddoktapay - Bangladesh payment automation platform supporting MFS and global payment methods.
