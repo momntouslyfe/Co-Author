@@ -276,7 +276,7 @@ export function SubscriptionPlanManager() {
                         <div className="text-xs text-muted-foreground">{plan.description}</div>
                       )}
                       <div className="text-xs mt-1">
-                        {plan.allowCreditRollover ? (
+                        {(plan.allowCreditRollover ?? true) ? (
                           <span className="text-blue-600">✓ Credit rollover enabled</span>
                         ) : (
                           <span className="text-orange-600">✗ No credit rollover</span>

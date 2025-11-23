@@ -1,15 +1,90 @@
 'use client';
 
-import { BookOpen, FileText, Loader2 } from 'lucide-react';
+import { BookOpen, FileText, Loader2, GripVertical } from 'lucide-react';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
 import { Card } from '@/components/ui/card';
+import { useState, useEffect, useRef } from 'react';
+
+const DEFAULT_POSITION = { x: -24, y: 50 };
+const STORAGE_KEY = 'floating-credit-widget-position';
 
 export function FloatingCreditWidget() {
   const { creditSummary, isLoading } = useCreditSummary();
+  const [position, setPosition] = useState(DEFAULT_POSITION);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const savedPosition = localStorage.getItem(STORAGE_KEY);
+    if (savedPosition) {
+      try {
+        const parsed = JSON.parse(savedPosition);
+        setPosition(parsed);
+      } catch (e) {
+        console.error('Failed to parse saved position:', e);
+      }
+    }
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!cardRef.current) return;
+    
+    const rect = cardRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+    setIsDragging(true);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+
+    const newX = e.clientX - dragOffset.x;
+    const newY = e.clientY - dragOffset.y;
+
+    const maxX = window.innerWidth - (cardRef.current?.offsetWidth || 0);
+    const maxY = window.innerHeight - (cardRef.current?.offsetHeight || 0);
+
+    const newPosition = {
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY)),
+    };
+    
+    setPosition(newPosition);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newPosition));
+  };
+
+  const handleMouseUp = () => {
+    if (isDragging) {
+      setIsDragging(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragOffset, position]);
 
   if (isLoading) {
     return (
-      <div className="fixed top-1/2 -translate-y-1/2 right-6 z-50">
+      <div 
+        className="fixed z-50"
+        style={{ 
+          right: position.x === DEFAULT_POSITION.x ? `${Math.abs(DEFAULT_POSITION.x)}px` : 'auto',
+          left: position.x !== DEFAULT_POSITION.x ? `${position.x}px` : 'auto',
+          top: position.y === DEFAULT_POSITION.y ? `${position.y}%` : `${position.y}px`,
+          transform: position.y === DEFAULT_POSITION.y ? 'translateY(-50%)' : 'none',
+        }}
+      >
         <Card className="p-3 shadow-lg border-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <Loader2 className="h-4 w-4 animate-spin" />
         </Card>
@@ -22,11 +97,27 @@ export function FloatingCreditWidget() {
   }
 
   return (
-    <div className="fixed top-1/2 -translate-y-1/2 right-6 z-50">
-      <Card className="p-4 shadow-lg border-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div 
+      ref={cardRef}
+      className="fixed z-50"
+      style={{ 
+        right: position.x === DEFAULT_POSITION.x ? `${Math.abs(DEFAULT_POSITION.x)}px` : 'auto',
+        left: position.x !== DEFAULT_POSITION.x ? `${position.x}px` : 'auto',
+        top: position.y === DEFAULT_POSITION.y ? `${position.y}%` : `${position.y}px`,
+        transform: position.y === DEFAULT_POSITION.y ? 'translateY(-50%)' : 'none',
+        cursor: isDragging ? 'grabbing' : 'grab',
+      }}
+    >
+      <Card 
+        className="p-4 shadow-lg border-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 select-none"
+        onMouseDown={handleMouseDown}
+      >
         <div className="space-y-3">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Credits Remaining
+          <div className="flex items-center gap-2">
+            <GripVertical className="h-3 w-3 text-muted-foreground" />
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Credits Remaining
+            </div>
           </div>
           
           <div className="space-y-2">

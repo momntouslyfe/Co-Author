@@ -240,7 +240,9 @@ export async function activateSubscriptionPlan(
     } else {
       const userSub = userSubDoc.data() as UserSubscription;
       
-      if (plan.allowCreditRollover) {
+      const allowRollover = plan.allowCreditRollover ?? true;
+      
+      if (allowRollover) {
         transaction.update(userSubRef, {
           subscriptionPlanId,
           planEffectiveStart,
@@ -266,6 +268,8 @@ export async function activateSubscriptionPlan(
           wordCreditsUsedThisCycle: 0,
           remainingBookCreditsFromAddons: 0,
           remainingWordCreditsFromAddons: 0,
+          remainingBookCreditsFromAdmin: 0,
+          remainingWordCreditsFromAdmin: 0,
           totalBookCreditsFromAddonsThisCycle: 0,
           totalWordCreditsFromAddonsThisCycle: 0,
           totalBookCreditsFromAdminThisCycle: 0,
