@@ -58,20 +58,24 @@ Preferred communication style: Simple, everyday language.
 - **Admin Controls**: Full CRUD operations for subscription plans and addon credit packages.
 - **Payment Integration**: Uddoktapay payment gateway integrated for Bangladesh. Automatic credit granting upon payment approval.
 - **Security**: All admin routes protected with token verification and proper error handling.
+- **User Billing Section**: Comprehensive billing management in Settings page showing current subscription status, available plans, and payment history. Users must have an active subscription to use AI features.
+- **Subscription Enforcement**: AI functions and workflows require active monthly subscriptions. Expired subscriptions block AI operations with clear user-facing error messages directing users to the Billing section.
 
 **Payment Gateway Integration (Uddoktapay)**:
 - **Provider**: Uddoktapay - Bangladesh payment automation platform supporting MFS and global payment methods.
 - **API Endpoints**: 
-  - `/api/payment/create` - Initiates payment session and redirects to payment gateway.
+  - `/api/payment/create` - Initiates payment session and redirects to payment gateway. **Security**: Verifies Firebase ID token server-side and derives userId from authenticated token (prevents spoofed purchases).
   - `/api/payment/verify` - Verifies payment after user returns from gateway.
   - `/api/payment/webhook` - Handles instant payment notifications (IPN).
   - `/api/admin/payment/test-connection` - Admin tool to test API credentials.
   - `/api/admin/payment/list` - Lists all payment transactions with filters.
-  - `/api/admin/payment/approve` - Approves payment and grants credits to user.
+  - `/api/admin/payment/approve` - Approves payment and grants credits to user. **Fixed**: Now correctly uses `addonPlan.type` instead of `addonPlan.creditType` to grant correct credit type (book vs. word credits).
   - `/api/admin/payment/reject` - Rejects payment with reason.
+  - `/api/user/subscription-status` - Returns user's current subscription status with expiration dates.
+  - `/api/user/subscription-plans` - Lists available subscription plans for purchase.
 - **Payment Flow**: User purchases credits → Redirected to Uddoktapay → Payment completion → Webhook notification → Admin approval → Credits granted.
 - **Admin Features**: Payment management panel to view, approve, or reject payments. Connection testing for API credentials.
-- **Security**: Webhook requests validated using API key header. Payment records tracked in Firestore with approval workflow.
+- **Security**: Webhook requests validated using API key header. Payment records tracked in Firestore with approval workflow. Payment creation requires authenticated Firebase ID token.
 - **Environment Variables**: `UDDOKTAPAY_API_KEY` (required), `UDDOKTAPAY_BASE_URL` (defaults to sandbox).
 
 ## External Dependencies

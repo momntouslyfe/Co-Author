@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,8 +29,13 @@ export function BillingSettings() {
   const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const { user } = useAuthUser();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -165,8 +170,8 @@ export function BillingSettings() {
                     <Calendar className="h-4 w-4" />
                     <span>Plan Started</span>
                   </div>
-                  <p className="font-medium">
-                    {format(subscriptionStatus.subscription.planEffectiveStart, 'PPP')}
+                  <p className="font-medium" suppressHydrationWarning>
+                    {isMounted ? format(subscriptionStatus.subscription.planEffectiveStart, 'PPP') : '...'}
                   </p>
                 </div>
 
@@ -175,8 +180,8 @@ export function BillingSettings() {
                     <Calendar className="h-4 w-4" />
                     <span>Expires On</span>
                   </div>
-                  <p className="font-medium">
-                    {format(subscriptionStatus.subscription.planEffectiveEnd, 'PPP')}
+                  <p className="font-medium" suppressHydrationWarning>
+                    {isMounted ? format(subscriptionStatus.subscription.planEffectiveEnd, 'PPP') : '...'}
                   </p>
                 </div>
 
@@ -185,8 +190,8 @@ export function BillingSettings() {
                     <Calendar className="h-4 w-4" />
                     <span>Next Payment Date</span>
                   </div>
-                  <p className="font-medium">
-                    {format(subscriptionStatus.subscription.billingCycleEnd, 'PPP')}
+                  <p className="font-medium" suppressHydrationWarning>
+                    {isMounted ? format(subscriptionStatus.subscription.billingCycleEnd, 'PPP') : '...'}
                   </p>
                 </div>
 
