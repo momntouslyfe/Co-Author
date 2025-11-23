@@ -41,6 +41,10 @@ export interface UserSubscription {
   remainingWordCreditsFromAddons: number;
   remainingBookCreditsFromAdmin: number;
   remainingWordCreditsFromAdmin: number;
+  totalBookCreditsFromAddonsThisCycle?: number;
+  totalWordCreditsFromAddonsThisCycle?: number;
+  totalBookCreditsFromAdminThisCycle?: number;
+  totalWordCreditsFromAdminThisCycle?: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

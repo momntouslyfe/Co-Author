@@ -34,12 +34,14 @@ export function FloatingCreditWidget() {
               <BookOpen className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground">Book Creation</span>
-                <span className="text-sm font-bold">
-                  {creditSummary.bookCreditsAvailable.toLocaleString()}
-                  <span className="text-xs text-muted-foreground font-normal">
-                    {' '}/ {creditSummary.bookCreditsTotal.toLocaleString()}
+                <div className="flex items-baseline gap-1">
+                  <span className="text-sm font-bold text-primary">
+                    {creditSummary.bookCreditsAvailable.toLocaleString()}
                   </span>
-                </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    of {creditSummary.bookCreditsTotal.toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -47,12 +49,14 @@ export function FloatingCreditWidget() {
               <FileText className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground">Word Credits</span>
-                <span className="text-sm font-bold">
-                  {creditSummary.wordCreditsAvailable.toLocaleString()}
-                  <span className="text-xs text-muted-foreground font-normal">
-                    {' '}/ {creditSummary.wordCreditsTotal.toLocaleString()}
+                <div className="flex items-baseline gap-1">
+                  <span className="text-sm font-bold text-primary">
+                    {creditSummary.wordCreditsAvailable.toLocaleString()}
                   </span>
-                </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    of {creditSummary.wordCreditsTotal.toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

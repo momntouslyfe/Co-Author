@@ -177,13 +177,17 @@ export async function initializeUserSubscription(
     remainingWordCreditsFromAddons: 0,
     remainingBookCreditsFromAdmin: 0,
     remainingWordCreditsFromAdmin: 0,
+    totalBookCreditsFromAddonsThisCycle: 0,
+    totalWordCreditsFromAddonsThisCycle: 0,
+    totalBookCreditsFromAdminThisCycle: 0,
+    totalWordCreditsFromAdminThisCycle: 0,
     createdAt: now,
     updatedAt: now,
   });
 }
 
 export async function getUserCreditSummary(userId: string): Promise<CreditSummary> {
-  const userSub = await getUserSubscription(userId);
+  let userSub = await getUserSubscription(userId);
   
   if (!userSub) {
     await initializeUserSubscription(userId);
@@ -203,10 +207,7 @@ export async function getUserCreditSummary(userId: string): Promise<CreditSummar
     if (!updatedUserSub) {
       throw new Error('Failed to get updated subscription');
     }
-    userSub.bookCreditsUsedThisCycle = updatedUserSub.bookCreditsUsedThisCycle;
-    userSub.wordCreditsUsedThisCycle = updatedUserSub.wordCreditsUsedThisCycle;
-    userSub.billingCycleStart = updatedUserSub.billingCycleStart;
-    userSub.billingCycleEnd = updatedUserSub.billingCycleEnd;
+    userSub = updatedUserSub;
   }
   
   const plan = userSub.subscriptionPlanId 
@@ -226,16 +227,27 @@ function calculateCreditSummary(
   const bookCreditsFromPlanAvailable = Math.max(0, bookCreditsFromPlan - userSub.bookCreditsUsedThisCycle);
   const wordCreditsFromPlanAvailable = Math.max(0, wordCreditsFromPlan - userSub.wordCreditsUsedThisCycle);
   
-  const bookCreditsTotal = bookCreditsFromPlanAvailable + userSub.remainingBookCreditsFromAddons + userSub.remainingBookCreditsFromAdmin;
-  const wordCreditsTotal = wordCreditsFromPlanAvailable + userSub.remainingWordCreditsFromAddons + userSub.remainingWordCreditsFromAdmin;
+  const bookCreditsAvailable = bookCreditsFromPlanAvailable + userSub.remainingBookCreditsFromAddons + userSub.remainingBookCreditsFromAdmin;
+  const wordCreditsAvailable = wordCreditsFromPlanAvailable + userSub.remainingWordCreditsFromAddons + userSub.remainingWordCreditsFromAdmin;
+  
+  const totalBookCreditsFromAddons = userSub.totalBookCreditsFromAddonsThisCycle ?? userSub.remainingBookCreditsFromAddons;
+  const totalWordCreditsFromAddons = userSub.totalWordCreditsFromAddonsThisCycle ?? userSub.remainingWordCreditsFromAddons;
+  const totalBookCreditsFromAdmin = userSub.totalBookCreditsFromAdminThisCycle ?? userSub.remainingBookCreditsFromAdmin;
+  const totalWordCreditsFromAdmin = userSub.totalWordCreditsFromAdminThisCycle ?? userSub.remainingWordCreditsFromAdmin;
+  
+  const bookCreditsTotal = bookCreditsFromPlan + totalBookCreditsFromAddons + totalBookCreditsFromAdmin;
+  const wordCreditsTotal = wordCreditsFromPlan + totalWordCreditsFromAddons + totalWordCreditsFromAdmin;
+  
+  const totalBookCreditsUsed = bookCreditsTotal - bookCreditsAvailable;
+  const totalWordCreditsUsed = wordCreditsTotal - wordCreditsAvailable;
   
   return {
-    bookCreditsAvailable: bookCreditsTotal,
-    bookCreditsUsed: userSub.bookCreditsUsedThisCycle,
-    bookCreditsTotal: bookCreditsFromPlan + userSub.remainingBookCreditsFromAddons + userSub.remainingBookCreditsFromAdmin,
-    wordCreditsAvailable: wordCreditsTotal,
-    wordCreditsUsed: userSub.wordCreditsUsedThisCycle,
-    wordCreditsTotal: wordCreditsFromPlan + userSub.remainingWordCreditsFromAddons + userSub.remainingWordCreditsFromAdmin,
+    bookCreditsAvailable,
+    bookCreditsUsed: totalBookCreditsUsed,
+    bookCreditsTotal,
+    wordCreditsAvailable,
+    wordCreditsUsed: totalWordCreditsUsed,
+    wordCreditsTotal,
     currentPeriodStart: userSub.billingCycleStart.toDate(),
     currentPeriodEnd: userSub.billingCycleEnd.toDate(),
     subscriptionPlan: plan,
@@ -256,13 +268,28 @@ async function resetBillingCycle(userId: string): Promise<void> {
     )
   );
   
-  const docRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
-  await docRef.update({
-    bookCreditsUsedThisCycle: 0,
-    wordCreditsUsedThisCycle: 0,
-    billingCycleStart: cycleStart,
-    billingCycleEnd: cycleEnd,
-    updatedAt: now,
+  const userSubRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
+  
+  await getDb().runTransaction(async (transaction: admin.firestore.Transaction) => {
+    const userSubDoc = await transaction.get(userSubRef);
+    
+    if (!userSubDoc.exists) {
+      throw new Error('User subscription not found');
+    }
+    
+    const userSub = userSubDoc.data() as UserSubscription;
+    
+    transaction.update(userSubRef, {
+      bookCreditsUsedThisCycle: 0,
+      wordCreditsUsedThisCycle: 0,
+      totalBookCreditsFromAddonsThisCycle: userSub.remainingBookCreditsFromAddons,
+      totalWordCreditsFromAddonsThisCycle: userSub.remainingWordCreditsFromAddons,
+      totalBookCreditsFromAdminThisCycle: userSub.remainingBookCreditsFromAdmin,
+      totalWordCreditsFromAdminThisCycle: userSub.remainingWordCreditsFromAdmin,
+      billingCycleStart: cycleStart,
+      billingCycleEnd: cycleEnd,
+      updatedAt: now,
+    });
   });
 }
 
@@ -311,6 +338,10 @@ export async function deductCredits(
       transaction.update(userSubRef, {
         bookCreditsUsedThisCycle: 0,
         wordCreditsUsedThisCycle: 0,
+        totalBookCreditsFromAddonsThisCycle: userSub.remainingBookCreditsFromAddons,
+        totalWordCreditsFromAddonsThisCycle: userSub.remainingWordCreditsFromAddons,
+        totalBookCreditsFromAdminThisCycle: userSub.remainingBookCreditsFromAdmin,
+        totalWordCreditsFromAdminThisCycle: userSub.remainingWordCreditsFromAdmin,
         billingCycleStart: newCycleStartTimestamp,
         billingCycleEnd: newCycleEndTimestamp,
         updatedAt: nowTimestamp,
@@ -318,6 +349,10 @@ export async function deductCredits(
       
       userSub.bookCreditsUsedThisCycle = 0;
       userSub.wordCreditsUsedThisCycle = 0;
+      userSub.totalBookCreditsFromAddonsThisCycle = userSub.remainingBookCreditsFromAddons;
+      userSub.totalWordCreditsFromAddonsThisCycle = userSub.remainingWordCreditsFromAddons;
+      userSub.totalBookCreditsFromAdminThisCycle = userSub.remainingBookCreditsFromAdmin;
+      userSub.totalWordCreditsFromAdminThisCycle = userSub.remainingWordCreditsFromAdmin;
       userSub.billingCycleStart = newCycleStartTimestamp as any;
       userSub.billingCycleEnd = newCycleEndTimestamp as any;
     }
@@ -414,14 +449,18 @@ export async function addCredits(
     if (creditType === 'words') {
       if (isAddonPurchase) {
         updateData.remainingWordCreditsFromAddons = admin.firestore.FieldValue.increment(amount);
+        updateData.totalWordCreditsFromAddonsThisCycle = admin.firestore.FieldValue.increment(amount);
       } else {
         updateData.remainingWordCreditsFromAdmin = admin.firestore.FieldValue.increment(amount);
+        updateData.totalWordCreditsFromAdminThisCycle = admin.firestore.FieldValue.increment(amount);
       }
     } else {
       if (isAddonPurchase) {
         updateData.remainingBookCreditsFromAddons = admin.firestore.FieldValue.increment(amount);
+        updateData.totalBookCreditsFromAddonsThisCycle = admin.firestore.FieldValue.increment(amount);
       } else {
         updateData.remainingBookCreditsFromAdmin = admin.firestore.FieldValue.increment(amount);
+        updateData.totalBookCreditsFromAdminThisCycle = admin.firestore.FieldValue.increment(amount);
       }
     }
     
