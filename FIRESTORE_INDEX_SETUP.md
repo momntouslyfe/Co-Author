@@ -12,7 +12,18 @@
 
 ## 💳 Payment Indexes (NEW - Required for Payment System)
 
-### Step 2: Create Index #1 - Payments (approvalStatus + createdAt)
+### Step 2: Create Index #1 - Payments (userId + createdAt) ⚠️ CRITICAL - Dashboard Fix
+Click **"Create Index"** button and enter:
+- **Collection ID**: `payments`
+- **Fields to index**:
+  1. Field: `userId` | Order: **Ascending**
+  2. Field: `createdAt` | Order: **Descending**
+- **Query Scope**: Collection
+- Click **Create**
+
+**Why this is needed:** Allows users to see their own payment history on the dashboard.
+
+### Step 3: Create Index #2 - Payments (approvalStatus + createdAt)
 Click **"Create Index"** button and enter:
 - **Collection ID**: `payments`
 - **Fields to index**:
@@ -21,7 +32,7 @@ Click **"Create Index"** button and enter:
 - **Query Scope**: Collection
 - Click **Create**
 
-### Step 3: Create Index #2 - Payments (status + createdAt)
+### Step 4: Create Index #3 - Payments (status + createdAt)
 Click **"Create Index"** button and enter:
 - **Collection ID**: `payments`
 - **Fields to index**:
@@ -30,7 +41,7 @@ Click **"Create Index"** button and enter:
 - **Query Scope**: Collection
 - Click **Create**
 
-### Step 4: Create Index #3 - Payments (status + approvalStatus + createdAt)
+### Step 5: Create Index #4 - Payments (status + approvalStatus + createdAt)
 Click **"Create Index"** button and enter:
 - **Collection ID**: `payments`
 - **Fields to index**:
@@ -44,7 +55,7 @@ Click **"Create Index"** button and enter:
 
 ## 🛍️ Credit Plan Indexes (Required for Credit Purchase System)
 
-### Step 5: Create Index #4 - Addon Credit Plans (Type + Active + Price)
+### Step 6: Create Index #5 - Addon Credit Plans (Type + Active + Price)
 Click **"Create Index"** button and enter:
 - **Collection ID**: `addonCreditPlans`
 - **Fields to index**:
@@ -54,7 +65,7 @@ Click **"Create Index"** button and enter:
 - **Query Scope**: Collection
 - Click **Create**
 
-### Step 6: Create Index #5 - Addon Credit Plans (Type + Created Date)
+### Step 7: Create Index #6 - Addon Credit Plans (Type + Created Date)
 Click **"Create Index"** button again and enter:
 - **Collection ID**: `addonCreditPlans`
 - **Fields to index**:
@@ -63,7 +74,7 @@ Click **"Create Index"** button again and enter:
 - **Query Scope**: Collection
 - Click **Create**
 
-### Step 7: Create Index #6 - Addon Credit Plans (Active + Price)
+### Step 8: Create Index #7 - Addon Credit Plans (Active + Price)
 Click **"Create Index"** button again and enter:
 - **Collection ID**: `addonCreditPlans`
 - **Fields to index**:
@@ -72,7 +83,7 @@ Click **"Create Index"** button again and enter:
 - **Query Scope**: Collection
 - Click **Create**
 
-### Step 8: Create Index #7 - Subscription Plans (Active + Price)
+### Step 9: Create Index #8 - Subscription Plans (Active + Price)
 Click **"Create Index"** button again and enter:
 - **Collection ID**: `subscriptionPlans`
 - **Fields to index**:
@@ -85,7 +96,7 @@ Click **"Create Index"** button again and enter:
 
 ## ⏱️ Wait for Indexes to Build
 
-After creating all 7 indexes:
+After creating all 8 indexes:
 - Firebase will show "Building..." next to each index
 - This usually takes 5-10 minutes total
 - Once they all show a green checkmark ✅, they're ready!
@@ -98,7 +109,7 @@ After creating all 7 indexes:
 **Still getting "The query requires an index" error?**
 - Refresh your browser
 - Wait another 2-3 minutes for the indexes to fully build
-- Verify all 3 payment indexes exist and show green checkmarks
+- Verify all 4 payment indexes exist and show green checkmarks
 
 **Can't see the Indexes tab?**
 - Make sure you have Editor or Owner permissions on the Firebase project
