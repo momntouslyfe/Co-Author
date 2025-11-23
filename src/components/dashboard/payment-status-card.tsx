@@ -78,7 +78,13 @@ export function PaymentStatusCard() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/payment/status?orderId=${payment.orderId}`);
+      const response = await fetch('/api/payment/status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId: payment.orderId }),
+      });
       
       if (!response.ok) {
         throw new Error('Failed to check payment status');
