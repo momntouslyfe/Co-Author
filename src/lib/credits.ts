@@ -265,7 +265,10 @@ export async function activateSubscriptionPlan(
         }
       }
       
-      const updateData: any = {
+      const newRemainingBookCreditsFromAdmin = (userSub.remainingBookCreditsFromAdmin || 0) + rolloverBookCreditsFromPlan;
+      const newRemainingWordCreditsFromAdmin = (userSub.remainingWordCreditsFromAdmin || 0) + rolloverWordCreditsFromPlan;
+      
+      transaction.update(userSubRef, {
         subscriptionPlanId,
         planEffectiveStart,
         planEffectiveEnd,
@@ -273,20 +276,14 @@ export async function activateSubscriptionPlan(
         billingCycleEnd,
         bookCreditsUsedThisCycle: 0,
         wordCreditsUsedThisCycle: 0,
+        remainingBookCreditsFromAdmin: newRemainingBookCreditsFromAdmin,
+        remainingWordCreditsFromAdmin: newRemainingWordCreditsFromAdmin,
+        totalBookCreditsFromAddonsThisCycle: userSub.remainingBookCreditsFromAddons || 0,
+        totalWordCreditsFromAddonsThisCycle: userSub.remainingWordCreditsFromAddons || 0,
+        totalBookCreditsFromAdminThisCycle: newRemainingBookCreditsFromAdmin,
+        totalWordCreditsFromAdminThisCycle: newRemainingWordCreditsFromAdmin,
         updatedAt: now,
-      };
-      
-      if (rolloverBookCreditsFromPlan > 0) {
-        updateData.remainingBookCreditsFromAdmin = (userSub.remainingBookCreditsFromAdmin || 0) + rolloverBookCreditsFromPlan;
-        updateData.totalBookCreditsFromAdminThisCycle = admin.firestore.FieldValue.increment(rolloverBookCreditsFromPlan);
-      }
-      
-      if (rolloverWordCreditsFromPlan > 0) {
-        updateData.remainingWordCreditsFromAdmin = (userSub.remainingWordCreditsFromAdmin || 0) + rolloverWordCreditsFromPlan;
-        updateData.totalWordCreditsFromAdminThisCycle = admin.firestore.FieldValue.increment(rolloverWordCreditsFromPlan);
-      }
-      
-      transaction.update(userSubRef, updateData);
+      });
     }
   });
 }
