@@ -128,7 +128,7 @@ export async function PUT(
     }
 
     const updateData: any = {
-      updatedAt: admin.firestore.Timestamp.now(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     if (body.code) updateData.code = body.code.toUpperCase();
@@ -136,8 +136,8 @@ export async function PUT(
     if (body.discountType) updateData.discountType = body.discountType;
     if (body.discountValue !== undefined) updateData.discountValue = body.discountValue;
     if (body.maxUsesPerUser !== undefined) updateData.maxUsesPerUser = body.maxUsesPerUser;
-    if (body.validFrom) updateData.validFrom = admin.firestore.Timestamp.fromDate(new Date(body.validFrom));
-    if (body.validUntil) updateData.validUntil = admin.firestore.Timestamp.fromDate(new Date(body.validUntil));
+    if (body.validFrom) updateData.validFrom = new Date(body.validFrom);
+    if (body.validUntil) updateData.validUntil = new Date(body.validUntil);
     if (body.specificUserId !== undefined) updateData.specificUserId = body.specificUserId || null;
     if (body.affiliateId !== undefined) updateData.affiliateId = body.affiliateId || null;
     if (body.isActive !== undefined) updateData.isActive = body.isActive;

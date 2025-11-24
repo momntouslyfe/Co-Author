@@ -101,21 +101,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = admin.firestore.Timestamp.now();
     const couponData = {
       code: codeUpperCase,
       category: body.category,
       discountType: body.discountType,
       discountValue: body.discountValue,
       maxUsesPerUser: body.maxUsesPerUser || 1,
-      validFrom: admin.firestore.Timestamp.fromDate(new Date(body.validFrom)),
-      validUntil: admin.firestore.Timestamp.fromDate(new Date(body.validUntil)),
+      validFrom: new Date(body.validFrom),
+      validUntil: new Date(body.validUntil),
       specificUserId: body.specificUserId || null,
       affiliateId: body.affiliateId || null,
       isActive: body.isActive ?? true,
       description: body.description || '',
-      createdAt: now,
-      updatedAt: now,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     const docRef = await db.collection('coupons').add(couponData);
