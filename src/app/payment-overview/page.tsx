@@ -17,7 +17,7 @@ import { getCurrencySymbol } from '@/lib/currency-utils';
 export default function PaymentOverviewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuthUser();
+  const { user, isUserLoading } = useAuthUser();
   const { toast } = useToast();
 
   const planId = searchParams.get('planId');
@@ -37,13 +37,18 @@ export default function PaymentOverviewPage() {
       return;
     }
 
+    // Wait for user to load before redirecting
+    if (isUserLoading) {
+      return;
+    }
+
     if (!user) {
       router.push('/');
       return;
     }
 
     loadPlanDetails();
-  }, [planId, addonId, user, router]);
+  }, [planId, addonId, user, isUserLoading, router]);
 
   const loadPlanDetails = async () => {
     try {

@@ -32,7 +32,7 @@ export function BillingSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const { user } = useAuthUser();
+  const { user, isUserLoading } = useAuthUser();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -244,12 +244,17 @@ export function BillingSettings() {
                     <Button
                       className="w-full"
                       onClick={() => handlePurchasePlan(plan.id)}
-                      disabled={purchasing === plan.id || subscriptionStatus?.plan?.id === plan.id}
+                      disabled={purchasing === plan.id || subscriptionStatus?.plan?.id === plan.id || isUserLoading}
                     >
                       {purchasing === plan.id ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Processing...
+                        </>
+                      ) : isUserLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Loading...
                         </>
                       ) : subscriptionStatus?.plan?.id === plan.id ? (
                         'Current Plan'

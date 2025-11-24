@@ -16,7 +16,7 @@ function PurchaseCreditsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const searchParams = useSearchParams();
   const creditType = (searchParams.get('type') || 'words') as AddonCreditType;
-  const { user } = useAuthUser();
+  const { user, isUserLoading } = useAuthUser();
   const { toast } = useToast();
 
   const loadPlans = async () => {
@@ -123,6 +123,7 @@ function PurchaseCreditsContent() {
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-bold">{getCurrencySymbol(plan.currency)}{plan.price.toFixed(2)}</span>
                   </div>
+
                   <div className="mt-4 space-y-2">
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary" />
@@ -141,9 +142,18 @@ function PurchaseCreditsContent() {
                 <Button
                   className="w-full"
                   onClick={() => handlePurchase(plan.id)}
-                  disabled={!user}
+                  disabled={!user || isUserLoading}
                 >
-                  {!user ? 'Login to Purchase' : 'Purchase Now'}
+                  {isUserLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : !user ? (
+                    'Login to Purchase'
+                  ) : (
+                    'Purchase Now'
+                  )}
                 </Button>
               </CardContent>
             </Card>
