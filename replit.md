@@ -93,6 +93,34 @@ Preferred communication style: Simple, everyday language.
   - Amount validation ensures charged amount matches expected price before granting credits.
 - **Environment Variables**: `UDDOKTAPAY_API_KEY` (required), `UDDOKTAPAY_BASE_URL` (defaults to sandbox).
 
+**Coupon System**:
+- **Overview**: Comprehensive coupon and discount code system supporting promotional campaigns and affiliate partnerships.
+- **Categories**: 
+  - **Promotional**: General discount codes for marketing campaigns (e.g., LAUNCH50, NEWYEAR2025).
+  - **Affiliate**: Partner-specific codes for tracking affiliate sales and commissions.
+- **Features**:
+  - **Discount Types**: Percentage-based (e.g., 20% off) or fixed amount (e.g., $10 off).
+  - **Validity Period**: Coupons have start and end dates; expired coupons are automatically rejected.
+  - **Usage Limits**: Per-user usage limits (e.g., first-time users only, max 3 uses per user).
+  - **User-Specific**: Coupons can be restricted to specific users (e.g., VIP codes for premium customers).
+  - **Product Scope**: Apply to subscriptions only, addons only, or both.
+- **API Endpoints**:
+  - `/api/coupon/validate` - Validates coupon code with server-side pricing lookup (prevents client-side price manipulation).
+  - `/api/admin/coupons` - CRUD operations for coupon management (create, list, update, delete).
+- **Payment Flow Integration**:
+  - Users see payment overview page before payment creation (shows order details, coupon input).
+  - Coupon validation happens server-side during payment creation with authoritative Firestore pricing.
+  - Discounted amounts stored in payment records (`originalAmount`, `discountAmount`, `finalAmount`).
+  - Payment processor validates charged amount matches discounted total (prevents discount bypass attacks).
+  - Successful payments automatically create `CouponUsage` records in Firestore for tracking and analytics.
+- **Admin UI**: Full coupon management panel in admin dashboard with create/edit forms, list view, and delete functionality.
+- **Security**: 
+  - All pricing calculations use server-side Firestore data (client cannot manipulate prices).
+  - Coupon validation checks active status, date validity, usage limits, and user restrictions.
+  - Payment amount validation ensures charged amount matches expected discounted price.
+  - Coupon usage tracking prevents over-redemption and enables affiliate commission calculations.
+- **Data Models**: `Coupon` (code, discount, validity, limits), `CouponUsage` (userId, couponId, timestamp, amounts).
+
 ## External Dependencies
 
 **AI Services**:
