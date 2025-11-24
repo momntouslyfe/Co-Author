@@ -38,34 +38,45 @@ export async function processSuccessfulPayment(
       };
     }
 
-    // Verify payment with Uddoktapay to get authoritative charged amount
-    const verificationResult = await verifyPayment(invoiceId);
-    
-    if (!verificationResult.status) {
-      console.error(`Payment verification failed for order ${orderId}:`, verificationResult.message);
-      return {
-        success: false,
-        error: `Payment verification failed: ${verificationResult.message || 'Unknown error'}`,
-      };
-    }
+    // Handle FREE_ORDER: skip gateway verification and force charged amount to 0
+    const isFreeOrder = paymentData?.isFreeOrder === true || invoiceId === 'FREE_ORDER';
+    let authoritativeChargedAmount = 0;
 
-    // SECURITY: Validate that the verified invoice's order_id matches this payment record
-    // This prevents invoice substitution attacks where a forged invoice that verifies
-    // could be used for a different order
-    if (verificationResult.metadata?.order_id !== orderId) {
-      console.error(
-        `SECURITY ALERT - Invoice order mismatch in auto-approval! ` +
-        `Processing order ${orderId}, ` +
-        `but verified invoice ${invoiceId} belongs to order ${verificationResult.metadata?.order_id}`
-      );
-      return {
-        success: false,
-        error: 'Invoice does not belong to this order',
-      };
-    }
+    if (isFreeOrder) {
+      // For free orders, no payment gateway verification needed
+      // Charged amount is always 0
+      authoritativeChargedAmount = 0;
+      console.log(`Processing FREE_ORDER: ${orderId} (no gateway verification needed)`);
+    } else {
+      // Verify payment with Uddoktapay to get authoritative charged amount
+      const verificationResult = await verifyPayment(invoiceId);
+      
+      if (!verificationResult.status) {
+        console.error(`Payment verification failed for order ${orderId}:`, verificationResult.message);
+        return {
+          success: false,
+          error: `Payment verification failed: ${verificationResult.message || 'Unknown error'}`,
+        };
+      }
 
-    // Use the AUTHORITATIVE charged amount from Uddoktapay
-    const authoritativeChargedAmount = parseFloat(verificationResult.charged_amount || verificationResult.amount || '0');
+      // SECURITY: Validate that the verified invoice's order_id matches this payment record
+      // This prevents invoice substitution attacks where a forged invoice that verifies
+      // could be used for a different order
+      if (verificationResult.metadata?.order_id !== orderId) {
+        console.error(
+          `SECURITY ALERT - Invoice order mismatch in auto-approval! ` +
+          `Processing order ${orderId}, ` +
+          `but verified invoice ${invoiceId} belongs to order ${verificationResult.metadata?.order_id}`
+        );
+        return {
+          success: false,
+          error: 'Invoice does not belong to this order',
+        };
+      }
+
+      // Use the AUTHORITATIVE charged amount from Uddoktapay
+      authoritativeChargedAmount = parseFloat(verificationResult.charged_amount || verificationResult.amount || '0');
+    }
 
     // Process subscription payment
     if (paymentData?.planId) {
@@ -84,23 +95,26 @@ export async function processSuccessfulPayment(
         const subscriptionPlan = subscriptionPlanDoc.data();
         const planPrice = subscriptionPlan?.price || 0;
         
-        // Use discounted price if coupon was applied, otherwise use plan price
-        const expectedPrice = paymentData.couponId 
-          ? parseFloat(paymentData.amount || paymentData.expectedAmount || '0')
-          : planPrice;
+        // Skip amount validation for FREE_ORDER (charged amount is always 0)
+        if (!isFreeOrder) {
+          // Use discounted price if coupon was applied, otherwise use plan price
+          const expectedPrice = paymentData.couponId 
+            ? parseFloat(paymentData.amount || paymentData.expectedAmount || '0')
+            : planPrice;
 
-        // Validate that charged amount matches expected price
-        if (Math.abs(authoritativeChargedAmount - expectedPrice) > 0.01) {
-          console.error(
-            `SECURITY ALERT - Payment amount mismatch! ` +
-            `Expected: ${expectedPrice}, ` +
-            `Charged: ${authoritativeChargedAmount}, ` +
-            `Order: ${orderId}`
-          );
-          return {
-            success: false,
-            error: `Payment amount mismatch. Expected ${expectedPrice}, got ${authoritativeChargedAmount}`,
-          };
+          // Validate that charged amount matches expected price
+          if (Math.abs(authoritativeChargedAmount - expectedPrice) > 0.01) {
+            console.error(
+              `SECURITY ALERT - Payment amount mismatch! ` +
+              `Expected: ${expectedPrice}, ` +
+              `Charged: ${authoritativeChargedAmount}, ` +
+              `Order: ${orderId}`
+            );
+            return {
+              success: false,
+              error: `Payment amount mismatch. Expected ${expectedPrice}, got ${authoritativeChargedAmount}`,
+            };
+          }
         }
 
         await activateSubscriptionPlan(
@@ -138,19 +152,22 @@ export async function processSuccessfulPayment(
         const expectedPrice = paymentData.couponId 
           ? parseFloat(paymentData.amount || paymentData.expectedAmount || '0')
           : addonPrice;
-
-        // Validate that charged amount matches expected price
-        if (Math.abs(authoritativeChargedAmount - expectedPrice) > 0.01) {
-          console.error(
-            `SECURITY ALERT - Payment amount mismatch! ` +
-            `Expected: ${expectedPrice}, ` +
-            `Charged: ${authoritativeChargedAmount}, ` +
-            `Order: ${orderId}`
-          );
-          return {
-            success: false,
-            error: `Payment amount mismatch. Expected ${expectedPrice}, got ${authoritativeChargedAmount}`,
-          };
+        
+        // Skip amount validation for FREE_ORDER (charged amount is always 0)
+        if (!isFreeOrder) {
+          // Validate that charged amount matches expected price
+          if (Math.abs(authoritativeChargedAmount - expectedPrice) > 0.01) {
+            console.error(
+              `SECURITY ALERT - Payment amount mismatch! ` +
+              `Expected: ${expectedPrice}, ` +
+              `Charged: ${authoritativeChargedAmount}, ` +
+              `Order: ${orderId}`
+            );
+            return {
+              success: false,
+              error: `Payment amount mismatch. Expected ${expectedPrice}, got ${authoritativeChargedAmount}`,
+            };
+          }
         }
 
         const creditType = addonPlan?.type || 'words';

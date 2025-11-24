@@ -162,12 +162,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle zero-amount payments (e.g., 100% discount coupons)
-    // Still need to calculate conversion rate for consistent bookkeeping
     if (finalAmount === 0) {
-      // Convert original amount to BDT to get proper conversion rate and metadata
-      // This maintains consistent FX semantics even when final amount is 0
-      let originalAmountInBDT = originalAmount;
+      // Even for free orders, calculate conversion rate to maintain invariants for downstream validation
       let freeOrderConversionRate = 1.0;
+      let originalAmountInBDT = originalAmount;
       
       if (authoritativeCurrency !== 'BDT') {
         try {
@@ -180,15 +178,14 @@ export async function POST(request: NextRequest) {
           console.log(`Free order conversion: ${originalAmount} ${authoritativeCurrency} = ${originalAmountInBDT} BDT (rate: ${freeOrderConversionRate})`);
         } catch (error: any) {
           console.error('Free order conversion error:', error);
-          return NextResponse.json(
-            { error: 'Currency conversion failed. Please contact admin to set up conversion rates.' },
-            { status: 500 }
-          );
+          // Fallback to rate=1 if conversion fails (non-fatal for free orders)
+          freeOrderConversionRate = 1.0;
+          console.warn('Using fallback conversion rate of 1.0 for free order');
         }
       }
       
       // For free orders, bypass payment gateway and grant credits immediately
-      // Use post-discount BDT semantics (0) while preserving valid conversion rate
+      // Maintain payment invariants: numeric conversionRate, post-discount BDT totals (0)
       const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substring(7)}`;
       const paymentRef = admin.firestore().collection('payments').doc(orderId);
       
@@ -207,9 +204,10 @@ export async function POST(request: NextRequest) {
         chargedAmount: '0', // Charged BDT amount (post-discount is 0)
         currency: authoritativeCurrency, // Source currency (USD, BDT, etc.)
         paymentCurrency: 'BDT', // Always BDT for Uddoktapay integration
-        conversionRate: freeOrderConversionRate.toString(), // Valid FX rate from conversion
+        conversionRate: freeOrderConversionRate.toString(), // Valid numeric rate for analytics
         amountInBDT: '0', // Final BDT amount (post-discount is 0)
-        originalAmountInBDT: originalAmountInBDT.toString(), // Pre-discount BDT for analytics
+        freeOrderOriginalAmountBDT: originalAmountInBDT.toString(), // Pre-discount BDT for analytics
+        isFreeOrder: true, // Explicit flag for downstream validation branching
         invoiceId: 'FREE_ORDER', // Special marker for identification
         status: 'completed',
         approvalStatus: 'approved',
