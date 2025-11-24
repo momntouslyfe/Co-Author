@@ -12,6 +12,7 @@ import { AddonCreditPlanManager } from '@/components/admin/addon-credit-plan-man
 import { CreditAllocator } from '@/components/admin/credit-allocator';
 import { PaymentSettings } from '@/components/admin/payment-settings';
 import { PaymentManagement } from '@/components/admin/payment-management';
+import { CouponManager } from '@/components/admin/coupon-manager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AdminDashboard() {
@@ -36,7 +37,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="settings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-10">
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="api-keys">API Keys</TabsTrigger>
             <TabsTrigger value="routing">AI Routing</TabsTrigger>
@@ -44,6 +45,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
             <TabsTrigger value="addon-credits">Addon Credits</TabsTrigger>
             <TabsTrigger value="allocate">Allocate Credits</TabsTrigger>
+            <TabsTrigger value="coupons">Coupons</TabsTrigger>
             <TabsTrigger value="payment-settings">Payment Setup</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
           </TabsList>
@@ -74,6 +76,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="allocate">
             <CreditAllocator />
+          </TabsContent>
+
+          <TabsContent value="coupons">
+            <CouponManager />
           </TabsContent>
 
           <TabsContent value="payment-settings">

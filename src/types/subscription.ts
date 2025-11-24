@@ -135,3 +135,79 @@ export interface AllocateCreditsInput {
   amount: number;
   description: string;
 }
+
+export type CouponCategory = 'promotional' | 'affiliate';
+export type CouponDiscountType = 'percentage' | 'fixed';
+
+export interface Coupon {
+  id: string;
+  code: string;
+  category: CouponCategory;
+  discountType: CouponDiscountType;
+  discountValue: number;
+  maxUsesPerUser: number;
+  validFrom: Timestamp;
+  validUntil: Timestamp;
+  specificUserId?: string;
+  affiliateId?: string;
+  isActive: boolean;
+  description?: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface CouponUsage {
+  id: string;
+  userId: string;
+  couponId: string;
+  couponCode: string;
+  usedAt: Timestamp;
+  discountAmount: number;
+  originalAmount: number;
+  finalAmount: number;
+  subscriptionPlanId?: string;
+  addonPlanId?: string;
+}
+
+export interface CreateCouponInput {
+  code: string;
+  category: CouponCategory;
+  discountType: CouponDiscountType;
+  discountValue: number;
+  maxUsesPerUser: number;
+  validFrom: Date;
+  validUntil: Date;
+  specificUserId?: string;
+  affiliateId?: string;
+  isActive: boolean;
+  description?: string;
+}
+
+export interface UpdateCouponInput {
+  code?: string;
+  category?: CouponCategory;
+  discountType?: CouponDiscountType;
+  discountValue?: number;
+  maxUsesPerUser?: number;
+  validFrom?: Date;
+  validUntil?: Date;
+  specificUserId?: string;
+  affiliateId?: string;
+  isActive?: boolean;
+  description?: string;
+}
+
+export interface ValidateCouponInput {
+  code: string;
+  userId: string;
+  subscriptionPlanId?: string;
+  addonPlanId?: string;
+}
+
+export interface ValidateCouponResponse {
+  valid: boolean;
+  error?: string;
+  coupon?: Coupon;
+  discountAmount?: number;
+  finalAmount?: number;
+}
