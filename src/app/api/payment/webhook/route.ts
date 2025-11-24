@@ -29,6 +29,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Skip webhook processing for FREE_ORDER invoices (zero-amount payments)
+    // These are already processed synchronously during payment creation
+    if (webhookData.invoice_id === 'FREE_ORDER') {
+      console.log('Skipping webhook processing for FREE_ORDER:', webhookData.metadata.order_id);
+      return NextResponse.json({ 
+        success: true, 
+        message: 'FREE_ORDER already processed during creation' 
+      });
+    }
+
     const orderId = webhookData.metadata.order_id;
 
     // Get payment record from Firestore

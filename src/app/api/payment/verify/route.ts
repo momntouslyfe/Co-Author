@@ -15,6 +15,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle FREE_ORDER invoices (zero-amount payments from 100% coupons)
+    if (invoiceId === 'FREE_ORDER') {
+      const admin = getFirebaseAdmin();
+      const { orderId } = body;
+      
+      if (!orderId) {
+        return NextResponse.json(
+          { error: 'Order ID required for FREE_ORDER verification' },
+          { status: 400 }
+        );
+      }
+      
+      const paymentRef = admin.firestore().collection('payments').doc(orderId);
+      const paymentDoc = await paymentRef.get();
+      
+      if (!paymentDoc.exists) {
+        return NextResponse.json(
+          { error: 'Payment record not found' },
+          { status: 404 }
+        );
+      }
+      
+      const paymentData = paymentDoc.data();
+      
+      // Return success for already completed free orders
+      if (paymentData?.status === 'completed' && paymentData?.approvalStatus === 'approved') {
+        return NextResponse.json({
+          success: true,
+          payment: {
+            orderId,
+            status: 'completed',
+            approvalStatus: 'approved',
+            message: 'Free order successfully processed. Your credits have been added to your account.',
+          },
+        });
+      }
+      
+      // If not already processed, this is an error state
+      return NextResponse.json(
+        { error: 'Free order processing error. Please contact support.' },
+        { status: 500 }
+      );
+    }
+
     // Verify payment with Uddoktapay
     const result = await verifyPayment(invoiceId);
 

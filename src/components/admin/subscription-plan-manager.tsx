@@ -47,6 +47,7 @@ export function SubscriptionPlanManager() {
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [deletePlanId, setDeletePlanId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [defaultCurrency, setDefaultCurrency] = useState<string>('USD');
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<PlanFormData>({
@@ -63,14 +64,28 @@ export function SubscriptionPlanManager() {
   const loadPlans = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/admin/subscription-plans', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      
+      const [plansResponse, currenciesResponse] = await Promise.all([
+        fetch('/api/admin/subscription-plans', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch('/api/admin/currencies', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-      if (!response.ok) throw new Error('Failed to load subscription plans');
+      if (!plansResponse.ok) throw new Error('Failed to load subscription plans');
 
-      const data = await response.json();
-      setPlans(data);
+      const plansData = await plansResponse.json();
+      setPlans(plansData);
+      
+      if (currenciesResponse.ok) {
+        const currenciesData = await currenciesResponse.json();
+        const defaultCurr = currenciesData.currencies?.find((c: any) => c.isDefault);
+        if (defaultCurr) {
+          setDefaultCurrency(defaultCurr.code);
+        }
+      }
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -107,7 +122,7 @@ export function SubscriptionPlanManager() {
         bookCreditsPerMonth: 0,
         wordCreditsPerMonth: 0,
         price: 0,
-        currency: 'USD',
+        currency: defaultCurrency,
         isActive: true,
         allowCreditRollover: true,
       });

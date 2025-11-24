@@ -1,5 +1,46 @@
 import { Timestamp } from 'firebase/firestore';
 
+export type SupportedCurrency = 'USD' | 'BDT';
+
+export interface CurrencySettings {
+  id: string;
+  code: SupportedCurrency;
+  symbol: string;
+  name: string;
+  isEnabled: boolean;
+  isDefault: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface CurrencyConversionRate {
+  id: string;
+  fromCurrency: SupportedCurrency;
+  toCurrency: SupportedCurrency;
+  rate: number;
+  updatedAt: Timestamp;
+  updatedBy?: string;
+}
+
+export interface CreateCurrencySettingsInput {
+  code: SupportedCurrency;
+  symbol: string;
+  name: string;
+  isEnabled: boolean;
+  isDefault: boolean;
+}
+
+export interface UpdateCurrencySettingsInput {
+  isEnabled?: boolean;
+  isDefault?: boolean;
+}
+
+export interface UpdateConversionRateInput {
+  fromCurrency: SupportedCurrency;
+  toCurrency: SupportedCurrency;
+  rate: number;
+}
+
 export interface SubscriptionPlan {
   id: string;
   name: string;

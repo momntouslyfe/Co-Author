@@ -65,10 +65,26 @@ Preferred communication style: Simple, everyday language.
 - **Currency Display**: All pricing displays show currency symbols (৳ for BDT, $ for USD) instead of currency codes. Credit terminology uses "AI Words Credit" for user-facing components.
 - **Draggable Credit Widget**: The floating credit widget on the dashboard is draggable via mouse. Users can reposition it anywhere on screen, with position persisting in localStorage. Default position is right-side, vertically centered.
 
+**Currency Management System**:
+- **Supported Currencies**: USD (US Dollar) and BDT (Bangladeshi Taka).
+- **Admin Controls**: Admins can enable/disable currencies and set one as the default for all subscription plans, addon plans, and coupon codes.
+- **Currency Conversion**: Conversion rates configurable by admin (e.g., 1 USD = 125 BDT). Automatic conversion to BDT for Uddoktapay payments.
+- **Database Collections**:
+  - `currencies` - Stores currency settings (code, symbol, name, enabled status, default status).
+  - `currencyConversions` - Stores conversion rates between currencies with timestamps.
+- **API Endpoints**:
+  - `/api/admin/currencies` - GET all currencies, auto-initializes defaults (USD enabled/default, BDT disabled).
+  - `/api/admin/currencies/:id` - PUT to update currency settings (enable/disable, set as default).
+  - `/api/admin/currencies/conversion-rates` - GET/POST conversion rates between currencies.
+- **Payment Flow Integration**: When creating payments, amounts are automatically converted from the plan's currency to BDT before sending to Uddoktapay (which only accepts BDT for local MFS methods like bKash, Nagad, Rocket).
+- **Default Currency Behavior**: New subscription plans and addon plans automatically use the default currency. Existing plans retain their configured currency.
+- **Conversion Logic**: Stored in `src/lib/currency.ts` with functions for currency management, conversion rate updates, and amount conversion.
+
 **Payment Gateway Integration (Uddoktapay)**:
 - **Provider**: Uddoktapay - Bangladesh payment automation platform supporting MFS and global payment methods.
+- **Currency Requirement**: Uddoktapay only accepts BDT for local payment methods. The system automatically converts plan prices to BDT using admin-configured conversion rates.
 - **API Endpoints**: 
-  - `/api/payment/create` - Initiates payment session and redirects to payment gateway. **Security**: Verifies Firebase ID token server-side and derives userId from authenticated token (prevents spoofed purchases).
+  - `/api/payment/create` - Initiates payment session and redirects to payment gateway. **Security**: Verifies Firebase ID token server-side and derives userId from authenticated token (prevents spoofed purchases). **Currency Conversion**: Automatically converts payment amount to BDT before creating payment session.
   - `/api/payment/verify` - Verifies payment after user returns from gateway. **Auto-approval**: Automatically approves successful payments and grants credits/activates subscriptions.
   - `/api/payment/webhook` - Handles instant payment notifications (IPN). **Auto-approval**: Automatically processes successful payments with amount validation and credit granting.
   - `/api/admin/payment/test-connection` - Admin tool to test API credentials.

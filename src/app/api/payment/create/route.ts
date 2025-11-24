@@ -3,6 +3,8 @@ import { createPayment } from '@/lib/uddoktapay';
 import { getFirebaseAdmin, initializeFirebaseAdmin } from '@/lib/firebase-admin';
 import * as firebaseAdmin from 'firebase-admin';
 import type { UddoktapayCheckoutRequest } from '@/types/uddoktapay';
+import { convertAmount } from '@/lib/currency';
+import type { SupportedCurrency } from '@/types/subscription';
 
 export async function POST(request: NextRequest) {
   try {
@@ -159,6 +161,116 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Handle zero-amount payments (e.g., 100% discount coupons)
+    // Still need to calculate conversion rate for consistent bookkeeping
+    if (finalAmount === 0) {
+      // Convert original amount to BDT to get proper conversion rate and metadata
+      // This maintains consistent FX semantics even when final amount is 0
+      let originalAmountInBDT = originalAmount;
+      let freeOrderConversionRate = 1.0;
+      
+      if (authoritativeCurrency !== 'BDT') {
+        try {
+          originalAmountInBDT = await convertAmount(
+            originalAmount,
+            authoritativeCurrency as SupportedCurrency,
+            'BDT'
+          );
+          freeOrderConversionRate = originalAmountInBDT / originalAmount;
+          console.log(`Free order conversion: ${originalAmount} ${authoritativeCurrency} = ${originalAmountInBDT} BDT (rate: ${freeOrderConversionRate})`);
+        } catch (error: any) {
+          console.error('Free order conversion error:', error);
+          return NextResponse.json(
+            { error: 'Currency conversion failed. Please contact admin to set up conversion rates.' },
+            { status: 500 }
+          );
+        }
+      }
+      
+      // For free orders, bypass payment gateway and grant credits immediately
+      // Use post-discount BDT semantics (0) while preserving valid conversion rate
+      const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      const paymentRef = admin.firestore().collection('payments').doc(orderId);
+      
+      const paymentData: any = {
+        userId,
+        userEmail,
+        userName,
+        orderId,
+        planId: planId || null,
+        addonId: addonId || null,
+        originalAmount: originalAmount.toString(), // Original price in source currency
+        discountAmount: discountAmount.toString(), // Discount applied (equals originalAmount)
+        amount: '0', // Final amount in source currency (post-discount)
+        expectedAmount: '0', // Expected BDT amount (post-discount is 0)
+        fee: '0',
+        chargedAmount: '0', // Charged BDT amount (post-discount is 0)
+        currency: authoritativeCurrency, // Source currency (USD, BDT, etc.)
+        paymentCurrency: 'BDT', // Always BDT for Uddoktapay integration
+        conversionRate: freeOrderConversionRate.toString(), // Valid FX rate from conversion
+        amountInBDT: '0', // Final BDT amount (post-discount is 0)
+        originalAmountInBDT: originalAmountInBDT.toString(), // Pre-discount BDT for analytics
+        invoiceId: 'FREE_ORDER', // Special marker for identification
+        status: 'completed',
+        approvalStatus: 'approved',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
+      if (validatedCoupon) {
+        paymentData.couponId = validatedCoupon.id;
+        paymentData.couponCode = validatedCoupon.code;
+        
+        // Record coupon usage for analytics and tracking
+        await admin.firestore().collection('couponUsage').add({
+          userId,
+          couponId: validatedCoupon.id,
+          couponCode: validatedCoupon.code,
+          orderId,
+          originalAmount: originalAmount.toString(),
+          discountAmount: discountAmount.toString(),
+          finalAmount: '0',
+          usedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+      
+      await paymentRef.set(paymentData);
+      
+      // Process the free order immediately (grant credits/activate subscription)
+      const { processSuccessfulPayment } = await import('@/lib/payment-processor');
+      await processSuccessfulPayment(orderId, 'FREE_ORDER');
+      
+      // Return success URL instead of payment gateway URL
+      return NextResponse.json({
+        success: true,
+        orderId,
+        paymentUrl: `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/payment/success?invoice_id=FREE_ORDER&order_id=${orderId}`,
+      });
+    }
+
+    // Convert amount to BDT for Uddoktapay if needed
+    // Uddoktapay only accepts BDT for local payment methods (bKash, Nagad, Rocket)
+    let amountInBDT = finalAmount;
+    let conversionRate = 1.0;
+    
+    if (authoritativeCurrency !== 'BDT') {
+      try {
+        amountInBDT = await convertAmount(
+          finalAmount,
+          authoritativeCurrency as SupportedCurrency,
+          'BDT'
+        );
+        conversionRate = amountInBDT / finalAmount;
+        console.log(`Currency conversion: ${finalAmount} ${authoritativeCurrency} = ${amountInBDT} BDT (rate: ${conversionRate})`);
+      } catch (error: any) {
+        console.error('Currency conversion error:', error);
+        return NextResponse.json(
+          { error: 'Currency conversion failed. Please contact admin to set up conversion rates.' },
+          { status: 500 }
+        );
+      }
+    }
+
     // Generate unique order ID
     const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
@@ -192,10 +304,13 @@ export async function POST(request: NextRequest) {
       originalAmount: originalAmount.toString(),
       discountAmount: discountAmount.toString(),
       amount: finalAmount.toString(),
-      expectedAmount: finalAmount.toString(), // For validation during approval
+      expectedAmount: amountInBDT.toString(), // For validation during approval (in BDT)
       fee: '0',
-      chargedAmount: finalAmount.toString(),
+      chargedAmount: amountInBDT.toString(),
       currency: authoritativeCurrency,
+      paymentCurrency: 'BDT', // Currency sent to payment gateway
+      conversionRate: conversionRate.toString(),
+      amountInBDT: amountInBDT.toString(),
       invoiceId: '', // Will be updated after payment
       status: 'pending',
       approvalStatus: 'pending',
@@ -210,11 +325,11 @@ export async function POST(request: NextRequest) {
 
     await paymentRef.set(paymentData);
 
-    // Create payment session with Uddoktapay using FINAL amount (after discount)
+    // Create payment session with Uddoktapay using amount in BDT (after discount and conversion)
     const checkoutData: UddoktapayCheckoutRequest = {
       full_name: userName,
       email: userEmail,
-      amount: finalAmount.toString(),
+      amount: amountInBDT.toString(),
       metadata,
       redirect_url: `${baseUrl}/payment/success`,
       return_type: 'GET',
