@@ -4,6 +4,15 @@
 
 Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and Firebase. Its purpose is to assist authors from concept to completion through AI-assisted topic research, blueprint generation, and interactive chapter writing. The platform features a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It leverages Google's Gemini AI via Genkit for all AI operations, Firebase Authentication for user management, and Firestore for data persistence. The UI is built with shadcn/ui and Tailwind CSS. The project aims to provide authoritative, well-researched, and credible writing support, avoiding fabricated information. An administrative panel offers centralized API key management with test-before-save functionality, user management, and global application settings for enhanced security and operational control.
 
+## Recent Changes
+
+### November 24, 2025 - Payment and Coupon System Fixes
+- **Payment Amount Mismatch Fix**: Resolved "Expected 10, got 1200" error caused by comparing amounts in different currency units (USD vs BDT). Payment validation now properly handles currency conversion with multi-layered fallback logic to determine expected BDT amount.
+- **Coupon Validation Fix**: Improved coupon validation with robust timestamp handling supporting all Firestore date formats (Timestamp objects, JSON serialized timestamps, Date objects, strings). Added Firestore indexes for efficient coupon queries and fixed false "expired" errors for coupons without expiration dates.
+- **Enhanced Logging**: Added comprehensive diagnostic logging for payment verification and coupon validation to aid debugging.
+- **Files Modified**: `src/lib/payment-processor.ts`, `src/app/api/coupon/validate/route.ts`, `firestore.indexes.json`
+- **Documentation**: See `PAYMENT_COUPON_FIXES.md` for detailed technical documentation.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
