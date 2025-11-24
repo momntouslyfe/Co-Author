@@ -69,17 +69,28 @@ Preferred communication style: Simple, everyday language.
 - **Provider**: Uddoktapay - Bangladesh payment automation platform supporting MFS and global payment methods.
 - **API Endpoints**: 
   - `/api/payment/create` - Initiates payment session and redirects to payment gateway. **Security**: Verifies Firebase ID token server-side and derives userId from authenticated token (prevents spoofed purchases).
-  - `/api/payment/verify` - Verifies payment after user returns from gateway.
-  - `/api/payment/webhook` - Handles instant payment notifications (IPN).
+  - `/api/payment/verify` - Verifies payment after user returns from gateway. **Auto-approval**: Automatically approves successful payments and grants credits/activates subscriptions.
+  - `/api/payment/webhook` - Handles instant payment notifications (IPN). **Auto-approval**: Automatically processes successful payments with amount validation and credit granting.
   - `/api/admin/payment/test-connection` - Admin tool to test API credentials.
   - `/api/admin/payment/list` - Lists all payment transactions with filters.
-  - `/api/admin/payment/approve` - Approves payment and grants credits to user. **Fixed**: Now correctly uses `addonPlan.type` instead of `addonPlan.creditType` to grant correct credit type (book vs. word credits).
+  - `/api/admin/payment/approve` - Manual approval endpoint for edge cases. Verifies payment, validates amount, and grants credits to user.
   - `/api/admin/payment/reject` - Rejects payment with reason.
   - `/api/user/subscription-status` - Returns user's current subscription status with expiration dates.
   - `/api/user/subscription-plans` - Lists available subscription plans for purchase.
-- **Payment Flow**: User purchases credits → Redirected to Uddoktapay → Payment completion → Webhook notification → Admin approval → Credits granted.
-- **Admin Features**: Payment management panel to view, approve, or reject payments. Connection testing for API credentials.
-- **Security**: Webhook requests validated using API key header. Payment records tracked in Firestore with approval workflow. Payment creation requires authenticated Firebase ID token.
+- **Payment Flow**: User purchases credits → Redirected to Uddoktapay → Payment completion → **Auto-verification & approval** → Credits granted instantly → User redirected to success page. Manual admin approval only needed when auto-approval fails (e.g., amount mismatch).
+- **Auto-Approval System**: 
+  - **Shared Processor**: `src/lib/payment-processor.ts` contains `processSuccessfulPayment()` function used by both verify and webhook endpoints.
+  - **Security Validation**: Verifies payment with Uddoktapay, validates metadata.order_id matches, and checks charged amount equals expected price (1 cent tolerance).
+  - **Automatic Credit Granting**: Instantly activates subscriptions or adds credits when validation passes.
+  - **Failure Handling**: If auto-approval fails (verification failure, amount mismatch, or invoice mismatch), payment is marked as 'failed' with rejection reason. Users see clear error messages instead of being stuck in pending state.
+  - **Retry Support**: Webhook duplicate-processing guard only prevents retries when payment is fully completed and approved, allowing successful retries if earlier attempts failed.
+- **Admin Features**: Payment management panel to view, approve, or reject payments manually when auto-approval fails. Connection testing for API credentials.
+- **Security**: 
+  - Webhook requests validated using API key header.
+  - Payment records tracked in Firestore with approval workflow.
+  - Payment creation requires authenticated Firebase ID token.
+  - Invoice substitution attacks prevented via metadata.order_id validation in auto-approval processor.
+  - Amount validation ensures charged amount matches expected price before granting credits.
 - **Environment Variables**: `UDDOKTAPAY_API_KEY` (required), `UDDOKTAPAY_BASE_URL` (defaults to sandbox).
 
 ## External Dependencies
