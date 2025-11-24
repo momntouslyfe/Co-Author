@@ -3,8 +3,12 @@ import { verifyAdminToken, getAuthToken } from '@/lib/admin-auth';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import type { Coupon, CreateCouponInput } from '@/types/subscription';
 
-const admin = getFirebaseAdmin();
-const db = admin.firestore();
+function getAdminModuleAndDb() {
+  const adminApp = getFirebaseAdmin();
+  const adminModule = require('firebase-admin');
+  const db = adminApp.firestore();
+  return { adminApp, adminModule, db };
+}
 
 // GET /api/admin/coupons - List all coupons
 export async function GET(request: NextRequest) {
@@ -25,6 +29,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const { db } = getAdminModuleAndDb();
     const couponsSnapshot = await db.collection('coupons').orderBy('createdAt', 'desc').get();
 
     const coupons = couponsSnapshot.docs.map((doc: any) => ({
@@ -86,6 +91,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { db, adminModule } = getAdminModuleAndDb();
+
     // Check if coupon code already exists
     const codeUpperCase = body.code.toUpperCase();
     const existingCoupon = await db
@@ -113,8 +120,8 @@ export async function POST(request: NextRequest) {
       affiliateId: body.affiliateId || null,
       isActive: body.isActive ?? true,
       description: body.description || '',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: adminModule.firestore.FieldValue.serverTimestamp(),
+      updatedAt: adminModule.firestore.FieldValue.serverTimestamp(),
     };
 
     const docRef = await db.collection('coupons').add(couponData);

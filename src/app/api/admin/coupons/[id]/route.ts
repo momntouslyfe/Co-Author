@@ -3,8 +3,12 @@ import { verifyAdminToken, getAuthToken } from '@/lib/admin-auth';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import type { UpdateCouponInput } from '@/types/subscription';
 
-const admin = getFirebaseAdmin();
-const db = admin.firestore();
+function getAdminModuleAndDb() {
+  const adminApp = getFirebaseAdmin();
+  const adminModule = require('firebase-admin');
+  const db = adminApp.firestore();
+  return { adminApp, adminModule, db };
+}
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -32,6 +36,7 @@ export async function GET(
       );
     }
 
+    const { db } = getAdminModuleAndDb();
     const { id } = await context.params;
     const docRef = db.collection('coupons').doc(id);
     const doc = await docRef.get();
@@ -83,6 +88,7 @@ export async function PUT(
     const { id } = await context.params;
     const body: UpdateCouponInput = await request.json();
 
+    const { db, adminModule } = getAdminModuleAndDb();
     const docRef = db.collection('coupons').doc(id);
     const doc = await docRef.get();
 
@@ -128,7 +134,7 @@ export async function PUT(
     }
 
     const updateData: any = {
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: adminModule.firestore.FieldValue.serverTimestamp(),
     };
 
     if (body.code) updateData.code = body.code.toUpperCase();
@@ -183,6 +189,7 @@ export async function DELETE(
       );
     }
 
+    const { db } = getAdminModuleAndDb();
     const { id } = await context.params;
     const docRef = db.collection('coupons').doc(id);
     const doc = await docRef.get();
