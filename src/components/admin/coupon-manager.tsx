@@ -159,8 +159,8 @@ export function CouponManager() {
       discountType: coupon.discountType,
       discountValue: coupon.discountValue,
       maxUsesPerUser: coupon.maxUsesPerUser,
-      validFrom: new Date(coupon.validFrom.toMillis()).toISOString().split('T')[0],
-      validUntil: new Date(coupon.validUntil.toMillis()).toISOString().split('T')[0],
+      validFrom: convertTimestampToDate(coupon.validFrom).toISOString().split('T')[0],
+      validUntil: convertTimestampToDate(coupon.validUntil).toISOString().split('T')[0],
       specificUserId: coupon.specificUserId || '',
       affiliateId: coupon.affiliateId || '',
       isActive: coupon.isActive,
@@ -198,8 +198,23 @@ export function CouponManager() {
     }
   };
 
+  const convertTimestampToDate = (timestamp: any): Date => {
+    // Handle Firebase Timestamp object with _seconds and _nanoseconds
+    if (timestamp && typeof timestamp === 'object') {
+      if ('_seconds' in timestamp) {
+        return new Date(timestamp._seconds * 1000);
+      }
+      // Handle Timestamp object with toMillis() method
+      if (typeof timestamp.toMillis === 'function') {
+        return new Date(timestamp.toMillis());
+      }
+    }
+    // Handle regular Date or string
+    return new Date(timestamp);
+  };
+
   const formatDate = (timestamp: any) => {
-    return new Date(timestamp.toMillis()).toLocaleDateString();
+    return convertTimestampToDate(timestamp).toLocaleDateString();
   };
 
   return (
