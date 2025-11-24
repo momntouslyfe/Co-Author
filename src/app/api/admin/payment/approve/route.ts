@@ -3,6 +3,8 @@ import { getAuthToken, verifyAdminToken } from '@/lib/admin-auth';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { addCredits, activateSubscriptionPlan } from '@/lib/credits';
 import { verifyPayment } from '@/lib/uddoktapay';
+import { convertAmount, getDefaultCurrency } from '@/lib/currency';
+import type { SupportedCurrency } from '@/types/subscription';
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,19 +103,48 @@ export async function POST(request: NextRequest) {
 
         const subscriptionPlan = subscriptionPlanDoc.data();
         const expectedPrice = subscriptionPlan?.price || 0;
+        const planCurrency = subscriptionPlan?.currency || 'USD';
+
+        // Convert expected price to BDT for comparison with Uddoktapay (which always charges in BDT)
+        let expectedPriceInBDT = expectedPrice;
+        if (planCurrency !== 'BDT') {
+          // Check if the currency is supported
+          if (planCurrency !== 'USD' && planCurrency !== 'BDT') {
+            console.error(`Unsupported currency ${planCurrency} for plan ${paymentData.planId}`);
+            return NextResponse.json(
+              { error: `This plan uses unsupported currency "${planCurrency}". Please update the plan to use USD or BDT in the admin panel, or set up a conversion rate for ${planCurrency} to BDT.` },
+              { status: 400 }
+            );
+          }
+          
+          try {
+            expectedPriceInBDT = await convertAmount(
+              expectedPrice,
+              planCurrency as SupportedCurrency,
+              'BDT'
+            );
+            console.log(`Currency conversion for approval: ${expectedPrice} ${planCurrency} = ${expectedPriceInBDT} BDT`);
+          } catch (error: any) {
+            console.error('Currency conversion error during approval:', error);
+            return NextResponse.json(
+              { error: `Currency conversion from ${planCurrency} to BDT failed. Please contact admin to set up the conversion rate.` },
+              { status: 400 }
+            );
+          }
+        }
 
         // SECURITY: Validate that AUTHORITATIVE charged amount from Uddoktapay matches expected price
-        if (Math.abs(authoritativeChargedAmount - expectedPrice) > 0.01) {
+        if (Math.abs(authoritativeChargedAmount - expectedPriceInBDT) > 1.00) {
           console.error(
             `SECURITY ALERT - Payment amount mismatch! ` +
-            `Expected: ${expectedPrice}, ` +
-            `Charged (verified with Uddoktapay): ${authoritativeChargedAmount}, ` +
+            `Expected: ${expectedPrice} ${planCurrency} (${expectedPriceInBDT} BDT), ` +
+            `Charged (verified with Uddoktapay): ${authoritativeChargedAmount} BDT, ` +
             `Order: ${orderId}, ` +
             `Invoice: ${paymentData.invoiceId}`
           );
           return NextResponse.json(
             { 
-              error: `Payment amount mismatch detected. Expected ${expectedPrice} ${paymentData.currency || 'BDT'}, but Uddoktapay verified amount is ${authoritativeChargedAmount} ${paymentData.currency || 'BDT'}. This payment may be fraudulent and cannot be approved.` 
+              error: `Payment amount mismatch detected. Expected ${expectedPrice} ${planCurrency} (${expectedPriceInBDT} BDT), but Uddoktapay verified amount is ${authoritativeChargedAmount} BDT. This payment may be fraudulent and cannot be approved.` 
             },
             { status: 400 }
           );
@@ -148,21 +179,50 @@ export async function POST(request: NextRequest) {
 
         const addonPlan = addonPlanDoc.data();
         const expectedPrice = addonPlan?.price || 0;
+        const planCurrency = addonPlan?.currency || 'USD';
+
+        // Convert expected price to BDT for comparison with Uddoktapay (which always charges in BDT)
+        let expectedPriceInBDT = expectedPrice;
+        if (planCurrency !== 'BDT') {
+          // Check if the currency is supported
+          if (planCurrency !== 'USD' && planCurrency !== 'BDT') {
+            console.error(`Unsupported currency ${planCurrency} for addon plan ${paymentData.addonId}`);
+            return NextResponse.json(
+              { error: `This addon plan uses unsupported currency "${planCurrency}". Please update the plan to use USD or BDT in the admin panel, or set up a conversion rate for ${planCurrency} to BDT.` },
+              { status: 400 }
+            );
+          }
+          
+          try {
+            expectedPriceInBDT = await convertAmount(
+              expectedPrice,
+              planCurrency as SupportedCurrency,
+              'BDT'
+            );
+            console.log(`Currency conversion for approval: ${expectedPrice} ${planCurrency} = ${expectedPriceInBDT} BDT`);
+          } catch (error: any) {
+            console.error('Currency conversion error during approval:', error);
+            return NextResponse.json(
+              { error: `Currency conversion from ${planCurrency} to BDT failed. Please contact admin to set up the conversion rate.` },
+              { status: 400 }
+            );
+          }
+        }
 
         // SECURITY: Validate that AUTHORITATIVE charged amount from Uddoktapay matches expected price
         // We use the verified amount from Uddoktapay API, not the stored chargedAmount
-        if (Math.abs(authoritativeChargedAmount - expectedPrice) > 0.01) {
-          // Allow 1 cent tolerance for floating point issues
+        if (Math.abs(authoritativeChargedAmount - expectedPriceInBDT) > 1.00) {
+          // Allow 1 BDT tolerance for floating point issues and conversion rounding
           console.error(
             `SECURITY ALERT - Payment amount mismatch! ` +
-            `Expected: ${expectedPrice}, ` +
-            `Charged (verified with Uddoktapay): ${authoritativeChargedAmount}, ` +
+            `Expected: ${expectedPrice} ${planCurrency} (${expectedPriceInBDT} BDT), ` +
+            `Charged (verified with Uddoktapay): ${authoritativeChargedAmount} BDT, ` +
             `Order: ${orderId}, ` +
             `Invoice: ${paymentData.invoiceId}`
           );
           return NextResponse.json(
             { 
-              error: `Payment amount mismatch detected. Expected ${expectedPrice} ${paymentData.currency || 'BDT'}, but Uddoktapay verified amount is ${authoritativeChargedAmount} ${paymentData.currency || 'BDT'}. This payment may be fraudulent and cannot be approved.` 
+              error: `Payment amount mismatch detected. Expected ${expectedPrice} ${planCurrency} (${expectedPriceInBDT} BDT), but Uddoktapay verified amount is ${authoritativeChargedAmount} BDT. This payment may be fraudulent and cannot be approved.` 
             },
             { status: 400 }
           );

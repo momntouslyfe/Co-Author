@@ -271,19 +271,18 @@ export function SubscriptionPlanManager() {
               <p className="text-sm text-muted-foreground">No subscription plans found</p>
             ) : (
               <div className="rounded-md border">
-                <div className="grid grid-cols-7 gap-4 border-b bg-muted/50 p-3 text-sm font-medium">
+                <div className="grid grid-cols-6 gap-4 border-b bg-muted/50 p-3 text-sm font-medium">
                   <div>Name</div>
                   <div>Book Credits</div>
                   <div>Word Credits</div>
                   <div>Price</div>
-                  <div>Currency</div>
                   <div>Status</div>
                   <div className="text-right">Actions</div>
                 </div>
                 {plans.map((plan) => (
                   <div
                     key={plan.id}
-                    className="grid grid-cols-7 gap-4 border-b p-3 text-sm last:border-0"
+                    className="grid grid-cols-6 gap-4 border-b p-3 text-sm last:border-0"
                   >
                     <div>
                       <div className="font-medium">{plan.name}</div>
@@ -300,8 +299,7 @@ export function SubscriptionPlanManager() {
                     </div>
                     <div>{plan.bookCreditsPerMonth.toLocaleString()}</div>
                     <div>{plan.wordCreditsPerMonth.toLocaleString()}</div>
-                    <div>{plan.price.toFixed(2)}</div>
-                    <div>{plan.currency}</div>
+                    <div>{plan.price.toFixed(2)} {plan.currency}</div>
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={plan.isActive}
@@ -390,9 +388,9 @@ export function SubscriptionPlanManager() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="price">Price*</Label>
+            <div className="grid gap-2">
+              <Label htmlFor="price">Price*</Label>
+              <div className="flex gap-2 items-center">
                 <Input
                   id="price"
                   type="number"
@@ -400,17 +398,15 @@ export function SubscriptionPlanManager() {
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                   placeholder="e.g., 29.99"
+                  className="flex-1"
                 />
+                <div className="flex items-center gap-1 px-3 py-2 border rounded-md bg-muted text-sm font-medium min-w-[80px]">
+                  <span>{defaultCurrency}</span>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="currency">Currency*</Label>
-                <Input
-                  id="currency"
-                  value={formData.currency}
-                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                  placeholder="e.g., USD"
-                />
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Using system default currency. Change it in the Currency Settings tab.
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Switch

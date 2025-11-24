@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import type { Coupon, ValidateCouponResponse } from '@/types/subscription';
+import { convertAmount } from '@/lib/currency';
+import type { Coupon, ValidateCouponResponse, SupportedCurrency } from '@/types/subscription';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Look up the actual price from the plan
     let actualAmount: number;
+    let planCurrency: string;
     if (subscriptionPlanId) {
       const planDoc = await db.collection('subscriptionPlans').doc(subscriptionPlanId).get();
       if (!planDoc.exists) {
@@ -49,6 +51,7 @@ export async function POST(request: NextRequest) {
         });
       }
       actualAmount = planDoc.data()?.price;
+      planCurrency = planDoc.data()?.currency || 'USD';
     } else if (addonPlanId) {
       const addonDoc = await db.collection('addonCreditPlans').doc(addonPlanId).get();
       if (!addonDoc.exists) {
@@ -58,6 +61,7 @@ export async function POST(request: NextRequest) {
         });
       }
       actualAmount = addonDoc.data()?.price;
+      planCurrency = addonDoc.data()?.currency || 'USD';
     } else {
       return NextResponse.json({
         valid: false,
@@ -137,7 +141,38 @@ export async function POST(request: NextRequest) {
     if (coupon.discountType === 'percentage') {
       discountAmount = (actualAmount * coupon.discountValue) / 100;
     } else {
-      discountAmount = coupon.discountValue;
+      // For fixed discounts, convert currency if needed
+      let fixedDiscount = coupon.discountValue;
+      const couponCurrency = coupon.currency || 'USD';
+      
+      if (couponCurrency !== planCurrency) {
+        // Check if both currencies are supported
+        if ((couponCurrency !== 'USD' && couponCurrency !== 'BDT') || 
+            (planCurrency !== 'USD' && planCurrency !== 'BDT')) {
+          console.error(`Unsupported currency for coupon validation: coupon=${couponCurrency}, plan=${planCurrency}`);
+          return NextResponse.json({
+            valid: false,
+            error: `This coupon or plan uses an unsupported currency. Please contact admin to update the currency settings.`,
+          });
+        }
+        
+        try {
+          fixedDiscount = await convertAmount(
+            coupon.discountValue,
+            couponCurrency as SupportedCurrency,
+            planCurrency as SupportedCurrency
+          );
+          console.log(`Coupon currency conversion: ${coupon.discountValue} ${couponCurrency} = ${fixedDiscount} ${planCurrency}`);
+        } catch (error: any) {
+          console.error('Coupon currency conversion error:', error);
+          return NextResponse.json({
+            valid: false,
+            error: 'Currency conversion failed for coupon discount. Please contact admin to set up conversion rates.',
+          });
+        }
+      }
+      
+      discountAmount = fixedDiscount;
     }
 
     // Ensure discount doesn't exceed the actual amount

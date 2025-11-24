@@ -147,13 +147,44 @@ export async function POST(request: NextRequest) {
           if (coupon.discountType === 'percentage') {
             discountAmount = (authoritativeAmount * coupon.discountValue) / 100;
           } else {
-            discountAmount = coupon.discountValue;
+            // For fixed discounts, convert currency if needed
+            let fixedDiscount = coupon.discountValue;
+            const couponCurrency = coupon.currency || 'USD';
+            
+            if (couponCurrency !== authoritativeCurrency) {
+              // Check if both currencies are supported
+              if ((couponCurrency !== 'USD' && couponCurrency !== 'BDT') || 
+                  (authoritativeCurrency !== 'USD' && authoritativeCurrency !== 'BDT')) {
+                console.error(`Unsupported currency for payment: coupon=${couponCurrency}, plan=${authoritativeCurrency}`);
+                couponValid = false;
+                couponError = 'Coupon or plan uses unsupported currency';
+              } else {
+                try {
+                  fixedDiscount = await convertAmount(
+                    coupon.discountValue,
+                    couponCurrency as SupportedCurrency,
+                    authoritativeCurrency as SupportedCurrency
+                  );
+                  console.log(`Coupon currency conversion: ${coupon.discountValue} ${couponCurrency} = ${fixedDiscount} ${authoritativeCurrency}`);
+                } catch (error: any) {
+                  console.error('Coupon currency conversion error:', error);
+                  couponValid = false;
+                  couponError = 'Currency conversion failed for coupon';
+                }
+              }
+            }
+            
+            discountAmount = fixedDiscount;
           }
 
-          discountAmount = Math.min(discountAmount, authoritativeAmount);
-          finalAmount = Math.max(0, authoritativeAmount - discountAmount);
-          validatedCoupon = coupon;
-        } else {
+          if (couponValid) {
+            discountAmount = Math.min(discountAmount, authoritativeAmount);
+            finalAmount = Math.max(0, authoritativeAmount - discountAmount);
+            validatedCoupon = coupon;
+          }
+        }
+        
+        if (!couponValid) {
           console.warn(`Coupon validation failed for user ${userId}: ${couponError}`);
           // Don't fail the payment, just ignore invalid coupon
           // Users already saw validation on the payment overview page
@@ -168,6 +199,15 @@ export async function POST(request: NextRequest) {
       let originalAmountInBDT = originalAmount;
       
       if (authoritativeCurrency !== 'BDT') {
+        // Check if the currency is supported
+        if (authoritativeCurrency !== 'USD' && authoritativeCurrency !== 'BDT') {
+          console.error(`Unsupported currency for free order: ${authoritativeCurrency}`);
+          return NextResponse.json(
+            { error: `This plan uses unsupported currency "${authoritativeCurrency}". Please update the plan to use USD or BDT in the admin panel, or set up a conversion rate for ${authoritativeCurrency} to BDT.` },
+            { status: 400 }
+          );
+        }
+        
         try {
           originalAmountInBDT = await convertAmount(
             originalAmount,
@@ -178,9 +218,10 @@ export async function POST(request: NextRequest) {
           console.log(`Free order conversion: ${originalAmount} ${authoritativeCurrency} = ${originalAmountInBDT} BDT (rate: ${freeOrderConversionRate})`);
         } catch (error: any) {
           console.error('Free order conversion error:', error);
-          // Fallback to rate=1 if conversion fails (non-fatal for free orders)
-          freeOrderConversionRate = 1.0;
-          console.warn('Using fallback conversion rate of 1.0 for free order');
+          return NextResponse.json(
+            { error: `Currency conversion from ${authoritativeCurrency} to BDT failed. Please contact admin to set up the conversion rate.` },
+            { status: 400 }
+          );
         }
       }
       
@@ -252,6 +293,15 @@ export async function POST(request: NextRequest) {
     let conversionRate = 1.0;
     
     if (authoritativeCurrency !== 'BDT') {
+      // Check if the currency is supported
+      if (authoritativeCurrency !== 'USD' && authoritativeCurrency !== 'BDT') {
+        console.error(`Unsupported currency for payment: ${authoritativeCurrency}`);
+        return NextResponse.json(
+          { error: `This plan uses unsupported currency "${authoritativeCurrency}". Please update the plan to use USD or BDT in the admin panel, or set up a conversion rate for ${authoritativeCurrency} to BDT.` },
+          { status: 400 }
+        );
+      }
+      
       try {
         amountInBDT = await convertAmount(
           finalAmount,
@@ -263,8 +313,8 @@ export async function POST(request: NextRequest) {
       } catch (error: any) {
         console.error('Currency conversion error:', error);
         return NextResponse.json(
-          { error: 'Currency conversion failed. Please contact admin to set up conversion rates.' },
-          { status: 500 }
+          { error: `Currency conversion from ${authoritativeCurrency} to BDT failed. Please contact admin to set up the conversion rate.` },
+          { status: 400 }
         );
       }
     }

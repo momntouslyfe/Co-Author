@@ -186,6 +186,7 @@ export interface Coupon {
   category: CouponCategory;
   discountType: CouponDiscountType;
   discountValue: number;
+  currency?: string;
   maxUsesPerUser: number;
   validFrom: Timestamp;
   validUntil: Timestamp;
@@ -215,6 +216,7 @@ export interface CreateCouponInput {
   category: CouponCategory;
   discountType: CouponDiscountType;
   discountValue: number;
+  currency?: string;
   maxUsesPerUser: number;
   validFrom: Date;
   validUntil: Date;
@@ -229,6 +231,7 @@ export interface UpdateCouponInput {
   category?: CouponCategory;
   discountType?: CouponDiscountType;
   discountValue?: number;
+  currency?: string;
   maxUsesPerUser?: number;
   validFrom?: Date;
   validUntil?: Date;

@@ -50,11 +50,31 @@ export function CouponManager() {
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [defaultCurrency, setDefaultCurrency] = useState<string>('USD');
   const { toast } = useToast();
 
   useEffect(() => {
     loadCoupons();
+    loadDefaultCurrency();
   }, []);
+
+  const loadDefaultCurrency = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch('/api/admin/currencies', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const defaultCurr = data.currencies?.find((c: any) => c.isDefault);
+        if (defaultCurr) {
+          setDefaultCurrency(defaultCurr.code);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load default currency:', error);
+    }
+  };
 
   const loadCoupons = async () => {
     try {
@@ -301,7 +321,7 @@ export function CouponManager() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="discountValue">
-                      Discount Value * {formData.discountType === 'percentage' ? '(%)' : '(Amount)'}
+                      Discount Value * {formData.discountType === 'percentage' ? '(%)' : `(${defaultCurrency})`}
                     </Label>
                     <Input
                       id="discountValue"
@@ -311,6 +331,11 @@ export function CouponManager() {
                       value={formData.discountValue}
                       onChange={(e) => setFormData({ ...formData, discountValue: Number(e.target.value) })}
                     />
+                    {formData.discountType === 'fixed' && (
+                      <p className="text-xs text-muted-foreground">
+                        Using system default currency ({defaultCurrency})
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid gap-2">
@@ -457,7 +482,7 @@ export function CouponManager() {
                   <TableCell>
                     {coupon.discountType === 'percentage' 
                       ? `${coupon.discountValue}%` 
-                      : `$${coupon.discountValue}`}
+                      : `${coupon.discountValue} ${coupon.currency || defaultCurrency}`}
                   </TableCell>
                   <TableCell>{coupon.maxUsesPerUser}</TableCell>
                   <TableCell className="text-sm">

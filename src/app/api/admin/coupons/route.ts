@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminToken, getAuthToken } from '@/lib/admin-auth';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getDefaultCurrency } from '@/lib/currency';
 import type { Coupon, CreateCouponInput } from '@/types/subscription';
 
 function getAdminModuleAndDb() {
@@ -108,11 +109,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get default currency for fixed discount coupons
+    let couponCurrency = body.currency;
+    if (body.discountType === 'fixed' && !couponCurrency) {
+      const defaultCurr = await getDefaultCurrency();
+      couponCurrency = defaultCurr?.code || 'USD';
+    }
+
     const couponData = {
       code: codeUpperCase,
       category: body.category,
       discountType: body.discountType,
       discountValue: body.discountValue,
+      currency: couponCurrency || null,
       maxUsesPerUser: body.maxUsesPerUser || 1,
       validFrom: new Date(body.validFrom),
       validUntil: new Date(body.validUntil),
