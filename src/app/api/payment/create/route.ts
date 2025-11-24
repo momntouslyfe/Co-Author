@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { planId, addonId } = body;
+    const { planId, addonId, couponCode } = body;
 
     if (!planId && !addonId) {
       return NextResponse.json(
@@ -94,6 +94,71 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Apply coupon discount if provided
+    let originalAmount = authoritativeAmount;
+    let discountAmount = 0;
+    let finalAmount = authoritativeAmount;
+    let validatedCoupon: any = null;
+
+    if (couponCode) {
+      // Validate coupon server-side
+      const couponsRef = admin.firestore().collection('coupons');
+      const couponSnapshot = await couponsRef.where('code', '==', couponCode.toUpperCase()).limit(1).get();
+
+      if (!couponSnapshot.empty) {
+        const couponDoc = couponSnapshot.docs[0];
+        const coupon = { id: couponDoc.id, ...couponDoc.data() };
+
+        // Validate coupon
+        const now = firebaseAdmin.firestore.Timestamp.now();
+        let couponValid = true;
+        let couponError = '';
+
+        if (!coupon.isActive) {
+          couponValid = false;
+          couponError = 'Coupon is not active';
+        } else if (now.toMillis() < coupon.validFrom.toMillis()) {
+          couponValid = false;
+          couponError = 'Coupon is not yet valid';
+        } else if (now.toMillis() > coupon.validUntil.toMillis()) {
+          couponValid = false;
+          couponError = 'Coupon has expired';
+        } else if (coupon.specificUserId && coupon.specificUserId !== userId) {
+          couponValid = false;
+          couponError = 'Coupon not valid for this user';
+        } else {
+          // Check usage limit
+          const usageRef = admin.firestore().collection('couponUsage');
+          const usageSnapshot = await usageRef
+            .where('userId', '==', userId)
+            .where('couponId', '==', coupon.id)
+            .get();
+
+          if (usageSnapshot.size >= coupon.maxUsesPerUser) {
+            couponValid = false;
+            couponError = 'Coupon usage limit exceeded';
+          }
+        }
+
+        if (couponValid) {
+          // Calculate discount
+          if (coupon.discountType === 'percentage') {
+            discountAmount = (authoritativeAmount * coupon.discountValue) / 100;
+          } else {
+            discountAmount = coupon.discountValue;
+          }
+
+          discountAmount = Math.min(discountAmount, authoritativeAmount);
+          finalAmount = Math.max(0, authoritativeAmount - discountAmount);
+          validatedCoupon = coupon;
+        } else {
+          console.warn(`Coupon validation failed for user ${userId}: ${couponError}`);
+          // Don't fail the payment, just ignore invalid coupon
+          // Users already saw validation on the payment overview page
+        }
+      }
+    }
+
     // Generate unique order ID
     const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
@@ -117,30 +182,39 @@ export async function POST(request: NextRequest) {
     // Create payment record in Firestore with SERVER-VALIDATED amounts
     const paymentRef = admin.firestore().collection('payments').doc(orderId);
     
-    await paymentRef.set({
+    const paymentData: any = {
       userId,
       userEmail,
       userName,
       orderId,
       planId: planId || null,
       addonId: addonId || null,
-      amount: authoritativeAmount.toString(),
-      expectedAmount: authoritativeAmount.toString(), // For validation during approval
+      originalAmount: originalAmount.toString(),
+      discountAmount: discountAmount.toString(),
+      amount: finalAmount.toString(),
+      expectedAmount: finalAmount.toString(), // For validation during approval
       fee: '0',
-      chargedAmount: authoritativeAmount.toString(),
+      chargedAmount: finalAmount.toString(),
       currency: authoritativeCurrency,
       invoiceId: '', // Will be updated after payment
       status: 'pending',
       approvalStatus: 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
+    };
 
-    // Create payment session with Uddoktapay using SERVER-VALIDATED amount
+    if (validatedCoupon) {
+      paymentData.couponId = validatedCoupon.id;
+      paymentData.couponCode = validatedCoupon.code;
+    }
+
+    await paymentRef.set(paymentData);
+
+    // Create payment session with Uddoktapay using FINAL amount (after discount)
     const checkoutData: UddoktapayCheckoutRequest = {
       full_name: userName,
       email: userEmail,
-      amount: authoritativeAmount.toString(),
+      amount: finalAmount.toString(),
       metadata,
       redirect_url: `${baseUrl}/payment/success`,
       return_type: 'GET',

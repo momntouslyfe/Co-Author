@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -93,42 +94,12 @@ export function BillingSettings() {
       return;
     }
 
-    try {
-      setPurchasing(planId);
-      const token = await user.getIdToken();
-
-      const response = await fetch('/api/payment/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          planId: planId,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create payment');
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.paymentUrl) {
-        window.location.href = data.paymentUrl;
-      } else {
-        throw new Error('Invalid payment response');
-      }
-    } catch (error: any) {
-      toast({
-        title: 'Payment Error',
-        description: error.message || 'Failed to initiate payment. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setPurchasing(null);
-    }
+    // Route to payment overview page instead of creating payment immediately
+    const params = new URLSearchParams({
+      planId: planId,
+      type: 'subscription',
+    });
+    window.location.href = `/payment-overview?${params.toString()}`;
   };
 
   if (isLoading) {

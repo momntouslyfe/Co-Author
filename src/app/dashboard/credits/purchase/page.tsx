@@ -62,42 +62,12 @@ function PurchaseCreditsContent() {
       return;
     }
 
-    try {
-      setIsLoading(true);
-      const token = await user.getIdToken();
-
-      const response = await fetch('/api/payment/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          addonId: plan.id,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create payment');
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.paymentUrl) {
-        // Redirect to payment gateway
-        window.location.href = data.paymentUrl;
-      } else {
-        throw new Error('Invalid payment response');
-      }
-    } catch (error: any) {
-      toast({
-        title: 'Payment Error',
-        description: error.message || 'Failed to initiate payment. Please try again.',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-    }
+    // Route to payment overview page instead of creating payment immediately
+    const params = new URLSearchParams({
+      addonId: plan.id,
+      type: 'addon',
+    });
+    window.location.href = `/payment-overview?${params.toString()}`;
   };
 
   if (isLoading) {

@@ -82,7 +82,12 @@ export async function processSuccessfulPayment(
         }
 
         const subscriptionPlan = subscriptionPlanDoc.data();
-        const expectedPrice = subscriptionPlan?.price || 0;
+        const planPrice = subscriptionPlan?.price || 0;
+        
+        // Use discounted price if coupon was applied, otherwise use plan price
+        const expectedPrice = paymentData.couponId 
+          ? parseFloat(paymentData.amount || paymentData.expectedAmount || '0')
+          : planPrice;
 
         // Validate that charged amount matches expected price
         if (Math.abs(authoritativeChargedAmount - expectedPrice) > 0.01) {
@@ -127,7 +132,12 @@ export async function processSuccessfulPayment(
         }
 
         const addonPlan = addonPlanDoc.data();
-        const expectedPrice = addonPlan?.price || 0;
+        const addonPrice = addonPlan?.price || 0;
+        
+        // Use discounted price if coupon was applied, otherwise use addon price
+        const expectedPrice = paymentData.couponId 
+          ? parseFloat(paymentData.amount || paymentData.expectedAmount || '0')
+          : addonPrice;
 
         // Validate that charged amount matches expected price
         if (Math.abs(authoritativeChargedAmount - expectedPrice) > 0.01) {
@@ -173,6 +183,28 @@ export async function processSuccessfulPayment(
           success: false,
           error: error instanceof Error ? error.message : 'Failed to grant credits',
         };
+      }
+    }
+
+    // Track coupon usage if a coupon was applied
+    if (paymentData?.couponId && paymentData?.couponCode) {
+      try {
+        const couponUsageRef = admin.firestore().collection('couponUsage');
+        await couponUsageRef.add({
+          userId: paymentData.userId,
+          couponId: paymentData.couponId,
+          couponCode: paymentData.couponCode,
+          usedAt: admin.firestore.FieldValue.serverTimestamp(),
+          discountAmount: parseFloat(paymentData.discountAmount || '0'),
+          originalAmount: parseFloat(paymentData.originalAmount || '0'),
+          finalAmount: parseFloat(paymentData.amount || '0'),
+          subscriptionPlanId: paymentData.planId || null,
+          addonPlanId: paymentData.addonId || null,
+        });
+        console.log(`Coupon usage tracked: ${paymentData.couponCode} used by user ${paymentData.userId}`);
+      } catch (error) {
+        console.error('Error tracking coupon usage:', error);
+        // Don't fail the payment if coupon tracking fails
       }
     }
 
