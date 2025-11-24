@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     // Check validity period (only if dates are provided)
     if (coupon.validFrom || coupon.validUntil) {
-      const now = admin.firestore.Timestamp.now();
+      const now = new Date();
       
       // Helper function to safely convert various date formats to milliseconds
       const getMilliseconds = (dateField: any): number | null => {
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
       // Check validFrom if it exists
       if (coupon.validFrom) {
         const validFromMillis = getMilliseconds(coupon.validFrom);
-        if (validFromMillis && now.toMillis() < validFromMillis) {
+        if (validFromMillis && now.getTime() < validFromMillis) {
           return NextResponse.json({
             valid: false,
             error: 'This coupon is not yet valid',
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
       // Check validUntil if it exists
       if (coupon.validUntil) {
         const validUntilMillis = getMilliseconds(coupon.validUntil);
-        if (validUntilMillis && now.toMillis() > validUntilMillis) {
+        if (validUntilMillis && now.getTime() > validUntilMillis) {
           return NextResponse.json({
             valid: false,
             error: 'This coupon has expired',
