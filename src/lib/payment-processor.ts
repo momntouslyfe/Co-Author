@@ -74,8 +74,10 @@ export async function processSuccessfulPayment(
         };
       }
 
-      // Use the AUTHORITATIVE charged amount from Uddoktapay
+      // Use the AUTHORITATIVE charged amount from Uddoktapay (in BDT)
       authoritativeChargedAmount = parseFloat(verificationResult.charged_amount || verificationResult.amount || '0');
+      
+      console.log(`Payment verification - Charged amount from Uddoktapay: ${authoritativeChargedAmount} BDT`);
     }
 
     // Process subscription payment
@@ -97,18 +99,58 @@ export async function processSuccessfulPayment(
         
         // Skip amount validation for FREE_ORDER (charged amount is always 0)
         if (!isFreeOrder) {
-          // Use discounted price if coupon was applied, otherwise use plan price
-          const expectedPrice = paymentData.couponId 
-            ? parseFloat(paymentData.amount || paymentData.expectedAmount || '0')
-            : planPrice;
+          // Calculate expected price in BDT for validation
+          // Priority: 1. expectedAmount (BDT sent to gateway) 2. Compute from conversion metadata 3. Plan price if BDT
+          let expectedPrice: number;
+          
+          if (paymentData.expectedAmount) {
+            // Use the amount in BDT that was sent to payment gateway
+            expectedPrice = parseFloat(paymentData.expectedAmount);
+          } else if (paymentData.amountInBDT) {
+            // Fallback: use stored BDT conversion
+            expectedPrice = parseFloat(paymentData.amountInBDT);
+          } else if (paymentData.paymentCurrency === 'BDT') {
+            // If payment currency is BDT, use plan price directly
+            expectedPrice = planPrice;
+          } else if (paymentData.conversionRate && paymentData.amount) {
+            // Try to recompute BDT amount from stored conversion rate
+            const originalAmount = parseFloat(paymentData.amount);
+            const conversionRate = parseFloat(paymentData.conversionRate);
+            expectedPrice = originalAmount * conversionRate;
+            console.log(
+              `Recomputed BDT amount from conversion metadata: ` +
+              `${originalAmount} × ${conversionRate} = ${expectedPrice} BDT`
+            );
+          } else {
+            // Cannot validate - missing required BDT amount information
+            console.error(
+              `CRITICAL VALIDATION ERROR - Cannot determine expected BDT amount for order ${orderId}. ` +
+              `Missing expectedAmount, amountInBDT, and conversion metadata. ` +
+              `This payment requires manual admin review.`
+            );
+            return {
+              success: false,
+              error: 'Cannot verify payment amount - missing currency conversion data. Please contact support.',
+            };
+          }
+
+          console.log(
+            `Payment amount validation: ` +
+            `Expected: ${expectedPrice} BDT, ` +
+            `Charged: ${authoritativeChargedAmount} BDT, ` +
+            `Order: ${orderId}, ` +
+            `Currency: ${paymentData.currency || 'unknown'} → BDT`
+          );
 
           // Validate that charged amount matches expected price
-          if (Math.abs(authoritativeChargedAmount - expectedPrice) > 0.01) {
+          // Tolerance: 1.00 BDT to account for rounding in currency conversion
+          if (Math.abs(authoritativeChargedAmount - expectedPrice) > 1.00) {
             console.error(
               `SECURITY ALERT - Payment amount mismatch! ` +
-              `Expected: ${expectedPrice}, ` +
-              `Charged: ${authoritativeChargedAmount}, ` +
-              `Order: ${orderId}`
+              `Expected: ${expectedPrice} BDT, ` +
+              `Charged: ${authoritativeChargedAmount} BDT, ` +
+              `Order: ${orderId}, ` +
+              `Difference: ${Math.abs(authoritativeChargedAmount - expectedPrice)} BDT`
             );
             return {
               success: false,
@@ -148,20 +190,59 @@ export async function processSuccessfulPayment(
         const addonPlan = addonPlanDoc.data();
         const addonPrice = addonPlan?.price || 0;
         
-        // Use discounted price if coupon was applied, otherwise use addon price
-        const expectedPrice = paymentData.couponId 
-          ? parseFloat(paymentData.amount || paymentData.expectedAmount || '0')
-          : addonPrice;
+        // Calculate expected price in BDT for validation (needed for both tracking and validation)
+        let expectedPrice: number;
+        
+        if (paymentData.expectedAmount) {
+          // Use the amount in BDT that was sent to payment gateway
+          expectedPrice = parseFloat(paymentData.expectedAmount);
+        } else if (paymentData.amountInBDT) {
+          // Fallback: use stored BDT conversion
+          expectedPrice = parseFloat(paymentData.amountInBDT);
+        } else if (paymentData.paymentCurrency === 'BDT') {
+          // If payment currency is BDT, use addon price directly
+          expectedPrice = addonPrice;
+        } else if (paymentData.conversionRate && paymentData.amount) {
+          // Try to recompute BDT amount from stored conversion rate
+          const originalAmount = parseFloat(paymentData.amount);
+          const conversionRate = parseFloat(paymentData.conversionRate);
+          expectedPrice = originalAmount * conversionRate;
+          console.log(
+            `Recomputed BDT amount from conversion metadata: ` +
+            `${originalAmount} × ${conversionRate} = ${expectedPrice} BDT`
+          );
+        } else {
+          // Cannot validate - missing required BDT amount information
+          console.error(
+            `CRITICAL VALIDATION ERROR - Cannot determine expected BDT amount for order ${orderId}. ` +
+            `Missing expectedAmount, amountInBDT, and conversion metadata. ` +
+            `This payment requires manual admin review.`
+          );
+          return {
+            success: false,
+            error: 'Cannot verify payment amount - missing currency conversion data. Please contact support.',
+          };
+        }
         
         // Skip amount validation for FREE_ORDER (charged amount is always 0)
         if (!isFreeOrder) {
+          console.log(
+            `Payment amount validation (addon): ` +
+            `Expected: ${expectedPrice} BDT, ` +
+            `Charged: ${authoritativeChargedAmount} BDT, ` +
+            `Order: ${orderId}, ` +
+            `Currency: ${paymentData.currency || 'unknown'} → BDT`
+          );
+
           // Validate that charged amount matches expected price
-          if (Math.abs(authoritativeChargedAmount - expectedPrice) > 0.01) {
+          // Tolerance: 1.00 BDT to account for rounding in currency conversion
+          if (Math.abs(authoritativeChargedAmount - expectedPrice) > 1.00) {
             console.error(
               `SECURITY ALERT - Payment amount mismatch! ` +
-              `Expected: ${expectedPrice}, ` +
-              `Charged: ${authoritativeChargedAmount}, ` +
-              `Order: ${orderId}`
+              `Expected: ${expectedPrice} BDT, ` +
+              `Charged: ${authoritativeChargedAmount} BDT, ` +
+              `Order: ${orderId}, ` +
+              `Difference: ${Math.abs(authoritativeChargedAmount - expectedPrice)} BDT`
             );
             return {
               success: false,
