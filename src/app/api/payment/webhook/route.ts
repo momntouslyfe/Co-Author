@@ -45,11 +45,13 @@ export async function POST(request: NextRequest) {
     }
 
     const existingStatus = paymentDoc.data()?.status;
+    const existingApprovalStatus = paymentDoc.data()?.approvalStatus;
     const existingInvoiceId = paymentDoc.data()?.invoiceId;
 
-    // Prevent duplicate processing
-    if (existingStatus === 'completed' || existingStatus === 'processing') {
-      console.log('Payment already processed:', orderId);
+    // Prevent duplicate processing only if payment is fully completed and approved
+    // This allows retries if auto-approval failed on earlier attempts
+    if (existingStatus === 'completed' && existingApprovalStatus === 'approved') {
+      console.log('Payment already fully processed and approved:', orderId);
       return NextResponse.json({ success: true, message: 'Already processed' });
     }
 
@@ -120,10 +122,25 @@ export async function POST(request: NextRequest) {
       transactionId: webhookData.transaction_id,
       fee: webhookData.fee,
       chargedAmount: webhookData.charged_amount,
-      status: 'processing',
       updatedAt: new Date(),
       metadata: webhookData.metadata,
     });
+
+    // Auto-process successful payment (verify amount, grant credits, approve)
+    const { processSuccessfulPayment } = await import('@/lib/payment-processor');
+    const processResult = await processSuccessfulPayment(orderId, webhookData.invoice_id);
+    
+    if (!processResult.success) {
+      console.error('Webhook auto-approval failed:', processResult.error);
+      // If auto-approval fails due to verification or security issues, mark as failed
+      // This prevents users from being stuck in pending state
+      await paymentRef.update({
+        status: 'failed',
+        approvalStatus: 'rejected',
+        rejectionReason: `Auto-approval failed: ${processResult.error}`,
+        updatedAt: new Date(),
+      });
+    }
 
     console.log('Webhook processed successfully for order:', orderId);
 

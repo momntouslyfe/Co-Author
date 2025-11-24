@@ -31,6 +31,7 @@ function PaymentSuccessContent() {
       }
 
       try {
+        // Call verify endpoint which will auto-approve successful payments
         const response = await fetch('/api/payment/verify', {
           method: 'POST',
           headers: {
@@ -53,20 +54,7 @@ function PaymentSuccessContent() {
           return;
         }
 
-        // Redirect to pending page if payment is still processing
-        console.log('Checking redirect condition:', {
-          status: data.payment.status,
-          approvalStatus: data.payment.approvalStatus,
-          shouldRedirect: data.payment.status === 'processing' && data.payment.approvalStatus === 'pending'
-        });
-        
-        if (data.payment.status === 'processing' && data.payment.approvalStatus === 'pending') {
-          console.log('Redirecting to pending page...');
-          router.push(`/payment/pending?invoice_id=${invoiceId}&order_id=${data.payment.orderId}`);
-          return;
-        }
-
-        // Show success only for completed/approved payments
+        // Show success for completed/approved payments (auto-approved)
         if (data.payment.status === 'completed' || data.payment.approvalStatus === 'approved') {
           setPaymentStatus({
             success: true,
@@ -77,18 +65,26 @@ function PaymentSuccessContent() {
           return;
         }
 
+        // Redirect to pending page if payment needs manual approval
+        // This only happens when auto-approval fails (e.g., amount mismatch)
+        if (data.payment.status === 'processing' && data.payment.approvalStatus === 'pending') {
+          console.log('Payment requires manual approval, redirecting to pending page...');
+          router.push(`/payment/pending?invoice_id=${invoiceId}&order_id=${data.payment.orderId}`);
+          return;
+        }
+
         // Any other status should be treated as an error or unknown state
         setPaymentStatus({
           success: false,
           message: `Unexpected payment status: ${data.payment.status}. Please contact support if you need assistance.`,
           orderId: data.payment.orderId,
         });
+        setVerifying(false);
       } catch (error: any) {
         setPaymentStatus({
           success: false,
           message: error.message || 'Failed to verify payment. Please contact support.',
         });
-      } finally {
         setVerifying(false);
       }
     };

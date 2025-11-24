@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyPayment } from '@/lib/uddoktapay';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { processSuccessfulPayment } from '@/lib/payment-processor';
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,10 +85,7 @@ export async function POST(request: NextRequest) {
     const currentStatus = paymentDoc.data()?.status;
     const currentApprovalStatus = paymentDoc.data()?.approvalStatus;
 
-    // Only update to processing/pending if payment is in initial state
-    // This prevents downgrading approved payments back to pending
-    const shouldUpdateStatus = currentStatus === 'pending' || !currentStatus;
-    
+    // Update basic payment info first
     const updateData: any = {
       invoiceId: result.invoice_id,
       paymentMethod: result.payment_method || '',
@@ -99,14 +97,24 @@ export async function POST(request: NextRequest) {
       metadata: result.metadata || {},
     };
 
-    if (shouldUpdateStatus) {
-      updateData.status = 'processing';
-      updateData.approvalStatus = 'pending';
-    }
-
     await paymentRef.update(updateData);
 
-    // Get the updated document to return current status
+    // Auto-process successful payment (verify amount, grant credits, approve)
+    const processResult = await processSuccessfulPayment(orderId, invoiceId);
+    
+    if (!processResult.success) {
+      console.error('Auto-approval failed:', processResult.error);
+      // If auto-approval fails due to verification or security issues, mark as failed
+      // This prevents users from being stuck in pending state
+      await paymentRef.update({
+        status: 'failed',
+        approvalStatus: 'rejected',
+        rejectionReason: `Auto-approval failed: ${processResult.error}`,
+        updatedAt: new Date(),
+      });
+    }
+
+    // Get the final updated document to return current status
     const updatedDoc = await paymentRef.get();
     const updatedData = updatedDoc.data();
 
