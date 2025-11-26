@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
-import type { Project } from '@/lib/definitions';
+import type { Project, AuthorProfile } from '@/lib/definitions';
 import {
   Card,
   CardContent,
@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -35,9 +35,16 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -51,6 +58,7 @@ export default function CoAuthorPage() {
     const [isCreating, setIsCreating] = useState(false);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [newProjectName, setNewProjectName] = useState('');
+    const [selectedAuthorProfileId, setSelectedAuthorProfileId] = useState<string>('');
     const [open, setOpen] = useState(false);
 
     const projectsQuery = useMemoFirebase(() => {
@@ -58,7 +66,13 @@ export default function CoAuthorPage() {
         return collection(firestore, 'users', user.uid, 'projects');
     }, [user, firestore]);
 
+    const authorProfilesQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, 'users', user.uid, 'authorProfiles');
+    }, [user, firestore]);
+
     const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
+    const { data: authorProfiles } = useCollection<AuthorProfile>(authorProfilesQuery);
     
     const isLoading = isUserLoading || projectsLoading;
 
@@ -91,8 +105,7 @@ export default function CoAuthorPage() {
                 return;
             }
             
-            const projectCollection = collection(firestore, 'users', user.uid, 'projects');
-            const newProjectDoc = await addDoc(projectCollection, {
+            const projectData: any = {
                 userId: user.uid,
                 title: newProjectName,
                 status: 'Draft',
@@ -100,7 +113,14 @@ export default function CoAuthorPage() {
                 lastUpdated: serverTimestamp(),
                 imageUrl: `https://picsum.photos/seed/${Math.random()}/600/800`,
                 imageHint: 'book cover'
-            });
+            };
+
+            if (selectedAuthorProfileId && selectedAuthorProfileId !== 'none') {
+                projectData.authorProfileId = selectedAuthorProfileId;
+            }
+            
+            const projectCollection = collection(firestore, 'users', user.uid, 'projects');
+            const newProjectDoc = await addDoc(projectCollection, projectData);
             
             await fetch('/api/user/track-book-creation', {
                 method: 'POST',
@@ -120,6 +140,7 @@ export default function CoAuthorPage() {
             });
             setOpen(false);
             setNewProjectName('');
+            setSelectedAuthorProfileId('');
             router.push(`/dashboard/co-author/${newProjectDoc.id}`);
         } catch (error) {
             console.error("Error creating project:", error);
@@ -192,7 +213,7 @@ export default function CoAuthorPage() {
                     <DialogHeader>
                     <DialogTitle>Create New Project</DialogTitle>
                     <DialogDescription>
-                        Give your new project a name. Click save when you're done.
+                        Give your new project a name and optionally select an author profile.
                     </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -208,6 +229,35 @@ export default function CoAuthorPage() {
                             placeholder="e.g., 'My Next Bestseller'"
                             />
                         </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="author" className="text-right">
+                            Author
+                            </Label>
+                            <Select
+                                value={selectedAuthorProfileId}
+                                onValueChange={setSelectedAuthorProfileId}
+                            >
+                                <SelectTrigger id="author" className="col-span-3">
+                                    <SelectValue placeholder="Select author (optional)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">No author profile</SelectItem>
+                                    {authorProfiles?.map((profile) => (
+                                        <SelectItem key={profile.id} value={profile.id}>
+                                            {profile.penName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {authorProfiles && authorProfiles.length === 0 && (
+                            <p className="text-sm text-muted-foreground col-span-4 text-center">
+                                No author profiles found.{' '}
+                                <Link href="/dashboard/author-profile" className="text-primary hover:underline">
+                                    Create one
+                                </Link>
+                            </p>
+                        )}
                     </div>
                     <DialogFooter>
                     <Button onClick={handleCreateProject} disabled={isCreating}>

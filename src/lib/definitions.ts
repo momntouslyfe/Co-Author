@@ -20,6 +20,7 @@ export type Project = {
   description?: string;
   imageUrl?: string;
   imageHint?: string;
+  coverImageUrl?: string;
   language?: string;
   storytellingFramework?: string;
   chapters?: Chapter[];
@@ -29,6 +30,7 @@ export type Project = {
   lastUpdated: string;
   researchProfileId?: string;
   styleProfileId?: string;
+  authorProfileId?: string;
   currentStep?: 'blueprint' | 'title' | 'chapters';
 };
 
@@ -50,6 +52,27 @@ export type StyleProfile = {
     name: string;
     styleAnalysis: string;
     createdAt: string;
+};
+
+export type AuthorProfile = {
+    id: string;
+    userId: string;
+    penName: string;
+    fullName?: string;
+    bio: string;
+    photoUrl?: string;
+    email?: string;
+    website?: string;
+    socialLinks?: {
+        twitter?: string;
+        facebook?: string;
+        instagram?: string;
+        linkedin?: string;
+        goodreads?: string;
+    };
+    credentials?: string;
+    createdAt: string;
+    updatedAt?: string;
 };
 
 export type AIProvider = 'gemini' | 'openai' | 'claude';

@@ -3,21 +3,20 @@
 import { useState, useMemo } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
 import Link from 'next/link';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useMemoFirebase } from '@/firebase';
 import { useAuthUser } from '@/firebase/auth/use-user';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { doc } from 'firebase/firestore';
-import { Project, Chapter } from '@/lib/definitions';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { doc, collection } from 'firebase/firestore';
+import { Project, Chapter, AuthorProfile } from '@/lib/definitions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Loader2, ArrowLeft, BookOpen, FileText, ChevronRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Loader2, ArrowLeft, BookOpen, FileText, ChevronRight, User } from 'lucide-react';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
-
-function useMemoFirebase<T>(factory: () => T, deps: React.DependencyList): T {
-  return useMemo(factory, deps);
-}
 
 type GroupedChapters = {
   part: string;
@@ -48,13 +47,20 @@ export default function ChapterSelectionPage() {
   const { user } = useAuthUser();
   const firestore = useFirestore();
   const [selectedChapters, setSelectedChapters] = useState<Set<string>>(new Set());
+  const [selectedAuthorProfileId, setSelectedAuthorProfileId] = useState<string>('');
 
   const projectDocRef = useMemoFirebase(() => {
     if (!user || !projectId) return null;
     return doc(firestore, 'users', user.uid, 'projects', projectId);
   }, [user, firestore, projectId]);
 
+  const authorProfilesRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'users', user.uid, 'authorProfiles');
+  }, [user, firestore]);
+
   const { data: project, isLoading } = useDoc<Project>(projectDocRef);
+  const { data: authorProfiles, isLoading: authorProfilesLoading } = useCollection<AuthorProfile>(authorProfilesRef);
 
   const groupedChapters = useMemo(() => {
     if (!project?.chapters) return [];
@@ -89,7 +95,11 @@ export default function ChapterSelectionPage() {
   const handleContinue = () => {
     if (selectedChapters.size === 0) return;
     const chaptersParam = Array.from(selectedChapters).join(',');
-    router.push(`/dashboard/publish/${projectId}/editor?chapters=${encodeURIComponent(chaptersParam)}`);
+    let url = `/dashboard/publish/${projectId}/editor?chapters=${encodeURIComponent(chaptersParam)}`;
+    if (selectedAuthorProfileId) {
+      url += `&authorProfile=${encodeURIComponent(selectedAuthorProfileId)}`;
+    }
+    router.push(url);
   };
 
   if (isLoading) {
@@ -119,6 +129,47 @@ export default function ChapterSelectionPage() {
             <p className="text-muted-foreground">Select chapters to include in your ebook</p>
           </div>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Author Profile (Optional)
+            </CardTitle>
+            <CardDescription>
+              Select an author profile to include an "About the Author" page in your ebook.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="author-profile">Author Profile</Label>
+              <Select
+                value={selectedAuthorProfileId}
+                onValueChange={setSelectedAuthorProfileId}
+              >
+                <SelectTrigger id="author-profile">
+                  <SelectValue placeholder="Select an author profile (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No author profile</SelectItem>
+                  {authorProfiles?.map((profile) => (
+                    <SelectItem key={profile.id} value={profile.id}>
+                      {profile.penName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!authorProfilesLoading && (!authorProfiles || authorProfiles.length === 0) && (
+                <p className="text-sm text-muted-foreground">
+                  No author profiles found.{' '}
+                  <Link href="/dashboard/author-profile" className="text-primary hover:underline">
+                    Create one
+                  </Link>
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

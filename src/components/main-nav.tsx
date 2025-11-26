@@ -16,6 +16,7 @@ import {
   Archive,
   Palette,
   BookOpen,
+  User,
 } from 'lucide-react';
 import { useAuthUser } from '@/firebase/auth/use-user';
 
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/dashboard/research', icon: <Search />, label: 'Topic Research' },
   { href: '/dashboard/research/saved', icon: <Archive />, label: 'Saved Research' },
   { href: '/dashboard/style-profile', icon: <Palette />, label: 'Style Profile' },
+  { href: '/dashboard/author-profile', icon: <User />, label: 'Author Profile' },
   { href: '/dashboard/affiliate', icon: <Share2 />, label: 'Affiliate' },
 ];
 

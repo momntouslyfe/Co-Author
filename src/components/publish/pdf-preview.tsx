@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Download, Eye, X } from 'lucide-react';
 import { EditorStyles } from '@/lib/publish/content-transformer';
 import { EditorChapter } from '@/lib/publish/types';
+import { AuthorProfile } from '@/lib/definitions';
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,9 @@ type PDFPreviewProps = {
   showTOC: boolean;
   outline?: string;
   selectedChapterIds: string[];
+  authorProfile?: AuthorProfile;
+  authorBioContent?: string;
+  coverImageUrl?: string;
 };
 
 export function PDFPreview({
@@ -45,6 +49,9 @@ export function PDFPreview({
   showTOC,
   outline,
   selectedChapterIds,
+  authorProfile,
+  authorBioContent,
+  coverImageUrl,
 }: PDFPreviewProps) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -60,7 +67,10 @@ export function PDFPreview({
     showTOC,
     outline,
     selectedChapterIds,
-  }), [bookTitle, chapters, styles, showTOC, outline, selectedChapterIds]);
+    authorProfile,
+    authorBioContent,
+    coverImageUrl,
+  }), [bookTitle, chapters, styles, showTOC, outline, selectedChapterIds, authorProfile, authorBioContent, coverImageUrl]);
 
   if (!isClient) {
     return (

@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Font, Link } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Font, Link, Image } from '@react-pdf/renderer';
 import { EditorStyles, parseOutlineForTOC } from '@/lib/publish/content-transformer';
 import { EditorChapter } from '@/lib/publish/types';
+import { AuthorProfile } from '@/lib/definitions';
 
 Font.register({
   family: 'Times New Roman',
@@ -31,6 +32,9 @@ type PDFDocumentProps = {
   showTOC: boolean;
   outline?: string;
   selectedChapterIds: string[];
+  authorProfile?: AuthorProfile;
+  authorBioContent?: string;
+  coverImageUrl?: string;
 };
 
 const EXCLUDED_HEADINGS = [
@@ -201,6 +205,9 @@ export function PDFDocument({
   showTOC,
   outline,
   selectedChapterIds,
+  authorProfile,
+  authorBioContent,
+  coverImageUrl,
 }: PDFDocumentProps) {
   const getFontFamily = (fontName: string) => {
     if (['Times New Roman', 'Georgia', 'Arial'].includes(fontName)) {
@@ -217,6 +224,16 @@ export function PDFDocument({
       paddingBottom: 72,
       paddingLeft: 72,
       paddingRight: 72,
+    },
+    coverPage: {
+      flexDirection: 'column',
+      backgroundColor: '#FFFFFF',
+      padding: 0,
+    },
+    coverImage: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
     },
     header: {
       position: 'absolute',
@@ -304,14 +321,58 @@ export function PDFDocument({
       fontWeight: 'bold',
       color: styles.chapterTitleColor,
     },
-    inlineText: {
-      fontFamily: getFontFamily(styles.bodyFont),
+    authorPage: {
+      flex: 1,
+      padding: 20,
     },
-    boldText: {
+    authorTitle: {
+      fontFamily: getFontFamily(styles.chapterTitleFont),
+      fontSize: 24,
+      textAlign: 'center',
+      marginBottom: 30,
       fontWeight: 'bold',
     },
-    italicText: {
+    authorName: {
+      fontFamily: getFontFamily(styles.chapterTitleFont),
+      fontSize: 20,
+      textAlign: 'center',
+      marginBottom: 10,
+      fontWeight: 'bold',
+    },
+    authorFullName: {
+      fontFamily: getFontFamily(styles.bodyFont),
+      fontSize: 14,
+      textAlign: 'center',
+      marginBottom: 20,
       fontStyle: 'italic',
+      color: '#666666',
+    },
+    authorBio: {
+      fontFamily: getFontFamily(styles.bodyFont),
+      fontSize: styles.bodySize,
+      color: styles.bodyColor,
+      lineHeight: 1.6,
+      textAlign: 'justify',
+      marginBottom: 20,
+    },
+    authorCredentials: {
+      fontFamily: getFontFamily(styles.bodyFont),
+      fontSize: styles.bodySize - 1,
+      color: '#555555',
+      marginBottom: 15,
+    },
+    authorContact: {
+      fontFamily: getFontFamily(styles.bodyFont),
+      fontSize: styles.bodySize - 1,
+      color: '#555555',
+      marginBottom: 5,
+    },
+    authorPhoto: {
+      width: 150,
+      height: 150,
+      borderRadius: 75,
+      marginBottom: 20,
+      alignSelf: 'center',
     },
   });
 
@@ -341,11 +402,17 @@ export function PDFDocument({
 
   return (
     <Document>
-      <Page size="A4" style={pdfStyles.page}>
-        <View style={pdfStyles.titlePage}>
-          <Text style={pdfStyles.bookTitleText}>{bookTitle}</Text>
-        </View>
-      </Page>
+      {coverImageUrl ? (
+        <Page size="A4" style={pdfStyles.coverPage}>
+          <Image src={coverImageUrl} style={pdfStyles.coverImage} />
+        </Page>
+      ) : (
+        <Page size="A4" style={pdfStyles.page}>
+          <View style={pdfStyles.titlePage}>
+            <Text style={pdfStyles.bookTitleText}>{bookTitle}</Text>
+          </View>
+        </Page>
+      )}
 
       {showTOC && filteredTocData.length > 0 && (
         <Page size="A4" style={pdfStyles.page}>
@@ -409,6 +476,52 @@ export function PDFDocument({
           </Page>
         );
       })}
+
+      {authorProfile && (
+        <Page size="A4" style={pdfStyles.page}>
+          <View style={pdfStyles.authorPage}>
+            <Text style={pdfStyles.authorTitle}>About the Author</Text>
+            
+            {authorProfile.photoUrl && (
+              <Image src={authorProfile.photoUrl} style={pdfStyles.authorPhoto} />
+            )}
+            
+            <Text style={pdfStyles.authorName}>{authorProfile.penName}</Text>
+            
+            {authorProfile.fullName && (
+              <Text style={pdfStyles.authorFullName}>{authorProfile.fullName}</Text>
+            )}
+            
+            <Text style={pdfStyles.authorBio}>{authorProfile.bio}</Text>
+            
+            {authorProfile.credentials && (
+              <Text style={pdfStyles.authorCredentials}>
+                <Text style={{ fontWeight: 'bold' }}>Credentials: </Text>
+                {authorProfile.credentials}
+              </Text>
+            )}
+            
+            {authorProfile.website && (
+              <Text style={pdfStyles.authorContact}>
+                <Text style={{ fontWeight: 'bold' }}>Website: </Text>
+                {authorProfile.website}
+              </Text>
+            )}
+            
+            {authorProfile.email && (
+              <Text style={pdfStyles.authorContact}>
+                <Text style={{ fontWeight: 'bold' }}>Contact: </Text>
+                {authorProfile.email}
+              </Text>
+            )}
+          </View>
+          
+          <View style={pdfStyles.footer} fixed>
+            <Text>{bookTitle}</Text>
+            <Text render={({ pageNumber }) => `${pageNumber}`} />
+          </View>
+        </Page>
+      )}
     </Document>
   );
 }

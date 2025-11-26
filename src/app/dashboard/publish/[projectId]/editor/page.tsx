@@ -1,32 +1,33 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useRouter, notFound } from 'next/navigation';
 import Link from 'next/link';
-import { useFirestore } from '@/firebase';
+import Image from 'next/image';
+import { useFirestore, useMemoFirebase } from '@/firebase';
 import { useAuthUser } from '@/firebase/auth/use-user';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { doc } from 'firebase/firestore';
-import { Project, Chapter } from '@/lib/definitions';
+import { doc, updateDoc } from 'firebase/firestore';
+import { Project, Chapter, AuthorProfile } from '@/lib/definitions';
 import { 
   EditorStyles, 
   defaultStyles,
 } from '@/lib/publish/content-transformer';
 import { EditorChapter } from '@/lib/publish/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, ArrowLeft, BookOpen, List } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, ArrowLeft, BookOpen, List, Upload, ImageIcon, User, X } from 'lucide-react';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 import { StylePanel } from '@/components/publish/style-panel';
 import { BookEditor } from '@/components/publish/book-editor';
 import { PDFPreview } from '@/components/publish/pdf-preview';
-
-function useMemoFirebase<T>(factory: () => T, deps: React.DependencyList): T {
-  return useMemo(factory, deps);
-}
+import { useToast } from '@/hooks/use-toast';
 
 const EXCLUDED_HEADINGS = [
   'introduction',
@@ -117,8 +118,10 @@ export default function EditorPage() {
   const params = useParams<{ projectId: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { toast } = useToast();
   const projectId = params.projectId;
   const chaptersParam = searchParams.get('chapters');
+  const authorProfileParam = searchParams.get('authorProfile');
   const { user } = useAuthUser();
   const firestore = useFirestore();
   
@@ -127,6 +130,11 @@ export default function EditorPage() {
   const [currentChapterId, setCurrentChapterId] = useState<string>('');
   const [chapterContents, setChapterContents] = useState<Map<string, string>>(new Map());
   const [initialized, setInitialized] = useState(false);
+  const [activeTab, setActiveTab] = useState('chapters');
+  const [authorBioContent, setAuthorBioContent] = useState('');
+  const [coverImageUrl, setCoverImageUrl] = useState<string>('');
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedChapterIds = useMemo(() => {
     if (!chaptersParam) return [];
@@ -138,7 +146,43 @@ export default function EditorPage() {
     return doc(firestore, 'users', user.uid, 'projects', projectId);
   }, [user, firestore, projectId]);
 
+  const authorProfileDocRef = useMemoFirebase(() => {
+    if (!user || !authorProfileParam || authorProfileParam === 'none') return null;
+    return doc(firestore, 'users', user.uid, 'authorProfiles', authorProfileParam);
+  }, [user, firestore, authorProfileParam]);
+
   const { data: project, isLoading } = useDoc<Project>(projectDocRef);
+  const { data: authorProfile, isLoading: authorProfileLoading } = useDoc<AuthorProfile>(authorProfileDocRef);
+
+  useEffect(() => {
+    if (project?.coverImageUrl) {
+      setCoverImageUrl(project.coverImageUrl);
+    }
+  }, [project?.coverImageUrl]);
+
+  useEffect(() => {
+    if (authorProfile && !authorBioContent) {
+      let bioHtml = `<h2>About the Author</h2>`;
+      if (authorProfile.photoUrl) {
+        bioHtml += `<p><img src="${authorProfile.photoUrl}" alt="${authorProfile.penName}" style="max-width: 200px; border-radius: 8px;" /></p>`;
+      }
+      bioHtml += `<h3>${authorProfile.penName}</h3>`;
+      if (authorProfile.fullName) {
+        bioHtml += `<p><em>${authorProfile.fullName}</em></p>`;
+      }
+      bioHtml += `<p>${authorProfile.bio}</p>`;
+      if (authorProfile.credentials) {
+        bioHtml += `<p><strong>Credentials:</strong> ${authorProfile.credentials}</p>`;
+      }
+      if (authorProfile.website) {
+        bioHtml += `<p><strong>Website:</strong> ${authorProfile.website}</p>`;
+      }
+      if (authorProfile.email) {
+        bioHtml += `<p><strong>Contact:</strong> ${authorProfile.email}</p>`;
+      }
+      setAuthorBioContent(bioHtml);
+    }
+  }, [authorProfile, authorBioContent]);
 
   const editorChapters: EditorChapter[] = useMemo(() => {
     if (!project?.chapters) return [];
@@ -193,6 +237,65 @@ export default function EditorPage() {
     }
   };
 
+  const handleCoverImageUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please upload an image file (JPG, PNG, etc.)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingCover(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const dataUrl = e.target?.result as string;
+        setCoverImageUrl(dataUrl);
+        
+        if (user && projectId) {
+          const projectRef = doc(firestore, 'users', user.uid, 'projects', projectId);
+          await updateDoc(projectRef, {
+            coverImageUrl: dataUrl,
+          });
+          toast({
+            title: "Cover Uploaded",
+            description: "Your book cover has been saved.",
+          });
+        }
+        setIsUploadingCover(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Error uploading cover:", error);
+      toast({
+        title: "Upload Failed",
+        description: "Could not upload the cover image. Please try again.",
+        variant: "destructive",
+      });
+      setIsUploadingCover(false);
+    }
+  };
+
+  const handleRemoveCover = async () => {
+    setCoverImageUrl('');
+    if (user && projectId) {
+      try {
+        const projectRef = doc(firestore, 'users', user.uid, 'projects', projectId);
+        await updateDoc(projectRef, {
+          coverImageUrl: null,
+        });
+        toast({
+          title: "Cover Removed",
+          description: "Your book cover has been removed.",
+        });
+      } catch (error) {
+        console.error("Error removing cover:", error);
+      }
+    }
+  };
+
   const chaptersForPDF = useMemo(() => {
     return editorChapters.map(ch => ({
       ...ch,
@@ -221,6 +324,8 @@ export default function EditorPage() {
     ? (chapterContents.get(currentChapterId) || (currentChapter ? convertMarkdownToHtml(currentChapter.content) : ''))
     : '';
 
+  const hasAuthorProfile = authorProfileParam && authorProfileParam !== 'none' && authorProfile;
+
   return (
     <>
       <FloatingCreditWidget />
@@ -239,6 +344,63 @@ export default function EditorPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1 space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5" />
+                  Book Cover
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {coverImageUrl ? (
+                  <div className="relative">
+                    <div className="aspect-[3/4] w-full relative rounded-lg overflow-hidden border">
+                      <Image
+                        src={coverImageUrl}
+                        alt="Book cover"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={handleRemoveCover}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    className="aspect-[3/4] w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {isUploadingCover ? (
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    ) : (
+                      <>
+                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground text-center">
+                          Click to upload<br />book cover
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleCoverImageUpload(file);
+                  }}
+                />
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -283,11 +445,49 @@ export default function EditorPage() {
               showTOC={showTOC}
               outline={project?.outline}
               selectedChapterIds={selectedChapterIds}
+              authorProfile={hasAuthorProfile ? authorProfile : undefined}
+              authorBioContent={authorBioContent}
+              coverImageUrl={coverImageUrl}
             />
           </div>
 
           <div className="lg:col-span-3">
-            {currentChapter ? (
+            {hasAuthorProfile ? (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="chapters">Chapters</TabsTrigger>
+                  <TabsTrigger value="author" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    About the Author
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="chapters">
+                  {currentChapter ? (
+                    <BookEditor
+                      content={currentContent}
+                      onChange={handleContentChange}
+                      styles={styles}
+                      chapterTitle={currentChapter.title}
+                    />
+                  ) : (
+                    <Card className="h-[600px] flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <BookOpen className="h-12 w-12 mx-auto mb-4" />
+                        <p>Select a chapter to start editing</p>
+                      </div>
+                    </Card>
+                  )}
+                </TabsContent>
+                <TabsContent value="author">
+                  <BookEditor
+                    content={authorBioContent}
+                    onChange={setAuthorBioContent}
+                    styles={styles}
+                    chapterTitle="About the Author"
+                  />
+                </TabsContent>
+              </Tabs>
+            ) : currentChapter ? (
               <BookEditor
                 content={currentContent}
                 onChange={handleContentChange}
