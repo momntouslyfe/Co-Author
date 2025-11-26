@@ -376,9 +376,9 @@ export function PDFDocument({
     },
   });
 
-  const renderSegments = (segments: TextSegment[], baseStyle: any) => {
+  const renderSegments = (segments: TextSegment[], baseStyle: any, key?: string | number) => {
     return (
-      <Text style={baseStyle}>
+      <Text key={key} style={baseStyle}>
         {segments.map((segment, idx) => {
           const segmentStyle: any = {};
           if (segment.bold) segmentStyle.fontWeight = 'bold';
@@ -447,11 +447,11 @@ export function PDFDocument({
             
             {elements.map((element, index) => {
               if (element.type === 'heading') {
-                return renderSegments(element.segments, pdfStyles.subtopic);
+                return renderSegments(element.segments, pdfStyles.subtopic, `heading-${index}`);
               }
               if (element.type === 'list-item') {
                 return (
-                  <Text key={index} style={pdfStyles.listItem}>
+                  <Text key={`list-${index}`} style={pdfStyles.listItem}>
                     {'\u2022'}{' '}
                     {element.segments.map((segment, idx) => {
                       const segmentStyle: any = {};
@@ -466,7 +466,7 @@ export function PDFDocument({
                   </Text>
                 );
               }
-              return renderSegments(element.segments, pdfStyles.bodyText);
+              return renderSegments(element.segments, pdfStyles.bodyText, `body-${index}`);
             })}
             
             <View style={pdfStyles.footer} fixed>
