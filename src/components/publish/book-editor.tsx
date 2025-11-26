@@ -34,6 +34,7 @@ type BookEditorProps = {
 
 export function BookEditor({ content, onChange, styles, chapterTitle }: BookEditorProps) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: {
@@ -78,7 +79,20 @@ export function BookEditor({ content, onChange, styles, chapterTitle }: BookEdit
   }, [editor, styles.bodyFont, styles.bodySize, styles.bodyColor]);
 
   if (!editor) {
-    return null;
+    return (
+      <div className="border rounded-lg bg-white shadow-sm">
+        <div className="border-b p-2 h-12 bg-muted/30 animate-pulse" />
+        <div 
+          className="bg-white flex items-center justify-center"
+          style={{
+            aspectRatio: '8.5/11',
+            maxHeight: '800px',
+          }}
+        >
+          <div className="text-muted-foreground">Loading editor...</div>
+        </div>
+      </div>
+    );
   }
 
   return (
