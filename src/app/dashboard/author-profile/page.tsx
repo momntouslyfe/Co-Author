@@ -121,9 +121,11 @@ export default function AuthorProfilePage() {
     },
   });
 
-  const authorProfilesQuery = useMemoFirebase(() => {
+  const authorProfilesQuery = useMemo(() => {
     if (!user) return null;
-    return collection(firestore, 'users', user.uid, 'authorProfiles');
+    const q = collection(firestore, 'users', user.uid, 'authorProfiles');
+    (q as any).__memo = true;
+    return q;
   }, [user, firestore]);
 
   const { data: savedProfiles, isLoading: profilesLoading } = useCollection<AuthorProfile>(authorProfilesQuery);
