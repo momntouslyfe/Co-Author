@@ -844,11 +844,13 @@ export default function ChapterPage() {
     let formattedContent = '';
     
     if (chapterDetails) {
-      formattedContent += `# ${chapterDetails.title}\n\n`;
+      formattedContent += `${chapterDetails.title}\n\n`;
     }
     
     const cleanContent = chapterContent
-      .replace(/\$\$([^$]+)\$\$/g, (_, sectionTitle) => `\n## ${sectionTitle.trim()}\n`)
+      .replace(/\$\$(Your Action Step|Coming Up Next)\$\$/gi, '')
+      .replace(/\$\$([^$]+)\$\$/g, (_, sectionTitle) => `\n${sectionTitle.trim()}\n`)
+      .replace(/\n{3,}/g, '\n\n')
       .trim();
     
     formattedContent += cleanContent;
