@@ -29,13 +29,23 @@ export const AVAILABLE_FONTS = [
 export type FontName = typeof AVAILABLE_FONTS[number]['name'];
 
 let fontsRegistered = false;
+let fontsRegistrationPromise: Promise<void> | null = null;
 
 export async function registerFonts(): Promise<void> {
   if (fontsRegistered) {
     return;
   }
   
+  if (fontsRegistrationPromise) {
+    return fontsRegistrationPromise;
+  }
+  
+  fontsRegistrationPromise = doRegisterFonts();
+  await fontsRegistrationPromise;
   fontsRegistered = true;
+}
+
+async function doRegisterFonts(): Promise<void> {
 
   Font.register({
     family: 'Roboto',

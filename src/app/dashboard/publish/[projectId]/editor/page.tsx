@@ -19,11 +19,12 @@ import { Loader2, ArrowLeft, Download, Upload, ImageIcon, X, ChevronLeft, Chevro
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 import { TemplateSelector } from '@/components/publish/template-selector';
 import { ChapterPreview, FullBookPreview } from '@/components/publish/chapter-preview';
+import { PaginatedChapterPreview } from '@/components/publish/paginated-chapter-preview';
 import { useToast } from '@/hooks/use-toast';
 import dynamic from 'next/dynamic';
 
-const PDFDownloadLinkInner = dynamic(
-  () => import('@/components/publish/pdf-download-link-inner').then(mod => mod.PDFDownloadLinkInner),
+const LazyPDFExport = dynamic(
+  () => import('@/components/publish/lazy-pdf-export'),
   { ssr: false }
 );
 
@@ -435,7 +436,7 @@ export default function VisualEditorPage() {
                 </Button>
               </div>
               
-              <PDFDownloadLinkInner
+              <LazyPDFExport
                 bookTitle={project.title}
                 chapters={editorChapters}
                 styles={editorStyles}
@@ -598,12 +599,11 @@ export default function VisualEditorPage() {
                 {currentChapter && (
                   <div className="flex justify-center">
                     <div className="w-full max-w-2xl">
-                      <ChapterPreview
+                      <PaginatedChapterPreview
                         chapterNumber={currentChapterIndex + 1}
                         chapterTitle={currentChapter.title}
                         sections={currentChapter.sections}
                         styles={selectedTemplate.styles}
-                        showPageNumbers
                       />
                     </div>
                   </div>
