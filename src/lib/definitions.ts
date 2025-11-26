@@ -13,6 +13,26 @@ export type Chapter = {
   content: string;
 };
 
+export type PublishStyles = {
+  templateId?: string;
+  showTOC?: boolean;
+  chapterTitleFont?: string;
+  chapterTitleSize?: number;
+  chapterTitleColor?: string;
+  sectionTitleFont?: string;
+  sectionTitleSize?: number;
+  sectionTitleColor?: string;
+  bodyFont?: string;
+  bodySize?: number;
+  bodyColor?: string;
+  headerFont?: string;
+  headerSize?: number;
+  headerColor?: string;
+  footerFont?: string;
+  footerSize?: number;
+  footerColor?: string;
+};
+
 export type Project = {
   id: string;
   userId: string;
@@ -32,6 +52,7 @@ export type Project = {
   styleProfileId?: string;
   authorProfileId?: string;
   currentStep?: 'blueprint' | 'title' | 'chapters';
+  publishStyles?: PublishStyles;
 };
 
 export type ResearchProfile = {

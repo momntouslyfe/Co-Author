@@ -194,6 +194,9 @@ export default function VisualEditorPage() {
   const [viewMode, setViewMode] = useState<'single' | 'all'>('single');
   const [coverImageUrl, setCoverImageUrl] = useState<string>('');
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isSavingStyles, setIsSavingStyles] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [stylesLoaded, setStylesLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [customStyles, setCustomStyles] = useState({
@@ -213,29 +216,117 @@ export default function VisualEditorPage() {
     footerSize: 0,
     footerColor: '',
   });
+
+  const [lastTemplateId, setLastTemplateId] = useState<string>('');
+
+  useEffect(() => {
+    if (project?.publishStyles && !stylesLoaded) {
+      const savedStyles = project.publishStyles;
+      if (savedStyles.templateId) {
+        const savedTemplate = TEMPLATES.find(t => t.id === savedStyles.templateId);
+        if (savedTemplate) {
+          setSelectedTemplate(savedTemplate);
+          setLastTemplateId(savedTemplate.id);
+        }
+      }
+      setCustomStyles({
+        chapterTitleFont: savedStyles.chapterTitleFont || selectedTemplate.styles.chapterTitleFont,
+        chapterTitleSize: savedStyles.chapterTitleSize || selectedTemplate.styles.chapterTitleSize,
+        chapterTitleColor: savedStyles.chapterTitleColor || selectedTemplate.styles.chapterTitleColor,
+        sectionTitleFont: savedStyles.sectionTitleFont || selectedTemplate.styles.sectionTitleFont,
+        sectionTitleSize: savedStyles.sectionTitleSize || selectedTemplate.styles.sectionTitleSize,
+        sectionTitleColor: savedStyles.sectionTitleColor || selectedTemplate.styles.sectionTitleColor,
+        bodyFont: savedStyles.bodyFont || selectedTemplate.styles.bodyFont,
+        bodySize: savedStyles.bodySize || selectedTemplate.styles.bodySize,
+        bodyColor: savedStyles.bodyColor || selectedTemplate.styles.bodyColor,
+        headerFont: savedStyles.headerFont || selectedTemplate.styles.headerFont,
+        headerSize: savedStyles.headerSize || selectedTemplate.styles.headerSize,
+        headerColor: savedStyles.headerColor || selectedTemplate.styles.headerColor,
+        footerFont: savedStyles.footerFont || selectedTemplate.styles.footerFont,
+        footerSize: savedStyles.footerSize || selectedTemplate.styles.footerSize,
+        footerColor: savedStyles.footerColor || selectedTemplate.styles.footerColor,
+      });
+      if (savedStyles.showTOC !== undefined) setShowTOC(savedStyles.showTOC);
+      setStylesLoaded(true);
+      setHasUnsavedChanges(false);
+    } else if (!project?.publishStyles && !stylesLoaded && project) {
+      setCustomStyles({
+        chapterTitleFont: selectedTemplate.styles.chapterTitleFont,
+        chapterTitleSize: selectedTemplate.styles.chapterTitleSize,
+        chapterTitleColor: selectedTemplate.styles.chapterTitleColor,
+        sectionTitleFont: selectedTemplate.styles.sectionTitleFont,
+        sectionTitleSize: selectedTemplate.styles.sectionTitleSize,
+        sectionTitleColor: selectedTemplate.styles.sectionTitleColor,
+        bodyFont: selectedTemplate.styles.bodyFont,
+        bodySize: selectedTemplate.styles.bodySize,
+        bodyColor: selectedTemplate.styles.bodyColor,
+        headerFont: selectedTemplate.styles.headerFont,
+        headerSize: selectedTemplate.styles.headerSize,
+        headerColor: selectedTemplate.styles.headerColor,
+        footerFont: selectedTemplate.styles.footerFont,
+        footerSize: selectedTemplate.styles.footerSize,
+        footerColor: selectedTemplate.styles.footerColor,
+      });
+      setLastTemplateId(selectedTemplate.id);
+      setStylesLoaded(true);
+      setHasUnsavedChanges(false);
+    }
+  }, [project?.publishStyles, stylesLoaded, selectedTemplate.styles, project]);
   
   useEffect(() => {
-    setCustomStyles({
-      chapterTitleFont: selectedTemplate.styles.chapterTitleFont,
-      chapterTitleSize: selectedTemplate.styles.chapterTitleSize,
-      chapterTitleColor: selectedTemplate.styles.chapterTitleColor,
-      sectionTitleFont: selectedTemplate.styles.sectionTitleFont,
-      sectionTitleSize: selectedTemplate.styles.sectionTitleSize,
-      sectionTitleColor: selectedTemplate.styles.sectionTitleColor,
-      bodyFont: selectedTemplate.styles.bodyFont,
-      bodySize: selectedTemplate.styles.bodySize,
-      bodyColor: selectedTemplate.styles.bodyColor,
-      headerFont: selectedTemplate.styles.headerFont,
-      headerSize: selectedTemplate.styles.headerSize,
-      headerColor: selectedTemplate.styles.headerColor,
-      footerFont: selectedTemplate.styles.footerFont,
-      footerSize: selectedTemplate.styles.footerSize,
-      footerColor: selectedTemplate.styles.footerColor,
-    });
-  }, [selectedTemplate]);
+    if (stylesLoaded && selectedTemplate.id !== lastTemplateId) {
+      setCustomStyles({
+        chapterTitleFont: selectedTemplate.styles.chapterTitleFont,
+        chapterTitleSize: selectedTemplate.styles.chapterTitleSize,
+        chapterTitleColor: selectedTemplate.styles.chapterTitleColor,
+        sectionTitleFont: selectedTemplate.styles.sectionTitleFont,
+        sectionTitleSize: selectedTemplate.styles.sectionTitleSize,
+        sectionTitleColor: selectedTemplate.styles.sectionTitleColor,
+        bodyFont: selectedTemplate.styles.bodyFont,
+        bodySize: selectedTemplate.styles.bodySize,
+        bodyColor: selectedTemplate.styles.bodyColor,
+        headerFont: selectedTemplate.styles.headerFont,
+        headerSize: selectedTemplate.styles.headerSize,
+        headerColor: selectedTemplate.styles.headerColor,
+        footerFont: selectedTemplate.styles.footerFont,
+        footerSize: selectedTemplate.styles.footerSize,
+        footerColor: selectedTemplate.styles.footerColor,
+      });
+      setLastTemplateId(selectedTemplate.id);
+      setHasUnsavedChanges(true);
+    }
+  }, [selectedTemplate, stylesLoaded, lastTemplateId]);
   
   const updateCustomStyle = (key: keyof typeof customStyles, value: string | number) => {
     setCustomStyles(prev => ({ ...prev, [key]: value }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSaveStyles = async () => {
+    if (!projectDocRef) return;
+    
+    setIsSavingStyles(true);
+    try {
+      await updateDoc(projectDocRef, {
+        publishStyles: {
+          templateId: selectedTemplate.id,
+          showTOC,
+          ...customStyles,
+        },
+      });
+      setHasUnsavedChanges(false);
+      toast({ title: 'Styles saved', description: 'Your typography settings have been saved.' });
+    } catch (error) {
+      console.error('Error saving styles:', error);
+      toast({ title: 'Save failed', description: 'Could not save your styles.', variant: 'destructive' });
+    } finally {
+      setIsSavingStyles(false);
+    }
+  };
+
+  const handleTOCChange = (checked: boolean) => {
+    setShowTOC(checked);
+    setHasUnsavedChanges(true);
   };
   
   const mergedTemplateStyles: TemplateStyles = useMemo(() => ({
@@ -632,7 +723,7 @@ export default function VisualEditorPage() {
                     <Switch
                       id="show-toc"
                       checked={showTOC}
-                      onCheckedChange={setShowTOC}
+                      onCheckedChange={handleTOCChange}
                     />
                   </div>
                   
@@ -798,7 +889,12 @@ export default function VisualEditorPage() {
                           <div className="space-y-3">
                             {parsedChapters.map((chapter, idx) => (
                               <div key={chapter.id}>
-                                <div 
+                                <button 
+                                  onClick={() => {
+                                    const element = document.getElementById(`chapter-${chapter.id}`);
+                                    element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                  }}
+                                  className="w-full text-left flex justify-between items-baseline hover:opacity-70 transition-opacity cursor-pointer"
                                   style={{
                                     fontFamily: mergedTemplateStyles.bodyFont,
                                     fontSize: 14 * 0.75,
@@ -806,23 +902,47 @@ export default function VisualEditorPage() {
                                     fontWeight: 600,
                                   }}
                                 >
-                                  {chapter.title}
-                                </div>
-                                <div className="pl-4 space-y-1">
+                                  <span>{chapter.title}</span>
+                                  <span 
+                                    className="flex-shrink-0 ml-2"
+                                    style={{
+                                      fontFamily: mergedTemplateStyles.bodyFont,
+                                      fontSize: 12 * 0.75,
+                                      color: mergedTemplateStyles.bodyColor,
+                                    }}
+                                  >
+                                    {cumulativePageCounts[idx] || 1}
+                                  </span>
+                                </button>
+                                <div className="pl-4 space-y-1 mt-1">
                                   {chapter.sections
                                     .filter(s => s.title !== 'Introduction' && s.title !== 'Content')
-                                    .slice(0, 4)
                                     .map((section, sIdx) => (
-                                      <div 
+                                      <button 
                                         key={sIdx}
+                                        onClick={() => {
+                                          const element = document.getElementById(`chapter-${chapter.id}`);
+                                          element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        }}
+                                        className="w-full text-left flex justify-between items-baseline hover:opacity-70 transition-opacity cursor-pointer"
                                         style={{
                                           fontFamily: mergedTemplateStyles.bodyFont,
                                           fontSize: 11 * 0.75,
-                                          color: mergedTemplateStyles.bodyColor,
+                                          color: mergedTemplateStyles.sectionTitleColor,
                                         }}
                                       >
-                                        {section.title}
-                                      </div>
+                                        <span className="flex items-center gap-1">
+                                          <span style={{ 
+                                            width: 3, 
+                                            height: 3, 
+                                            borderRadius: '50%', 
+                                            backgroundColor: mergedTemplateStyles.accentColor,
+                                            display: 'inline-block',
+                                            flexShrink: 0,
+                                          }} />
+                                          {section.title}
+                                        </span>
+                                      </button>
                                     ))}
                                 </div>
                               </div>
@@ -833,7 +953,7 @@ export default function VisualEditorPage() {
                     )}
                     
                     {parsedChapters.map((chapter, index) => (
-                      <div key={chapter.id}>
+                      <div key={chapter.id} id={`chapter-${chapter.id}`}>
                         <div className="text-center text-sm text-muted-foreground mb-2 font-medium">
                           Chapter {index + 1}: {chapter.title}
                         </div>
@@ -1167,6 +1287,31 @@ export default function VisualEditorPage() {
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
+
+                  <div className="pt-4 border-t">
+                    <Button
+                      onClick={handleSaveStyles}
+                      disabled={isSavingStyles || !hasUnsavedChanges}
+                      className="w-full gap-2"
+                      size="sm"
+                    >
+                      {isSavingStyles ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          {hasUnsavedChanges ? 'Save Changes' : 'All Changes Saved'}
+                        </>
+                      )}
+                    </Button>
+                    {hasUnsavedChanges && (
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        You have unsaved changes
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </div>
