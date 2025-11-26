@@ -30,7 +30,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: ['firebase-admin', '@react-pdf/renderer'],
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.externals = [...(config.externals || []), '@react-pdf/renderer'];
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
