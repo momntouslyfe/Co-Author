@@ -15,14 +15,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-const PDFDownloadLink = dynamic(
-  async () => {
-    const { PDFDownloadLink } = await import('@react-pdf/renderer');
-    return PDFDownloadLink;
-  },
-  { ssr: false }
-);
-
 const PDFViewer = dynamic(
   async () => {
     const { PDFViewer } = await import('@react-pdf/renderer');
@@ -34,6 +26,11 @@ const PDFViewer = dynamic(
 const PDFDocument = dynamic(
   () => import('./pdf-document').then((mod) => mod.PDFDocument),
   { ssr: false, loading: () => <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-8 w-8 animate-spin" /></div> }
+);
+
+const PDFDownloadWrapper = dynamic(
+  () => import('./pdf-download-wrapper'),
+  { ssr: false }
 );
 
 type PDFPreviewProps = {
@@ -115,21 +112,10 @@ export function PDFPreview({
             Preview PDF
           </Button>
           
-          <PDFDownloadLink
+          <PDFDownloadWrapper
             document={<PDFDocument {...documentProps} />}
             fileName={`${bookTitle.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`}
-          >
-            {({ loading }: any) => (
-              <Button className="w-full gap-2" disabled={loading}>
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                {loading ? 'Generating...' : 'Export PDF'}
-              </Button>
-            )}
-          </PDFDownloadLink>
+          />
         </CardContent>
       </Card>
 
