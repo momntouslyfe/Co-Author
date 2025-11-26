@@ -6,6 +6,17 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 ## Recent Changes
 
+### November 26, 2025 - Author Profile & Book Cover Feature
+- **Author Profile Management**: Full CRUD operations for managing multiple author profiles with pen name, bio, credentials, photo, website, and email
+- **Author Profile Integration**: Optional author profile selection during project creation and in the publish workflow chapter selection
+- **Book Cover Upload**: Upload custom book covers in the PDF editor with image preview and persistence to Firestore
+- **Enhanced PDF Export**: 
+  - Book cover displayed as full-page first page when uploaded
+  - "About the Author" page appended at end of PDF when author profile selected
+  - Author photo, bio, credentials, and contact info rendered in styled format
+- **Files Added/Modified**: `src/app/dashboard/author-profile/page.tsx`, editor page updates, PDF document enhancements
+- **Data Model**: Added `AuthorProfile` type with penName, fullName, bio, credentials, photoUrl, website, email fields
+
 ### November 26, 2025 - Publish Module Implementation
 - **New Publish Module**: Complete module for exporting book projects as publication-ready PDFs
 - **Three-Stage Workflow**: Project list → Chapter selection → PDF editor
