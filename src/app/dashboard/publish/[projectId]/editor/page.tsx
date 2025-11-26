@@ -22,7 +22,7 @@ import { AVAILABLE_FONTS } from '@/lib/publish/fonts';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 import { TemplateSelector } from '@/components/publish/template-selector';
 import { ChapterPreview, FullBookPreview } from '@/components/publish/chapter-preview';
-import { PaginatedChapterPreview } from '@/components/publish/paginated-chapter-preview';
+import { PaginatedChapterPreview, getChapterPageCount, Section } from '@/components/publish/paginated-chapter-preview';
 import { useToast } from '@/hooks/use-toast';
 import dynamic from 'next/dynamic';
 
@@ -30,11 +30,6 @@ const LazyPDFExport = dynamic(
   () => import('@/components/publish/lazy-pdf-export'),
   { ssr: false }
 );
-
-interface Section {
-  title: string;
-  content: string;
-}
 
 interface ParsedChapter {
   id: string;
@@ -304,6 +299,38 @@ export default function VisualEditorPage() {
       .filter((c): c is ParsedChapter => c !== null);
   }, [project?.chapters, selectedChapterIds]);
 
+  const chapterPageCounts = useMemo(() => {
+    return parsedChapters.map(chapter => 
+      getChapterPageCount(chapter.title, chapter.sections, mergedTemplateStyles)
+    );
+  }, [parsedChapters, mergedTemplateStyles]);
+
+  const cumulativePageCounts = useMemo(() => {
+    let frontMatterPages = 0;
+    if (coverImageUrl) {
+      frontMatterPages += 1;
+    } else {
+      frontMatterPages += 1;
+    }
+    if (showTOC && parsedChapters.length > 0) frontMatterPages += 1;
+    
+    const counts: number[] = [];
+    let cumulative = frontMatterPages;
+    for (let i = 0; i < chapterPageCounts.length; i++) {
+      counts.push(cumulative + 1);
+      cumulative += chapterPageCounts[i];
+    }
+    return counts;
+  }, [chapterPageCounts, coverImageUrl, showTOC, parsedChapters.length]);
+
+  const totalBookPages = useMemo(() => {
+    let total = cumulativePageCounts.length > 0 
+      ? cumulativePageCounts[cumulativePageCounts.length - 1] + chapterPageCounts[chapterPageCounts.length - 1] - 1
+      : 0;
+    if (authorProfile) total += 1;
+    return total;
+  }, [cumulativePageCounts, chapterPageCounts, authorProfile]);
+
   const currentChapter = parsedChapters[currentChapterIndex];
 
   const handlePrevChapter = () => {
@@ -534,7 +561,7 @@ export default function VisualEditorPage() {
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-3">
+          <div className="col-span-2">
             <div className="sticky top-24 space-y-4">
               <Card>
                 <CardHeader className="pb-3">
@@ -579,8 +606,8 @@ export default function VisualEditorPage() {
                         <Loader2 className="h-8 w-8 animate-spin" />
                       ) : (
                         <>
-                          <ImageIcon className="h-8 w-8" />
-                          <span className="text-sm">Upload Cover</span>
+                          <ImageIcon className="h-6 w-6" />
+                          <span className="text-xs">Upload Cover</span>
                         </>
                       )}
                     </button>
@@ -613,13 +640,306 @@ export default function VisualEditorPage() {
                     <div className="pt-2 border-t">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <BookOpen className="h-4 w-4" />
-                        <span>Author: {authorProfile.penName}</span>
+                        <span className="truncate">{authorProfile.penName}</span>
                       </div>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
+              {viewMode === 'single' && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Chapters</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[200px]">
+                      <div className="space-y-1">
+                        {parsedChapters.map((chapter, index) => (
+                          <button
+                            key={chapter.id}
+                            onClick={() => setCurrentChapterIndex(index)}
+                            className={`
+                              w-full text-left px-2 py-1.5 rounded-md text-xs transition-colors
+                              ${currentChapterIndex === index 
+                                ? 'bg-primary text-primary-foreground' 
+                                : 'hover:bg-muted'
+                              }
+                            `}
+                          >
+                            <span className="font-medium">Ch. {index + 1}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+
+          <div className="col-span-7">
+            {viewMode === 'single' ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrevChapter}
+                    disabled={currentChapterIndex === 0}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Chapter {currentChapterIndex + 1} of {parsedChapters.length}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextChapter}
+                    disabled={currentChapterIndex === parsedChapters.length - 1}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+
+                {currentChapter && (
+                  <div className="flex justify-center">
+                    <div className="w-full max-w-2xl">
+                      <PaginatedChapterPreview
+                        chapterNumber={currentChapterIndex + 1}
+                        chapterTitle={currentChapter.title}
+                        sections={currentChapter.sections}
+                        styles={mergedTemplateStyles}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <ScrollArea className="h-[calc(100vh-200px)]">
+                  <div className="w-full max-w-2xl mx-auto space-y-4 pb-8">
+                    <div className="text-center text-sm text-muted-foreground mb-4">
+                      Total: {totalBookPages} pages
+                    </div>
+                    
+                    {coverImageUrl && (
+                      <div className="space-y-2">
+                        <div className="text-center text-xs text-muted-foreground">Cover</div>
+                        <div
+                          className="bg-white shadow-lg mx-auto relative"
+                          style={{
+                            width: 612 * 0.75,
+                            height: 792 * 0.75,
+                          }}
+                        >
+                          <img 
+                            src={coverImageUrl} 
+                            alt="Book Cover" 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {!coverImageUrl && (
+                      <div className="space-y-2">
+                        <div className="text-center text-xs text-muted-foreground">Title Page</div>
+                        <div
+                          className="bg-white shadow-lg mx-auto flex items-center justify-center"
+                          style={{
+                            width: 612 * 0.75,
+                            height: 792 * 0.75,
+                            backgroundColor: mergedTemplateStyles.pageBackground,
+                          }}
+                        >
+                          <h1 
+                            style={{
+                              fontFamily: mergedTemplateStyles.chapterTitleFont,
+                              fontSize: 36 * 0.75,
+                              color: mergedTemplateStyles.chapterTitleColor,
+                              textAlign: 'center',
+                              fontWeight: 700,
+                              padding: '0 24px',
+                            }}
+                          >
+                            {project.title}
+                          </h1>
+                        </div>
+                      </div>
+                    )}
+
+                    {showTOC && parsedChapters.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-center text-xs text-muted-foreground">Table of Contents</div>
+                        <div
+                          className="bg-white shadow-lg mx-auto p-12"
+                          style={{
+                            width: 612 * 0.75,
+                            height: 792 * 0.75,
+                            backgroundColor: mergedTemplateStyles.pageBackground,
+                          }}
+                        >
+                          <h2 
+                            style={{
+                              fontFamily: mergedTemplateStyles.chapterTitleFont,
+                              fontSize: 24 * 0.75,
+                              color: mergedTemplateStyles.chapterTitleColor,
+                              textAlign: mergedTemplateStyles.chapterTitleAlign as any,
+                              marginBottom: 24 * 0.75,
+                              fontWeight: 700,
+                            }}
+                          >
+                            Table of Contents
+                          </h2>
+                          <div className="space-y-3">
+                            {parsedChapters.map((chapter, idx) => (
+                              <div key={chapter.id}>
+                                <div 
+                                  style={{
+                                    fontFamily: mergedTemplateStyles.bodyFont,
+                                    fontSize: 14 * 0.75,
+                                    color: mergedTemplateStyles.bodyColor,
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {chapter.title}
+                                </div>
+                                <div className="pl-4 space-y-1">
+                                  {chapter.sections
+                                    .filter(s => s.title !== 'Introduction' && s.title !== 'Content')
+                                    .slice(0, 4)
+                                    .map((section, sIdx) => (
+                                      <div 
+                                        key={sIdx}
+                                        style={{
+                                          fontFamily: mergedTemplateStyles.bodyFont,
+                                          fontSize: 11 * 0.75,
+                                          color: mergedTemplateStyles.bodyColor,
+                                        }}
+                                      >
+                                        {section.title}
+                                      </div>
+                                    ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {parsedChapters.map((chapter, index) => (
+                      <div key={chapter.id}>
+                        <div className="text-center text-sm text-muted-foreground mb-2 font-medium">
+                          Chapter {index + 1}: {chapter.title}
+                        </div>
+                        <PaginatedChapterPreview
+                          chapterNumber={index + 1}
+                          chapterTitle={chapter.title}
+                          sections={chapter.sections}
+                          styles={mergedTemplateStyles}
+                          startPageNumber={cumulativePageCounts[index] || 1}
+                          bookTitle={project.title}
+                        />
+                      </div>
+                    ))}
+
+                    {authorProfile && (
+                      <div className="space-y-2">
+                        <div className="text-center text-xs text-muted-foreground">About the Author</div>
+                        <div
+                          className="bg-white shadow-lg mx-auto p-12"
+                          style={{
+                            width: 612 * 0.75,
+                            height: 792 * 0.75,
+                            backgroundColor: mergedTemplateStyles.pageBackground,
+                          }}
+                        >
+                          <h2 
+                            style={{
+                              fontFamily: mergedTemplateStyles.chapterTitleFont,
+                              fontSize: 24 * 0.75,
+                              color: mergedTemplateStyles.chapterTitleColor,
+                              textAlign: mergedTemplateStyles.chapterTitleAlign as any,
+                              marginBottom: 24 * 0.75,
+                              fontWeight: 700,
+                            }}
+                          >
+                            About the Author
+                          </h2>
+                          {authorProfile.photoUrl && (
+                            <div className="flex justify-center mb-4">
+                              <img 
+                                src={authorProfile.photoUrl} 
+                                alt={authorProfile.penName}
+                                className="w-24 h-24 rounded-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <h3 
+                            style={{
+                              fontFamily: mergedTemplateStyles.chapterTitleFont,
+                              fontSize: 18 * 0.75,
+                              color: mergedTemplateStyles.chapterTitleColor,
+                              textAlign: 'center',
+                              marginBottom: 8 * 0.75,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {authorProfile.penName}
+                          </h3>
+                          {authorProfile.fullName && (
+                            <p 
+                              style={{
+                                fontFamily: mergedTemplateStyles.bodyFont,
+                                fontSize: 12 * 0.75,
+                                color: mergedTemplateStyles.bodyColor,
+                                textAlign: 'center',
+                                fontStyle: 'italic',
+                                marginBottom: 16 * 0.75,
+                              }}
+                            >
+                              {authorProfile.fullName}
+                            </p>
+                          )}
+                          <p 
+                            style={{
+                              fontFamily: mergedTemplateStyles.bodyFont,
+                              fontSize: mergedTemplateStyles.bodySize * 0.75,
+                              color: mergedTemplateStyles.bodyColor,
+                              lineHeight: mergedTemplateStyles.bodyLineHeight,
+                              textAlign: 'justify',
+                            }}
+                          >
+                            {authorProfile.bio}
+                          </p>
+                          {authorProfile.credentials && (
+                            <p 
+                              style={{
+                                fontFamily: mergedTemplateStyles.bodyFont,
+                                fontSize: 10 * 0.75,
+                                color: mergedTemplateStyles.bodyColor,
+                                marginTop: 12 * 0.75,
+                              }}
+                            >
+                              <strong>Credentials:</strong> {authorProfile.credentials}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
+
+          <div className="col-span-3">
+            <div className="sticky top-24 space-y-4">
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -849,115 +1169,7 @@ export default function VisualEditorPage() {
                   </Collapsible>
                 </CardContent>
               </Card>
-
-              {viewMode === 'single' && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Chapters</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ScrollArea className="h-[200px]">
-                      <div className="space-y-1">
-                        {parsedChapters.map((chapter, index) => (
-                          <button
-                            key={chapter.id}
-                            onClick={() => setCurrentChapterIndex(index)}
-                            className={`
-                              w-full text-left px-3 py-2 rounded-md text-sm transition-colors
-                              ${currentChapterIndex === index 
-                                ? 'bg-primary text-primary-foreground' 
-                                : 'hover:bg-muted'
-                              }
-                            `}
-                          >
-                            <span className="font-medium">Ch. {index + 1}:</span> {chapter.title}
-                          </button>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              )}
             </div>
-          </div>
-
-          <div className="col-span-9">
-            {viewMode === 'single' ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePrevChapter}
-                    disabled={currentChapterIndex === 0}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    Chapter {currentChapterIndex + 1} of {parsedChapters.length}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleNextChapter}
-                    disabled={currentChapterIndex === parsedChapters.length - 1}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-
-                {currentChapter && (
-                  <div className="flex justify-center">
-                    <div className="w-full max-w-2xl">
-                      <PaginatedChapterPreview
-                        chapterNumber={currentChapterIndex + 1}
-                        chapterTitle={currentChapter.title}
-                        sections={currentChapter.sections}
-                        styles={mergedTemplateStyles}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex justify-center">
-                <ScrollArea className="h-[calc(100vh-200px)]">
-                  <div className="w-full max-w-2xl mx-auto space-y-8 pb-8">
-                    {coverImageUrl && (
-                      <div
-                        className="bg-white shadow-lg mx-auto"
-                        style={{
-                          width: 612 * 0.75,
-                          height: 792 * 0.75,
-                        }}
-                      >
-                        <img 
-                          src={coverImageUrl} 
-                          alt="Book Cover" 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    
-                    {parsedChapters.map((chapter, index) => (
-                      <div key={chapter.id}>
-                        <div className="text-center text-sm text-muted-foreground mb-2 font-medium">
-                          Chapter {index + 1}: {chapter.title}
-                        </div>
-                        <PaginatedChapterPreview
-                          chapterNumber={index + 1}
-                          chapterTitle={chapter.title}
-                          sections={chapter.sections}
-                          styles={mergedTemplateStyles}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
           </div>
         </div>
       </div>

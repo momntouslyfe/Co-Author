@@ -40,27 +40,22 @@ export function LazyPDFExport({
       const reactPdf = await import('@react-pdf/renderer');
       const pdfDocModule = await import('@/components/publish/pdf-document');
 
-      const defaultStyles: EditorStyles = {
-        chapterTitleFont: 'Poppins',
-        chapterTitleSize: 24,
-        chapterTitleColor: '#1a1a1a',
-        subtopicFont: 'Open Sans',
-        subtopicSize: 14,
-        subtopicColor: '#333333',
-        bodyFont: 'Open Sans',
-        bodySize: 11,
-        bodyColor: '#2d2d2d',
-        headerFont: 'Open Sans',
-        headerSize: 9,
-        headerColor: '#666666',
-        footerFont: 'Open Sans',
-        footerSize: 9,
-        footerColor: '#666666',
-      };
-
       const mergedStyles: EditorStyles = {
-        ...defaultStyles,
-        ...styles,
+        chapterTitleFont: styles.chapterTitleFont || 'Roboto',
+        chapterTitleSize: styles.chapterTitleSize || 24,
+        chapterTitleColor: styles.chapterTitleColor || '#1a1a1a',
+        subtopicFont: styles.subtopicFont || 'Roboto',
+        subtopicSize: styles.subtopicSize || 14,
+        subtopicColor: styles.subtopicColor || '#333333',
+        bodyFont: styles.bodyFont || 'Roboto',
+        bodySize: styles.bodySize || 11,
+        bodyColor: styles.bodyColor || '#2d2d2d',
+        headerFont: styles.headerFont || 'Roboto',
+        headerSize: styles.headerSize || 9,
+        headerColor: styles.headerColor || '#666666',
+        footerFont: styles.footerFont || 'Roboto',
+        footerSize: styles.footerSize || 9,
+        footerColor: styles.footerColor || '#666666',
       };
 
       const documentProps = {

@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { TemplateStyles } from '@/lib/publish/templates';
 
-interface Section {
+export interface Section {
   title: string;
   content: string;
 }
@@ -13,6 +13,8 @@ interface PaginatedChapterPreviewProps {
   chapterTitle: string;
   sections: Section[];
   styles: TemplateStyles;
+  startPageNumber?: number;
+  bookTitle?: string;
 }
 
 const PAGE_HEIGHT = 792;
@@ -208,6 +210,8 @@ export function PaginatedChapterPreview({
   chapterTitle,
   sections,
   styles,
+  startPageNumber = 1,
+  bookTitle,
 }: PaginatedChapterPreviewProps) {
   const pages = useMemo(
     () => paginateContent(chapterTitle, sections, styles),
@@ -222,15 +226,23 @@ export function PaginatedChapterPreview({
       {pages.map((pageContents, idx) => (
         <PreviewPage
           key={idx}
-          pageNumber={idx + 1}
+          pageNumber={startPageNumber + idx}
           totalPages={pages.length}
           contents={pageContents}
           styles={styles}
-          bookTitle={chapterTitle}
+          bookTitle={bookTitle || chapterTitle}
         />
       ))}
     </div>
   );
+}
+
+export function getChapterPageCount(
+  chapterTitle: string,
+  sections: Section[],
+  styles: TemplateStyles
+): number {
+  return paginateContent(chapterTitle, sections, styles).length;
 }
 
 export default PaginatedChapterPreview;
