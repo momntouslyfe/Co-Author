@@ -19,8 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ArrowUpRight, BookCopy, FileText, Search, Loader2, PenTool } from 'lucide-react';
-import { useAuthUser, useFirestore } from '@/firebase';
-import { useMemo } from 'react';
+import { useAuthUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Project } from '@/lib/definitions';
@@ -31,15 +30,13 @@ export default function Dashboard() {
   const { user } = useAuthUser();
   const firestore = useFirestore();
 
-  const projectsCollectionRef = useMemo(() => {
+  const projectsCollectionRef = useMemoFirebase(() => {
     if (!user) return null;
-    const q = query(
+    return query(
       collection(firestore, 'users', user.uid, 'projects'),
       orderBy('lastUpdated', 'desc'),
       limit(3)
     );
-    (q as any).__memo = true;
-    return q;
   }, [user, firestore]);
 
   const { data: recentProjects, isLoading } = useCollection<Project>(projectsCollectionRef);

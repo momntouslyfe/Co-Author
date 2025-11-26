@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
-import { useAuthUser, useFirestore, useDoc } from '@/firebase';
+import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
 import { Loader2, Sparkles, Save, Lightbulb, CheckCircle2, Edit3 } from 'lucide-react';
@@ -36,11 +36,9 @@ export default function TitleGeneratorPage() {
   const [selectedTitle, setSelectedTitle] = useState<string>('');
   const [customTitle, setCustomTitle] = useState<string>('');
 
-  const projectDocRef = useMemo(() => {
+  const projectDocRef = useMemoFirebase(() => {
     if (!user || !projectId) return null;
-    const d = doc(firestore, 'users', user.uid, 'projects', projectId);
-    (d as any).__memo = true;
-    return d;
+    return doc(firestore, 'users', user.uid, 'projects', projectId);
   }, [user, firestore, projectId]);
 
   const { data: project, isLoading: isProjectLoading } = useDoc<Project>(projectDocRef);

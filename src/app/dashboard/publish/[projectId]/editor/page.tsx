@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useRouter, notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useMemoFirebase } from '@/firebase';
 import { useAuthUser } from '@/firebase/auth/use-user';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -141,18 +141,14 @@ export default function EditorPage() {
     return chaptersParam.split(',');
   }, [chaptersParam]);
 
-  const projectDocRef = useMemo(() => {
+  const projectDocRef = useMemoFirebase(() => {
     if (!user || !projectId) return null;
-    const d = doc(firestore, 'users', user.uid, 'projects', projectId);
-    (d as any).__memo = true;
-    return d;
+    return doc(firestore, 'users', user.uid, 'projects', projectId);
   }, [user, firestore, projectId]);
 
-  const authorProfileDocRef = useMemo(() => {
+  const authorProfileDocRef = useMemoFirebase(() => {
     if (!user || !authorProfileParam || authorProfileParam === 'none') return null;
-    const d = doc(firestore, 'users', user.uid, 'authorProfiles', authorProfileParam);
-    (d as any).__memo = true;
-    return d;
+    return doc(firestore, 'users', user.uid, 'authorProfiles', authorProfileParam);
   }, [user, firestore, authorProfileParam]);
 
   const { data: project, isLoading } = useDoc<Project>(projectDocRef);

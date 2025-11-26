@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
-import { useAuthUser, useFirestore, useDoc } from '@/firebase';
+import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp, arrayRemove, collection } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
 import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, RefreshCw, BookOpen, BrainCircuit, Drama, Pencil, FileText, Palette } from 'lucide-react';
@@ -730,11 +730,9 @@ export default function ChapterPage() {
   const firestore = useFirestore();
   const { refreshCredits } = useCreditSummary();
   
-  const projectDocRef = useMemo(() => {
+  const projectDocRef = useMemoFirebase(() => {
     if (!user || !projectId) return null;
-    const d = doc(firestore, 'users', user.uid, 'projects', projectId);
-    (d as any).__memo = true;
-    return d;
+    return doc(firestore, 'users', user.uid, 'projects', projectId);
   }, [user, firestore, projectId]);
 
   const { data: project, isLoading: isProjectLoading } = useDoc<Project>(projectDocRef);
@@ -748,11 +746,9 @@ export default function ChapterPage() {
   const [selectedFramework, setSelectedFramework] = useState<string>('');
   
 
-  const styleProfilesQuery = useMemo(() => {
+  const styleProfilesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    const c = collection(firestore, 'users', user.uid, 'styleProfiles');
-    (c as any).__memo = true;
-    return c;
+    return collection(firestore, 'users', user.uid, 'styleProfiles');
   }, [user, firestore]);
 
   const { data: styleProfiles } = useCollection<StyleProfile>(styleProfilesQuery);
@@ -762,11 +758,9 @@ export default function ChapterPage() {
     return parseChapterDetails(project.outline, chapterId);
   }, [project?.outline, chapterId]);
   
-  const researchProfilesQuery = useMemo(() => {
+  const researchProfilesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    const c = collection(firestore, 'users', user.uid, 'researchProfiles');
-    (c as any).__memo = true;
-    return c;
+    return collection(firestore, 'users', user.uid, 'researchProfiles');
   }, [user, firestore]);
 
   const { data: researchProfiles } = useCollection<ResearchProfile>(researchProfilesQuery);

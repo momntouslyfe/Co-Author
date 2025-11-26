@@ -6,21 +6,6 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 ## Recent Changes
 
-### November 26, 2025 - Firebase Memoization Hook Fixes
-- **Fixed Critical Hook Error**: Resolved `useMemoFirebase is not defined` error across 7 pages where Firebase queries/refs were using a non-existent custom hook
-- **Hook Replacement**: Replaced all `useMemoFirebase` calls with React's `useMemo` hook from the React library
-- **Memo Property Addition**: Added `__memo = true` property to all Firebase references (doc, collection, query) before returning from useMemo
-- **Files Fixed**: 
-  - `src/app/dashboard/co-author/[id]/chapters/[chapterId]/page.tsx` (3 queries: project, styleProfiles, researchProfiles)
-  - `src/app/dashboard/co-author/[id]/chapters/page.tsx` (1 query: project)
-  - `src/app/dashboard/co-author/[id]/page.tsx` (3 queries: project, researchProfiles, styleProfiles)
-  - `src/app/dashboard/co-author/[id]/title-generator/page.tsx` (1 query: project)
-  - `src/app/dashboard/page.tsx` (1 query: projectsCollection)
-  - `src/app/dashboard/research/saved/page.tsx` (1 query: researchProfiles)
-  - `src/app/dashboard/style-profile/page.tsx` (1 query: styleProfiles)
-- **Pattern Applied**: For each Firebase reference, wrap in useMemo with the pattern: `const q = collection(...); (q as any).__memo = true; return q;`
-- **Impact**: Restored full functionality to all dashboard pages and workflows
-
 ### November 26, 2025 - Author Profile & Book Cover Feature
 - **Author Profile Management**: Full CRUD operations for managing multiple author profiles with pen name, bio, credentials, photo, website, and email
 - **Author Profile Integration**: Optional author profile selection during project creation and in the publish workflow chapter selection

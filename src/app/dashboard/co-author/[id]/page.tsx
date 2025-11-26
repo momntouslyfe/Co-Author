@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateBookBlueprint } from '@/ai/flows/generate-book-blueprint';
 import type { GenerateBookBlueprintOutput } from '@/ai/flows/generate-book-blueprint';
 import { Bot, Loader2, Save, Info } from 'lucide-react';
-import { useAuthUser, useFirestore, useCollection, useDoc } from '@/firebase';
+import { useAuthUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import type { ResearchProfile, StyleProfile, Project } from '@/lib/definitions';
 import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -78,27 +78,21 @@ export default function CoAuthorWorkspacePage() {
   const [isRegenerating, setIsRegenerating] = useState(false);
 
 
-  const projectDocRef = useMemo(() => {
+  const projectDocRef = useMemoFirebase(() => {
     if (!user || !projectId) return null;
-    const d = doc(firestore, 'users', user.uid, 'projects', projectId);
-    (d as any).__memo = true;
-    return d;
+    return doc(firestore, 'users', user.uid, 'projects', projectId);
   }, [user, firestore, projectId]);
 
   const { data: project, isLoading: isProjectLoading, error } = useDoc<Project>(projectDocRef);
 
-  const researchProfilesQuery = useMemo(() => {
+  const researchProfilesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    const c = collection(firestore, 'users', user.uid, 'researchProfiles');
-    (c as any).__memo = true;
-    return c;
+    return collection(firestore, 'users', user.uid, 'researchProfiles');
   }, [user, firestore]);
 
-  const styleProfilesQuery = useMemo(() => {
+  const styleProfilesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    const c = collection(firestore, 'users', user.uid, 'styleProfiles');
-    (c as any).__memo = true;
-    return c;
+    return collection(firestore, 'users', user.uid, 'styleProfiles');
   }, [user, firestore]);
 
   const { data: researchProfiles } = useCollection<ResearchProfile>(researchProfilesQuery);

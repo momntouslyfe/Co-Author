@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useAuthUser, useCollection, useFirestore } from "@/firebase";
+import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import type { Project, AuthorProfile } from '@/lib/definitions';
 import {
@@ -61,18 +61,14 @@ export default function CoAuthorPage() {
     const [selectedAuthorProfileId, setSelectedAuthorProfileId] = useState<string>('');
     const [open, setOpen] = useState(false);
 
-    const projectsQuery = useMemo(() => {
+    const projectsQuery = useMemoFirebase(() => {
         if (!user) return null;
-        const q = collection(firestore, 'users', user.uid, 'projects');
-        (q as any).__memo = true;
-        return q;
+        return collection(firestore, 'users', user.uid, 'projects');
     }, [user, firestore]);
 
-    const authorProfilesQuery = useMemo(() => {
+    const authorProfilesQuery = useMemoFirebase(() => {
         if (!user) return null;
-        const q = collection(firestore, 'users', user.uid, 'authorProfiles');
-        (q as any).__memo = true;
-        return q;
+        return collection(firestore, 'users', user.uid, 'authorProfiles');
     }, [user, firestore]);
 
     const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
