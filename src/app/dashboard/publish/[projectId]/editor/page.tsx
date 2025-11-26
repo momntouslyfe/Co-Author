@@ -56,26 +56,51 @@ function parseChapterContent(rawContent: string): Section[] {
   if (!rawContent) return [];
   
   const sections: Section[] = [];
-  const parts = rawContent.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+  const lines = rawContent.split('\n');
   
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
-    if (part.startsWith('$$') && part.endsWith('$$')) {
-      const title = part.replace(/\$\$/g, '').trim();
-      
-      if (isExcludedHeading(title)) {
-        if (i + 1 < parts.length && !parts[i + 1].startsWith('$$')) {
-          i++;
-        }
-        continue;
-      }
-      
-      const contentPart = (i + 1 < parts.length && !parts[i + 1].startsWith('$$')) ? parts[i + 1].trim() : '';
-      sections.push({ title, content: contentPart });
-      if (contentPart) {
-        i++;
-      }
+  let currentTitle = 'Introduction';
+  let contentBuffer: string[] = [];
+  let skipCurrentHeading = false;
+  
+  const flushSection = () => {
+    const content = contentBuffer.join('\n').trim();
+    if (content) {
+      sections.push({ 
+        title: currentTitle, 
+        content: content 
+      });
     }
+    contentBuffer = [];
+  };
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    
+    if (trimmed.startsWith('## ') || trimmed.startsWith('# ')) {
+      flushSection();
+      
+      const heading = trimmed.startsWith('## ') 
+        ? trimmed.substring(3) 
+        : trimmed.substring(2);
+      
+      if (isExcludedHeading(heading)) {
+        skipCurrentHeading = true;
+      } else {
+        currentTitle = heading;
+        skipCurrentHeading = false;
+      }
+    } else if (!skipCurrentHeading) {
+      contentBuffer.push(line);
+    }
+  }
+  
+  flushSection();
+  
+  if (sections.length === 0 && rawContent.trim()) {
+    sections.push({ 
+      title: 'Content', 
+      content: rawContent.trim() 
+    });
   }
   
   return sections;

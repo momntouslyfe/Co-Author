@@ -439,34 +439,36 @@ export function PDFDocument({
         const elements = parseHtmlContent(chapter.content);
         
         return (
-          <Page key={chapter.id} size="A4" style={pdfStyles.page} id={chapter.id}>
+          <Page key={chapter.id} size="A4" style={pdfStyles.page} id={chapter.id} wrap>
             <Text style={pdfStyles.header} fixed>{chapter.title}</Text>
             
             <Text style={pdfStyles.chapterTitle}>{chapter.title}</Text>
             
-            {elements.map((element, index) => {
-              if (element.type === 'heading') {
-                return renderSegments(element.segments, pdfStyles.subtopic, `heading-${index}`);
-              }
-              if (element.type === 'list-item') {
-                return (
-                  <Text key={`list-${index}`} style={pdfStyles.listItem}>
-                    {'\u2022'}{' '}
-                    {element.segments.map((segment, idx) => {
-                      const segmentStyle: any = {};
-                      if (segment.bold) segmentStyle.fontWeight = 'bold';
-                      if (segment.italic) segmentStyle.fontStyle = 'italic';
-                      return (
-                        <Text key={idx} style={segmentStyle}>
-                          {segment.text}
-                        </Text>
-                      );
-                    })}
-                  </Text>
-                );
-              }
-              return renderSegments(element.segments, pdfStyles.bodyText, `body-${index}`);
-            })}
+            <View>
+              {elements.map((element, index) => {
+                if (element.type === 'heading') {
+                  return renderSegments(element.segments, pdfStyles.subtopic, `heading-${index}`);
+                }
+                if (element.type === 'list-item') {
+                  return (
+                    <Text key={`list-${index}`} style={pdfStyles.listItem}>
+                      {'\u2022'}{' '}
+                      {element.segments.map((segment, idx) => {
+                        const segmentStyle: any = {};
+                        if (segment.bold) segmentStyle.fontWeight = 'bold';
+                        if (segment.italic) segmentStyle.fontStyle = 'italic';
+                        return (
+                          <Text key={idx} style={segmentStyle}>
+                            {segment.text}
+                          </Text>
+                        );
+                      })}
+                    </Text>
+                  );
+                }
+                return renderSegments(element.segments, pdfStyles.bodyText, `body-${index}`);
+              })}
+            </View>
             
             <View style={pdfStyles.footer} fixed>
               <Text>{bookTitle}</Text>

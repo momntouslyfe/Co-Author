@@ -21,6 +21,8 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
   - Typography (bodyLineHeight, chapterTitleAlign)
   - Colors (pageBackground, accentColor applied to section header borders)
   - Author page, TOC, and title page all use template values
+- **Content Parsing Fix**: Updated `parseChapterContent` to correctly handle markdown headers (`## ` and `# `) instead of `$$section$$` markers, preserving all content including prose before first heading
+- **PDF Multi-Page Flow**: Long chapters now properly flow across multiple pages in exported PDFs
 - **Files Added**: `src/lib/publish/templates.ts`, `src/components/publish/chapter-preview.tsx`, `src/components/publish/template-selector.tsx`
 - **Files Modified**: `src/app/dashboard/publish/[projectId]/editor/page.tsx`, `src/components/publish/pdf-download-link-inner.tsx`, `src/components/publish/pdf-document.tsx`
 
