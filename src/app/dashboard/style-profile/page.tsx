@@ -27,7 +27,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Bot, Loader2, Save, Trash2, Upload } from 'lucide-react';
 import { analyzeWritingStyle } from '@/ai/flows/analyze-writing-style';
 import type { StyleProfile } from '@/lib/definitions';
-import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useAuthUser, useCollection, useFirestore } from '@/firebase';
+import { useMemo } from 'react';
 import { getIdToken } from '@/lib/client-auth';
 import { addDoc, collection, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
@@ -81,9 +82,11 @@ export default function StyleProfilePage() {
     },
   });
 
-  const styleProfilesQuery = useMemoFirebase(() => {
+  const styleProfilesQuery = useMemo(() => {
     if (!user) return null;
-    return collection(firestore, 'users', user.uid, 'styleProfiles');
+    const c = collection(firestore, 'users', user.uid, 'styleProfiles');
+    (c as any).__memo = true;
+    return c;
   }, [user, firestore]);
 
   const { data: savedProfiles, isLoading: profilesLoading } = useCollection<StyleProfile>(styleProfilesQuery);

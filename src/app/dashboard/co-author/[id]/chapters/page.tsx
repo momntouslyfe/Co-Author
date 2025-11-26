@@ -4,7 +4,7 @@
 import { useMemo } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuthUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useAuthUser, useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Project, Chapter } from '@/lib/definitions';
 import { Loader2, FileText, ChevronRight } from 'lucide-react';
@@ -59,9 +59,11 @@ export default function ChaptersPage() {
   const { user } = useAuthUser();
   const firestore = useFirestore();
 
-  const projectDocRef = useMemoFirebase(() => {
+  const projectDocRef = useMemo(() => {
     if (!user || !projectId) return null;
-    return doc(firestore, 'users', user.uid, 'projects', projectId);
+    const d = doc(firestore, 'users', user.uid, 'projects', projectId);
+    (d as any).__memo = true;
+    return d;
   }, [user, firestore, projectId]);
 
   const { data: project, isLoading: isProjectLoading } = useDoc<Project>(projectDocRef);

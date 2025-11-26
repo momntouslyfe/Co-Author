@@ -1,6 +1,7 @@
 'use client';
 
-import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useAuthUser, useCollection, useFirestore } from "@/firebase";
+import { useMemo } from 'react';
 import { collection, deleteDoc, doc } from "firebase/firestore";
 import type { ResearchProfile } from "@/lib/definitions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,9 +33,11 @@ export default function SavedResearchPage() {
     const { toast } = useToast();
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-    const researchProfilesQuery = useMemoFirebase(() => {
+    const researchProfilesQuery = useMemo(() => {
         if (!user) return null;
-        return collection(firestore, 'users', user.uid, 'researchProfiles');
+        const c = collection(firestore, 'users', user.uid, 'researchProfiles');
+        (c as any).__memo = true;
+        return c;
     }, [user, firestore]);
 
     const { data: researchProfiles, isLoading: profilesLoading } = useCollection<ResearchProfile>(researchProfilesQuery);
