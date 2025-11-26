@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, ReactElement } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +28,14 @@ const PDFDocument = dynamic(
   { ssr: false, loading: () => <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-8 w-8 animate-spin" /></div> }
 );
 
+const PDFDownloadLink = dynamic(
+  async () => {
+    const { PDFDownloadLink: Link } = await import('@react-pdf/renderer');
+    return Link;
+  },
+  { ssr: false }
+);
+
 type PDFPreviewProps = {
   bookTitle: string;
   chapters: EditorChapter[];
@@ -39,31 +47,6 @@ type PDFPreviewProps = {
   authorBioContent?: string;
   coverImageUrl?: string;
 };
-
-function PDFDownloadButtonClient({ document, fileName }: { document: ReactElement; fileName: string }) {
-  const PDFDownloadLink = dynamic(
-    async () => {
-      const { PDFDownloadLink } = await import('@react-pdf/renderer');
-      return PDFDownloadLink;
-    },
-    { ssr: false }
-  ) as any;
-
-  return (
-    <PDFDownloadLink document={document} fileName={fileName}>
-      {({ loading }: any) => (
-        <Button className="w-full gap-2" disabled={loading}>
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="h-4 w-4" />
-          )}
-          {loading ? 'Generating...' : 'Export PDF'}
-        </Button>
-      )}
-    </PDFDownloadLink>
-  );
-}
 
 export function PDFPreview({
   bookTitle,
@@ -132,10 +115,21 @@ export function PDFPreview({
             Preview PDF
           </Button>
           
-          <PDFDownloadButtonClient
+          <PDFDownloadLink
             document={<PDFDocument {...documentProps} />}
             fileName={`${bookTitle.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`}
-          />
+          >
+            {({ loading }: any) => (
+              <Button className="w-full gap-2" disabled={loading}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {loading ? 'Generating...' : 'Export PDF'}
+              </Button>
+            )}
+          </PDFDownloadLink>
         </CardContent>
       </Card>
 
