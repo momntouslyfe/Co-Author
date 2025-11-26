@@ -25,7 +25,7 @@ Font.register({
   src: 'https://cdn.jsdelivr.net/npm/@nicholasadamou/canvas-fonts@1.0.0/Arial.ttf',
 });
 
-type PDFDocumentProps = {
+export type PDFDocumentProps = {
   bookTitle: string;
   chapters: EditorChapter[];
   styles: EditorStyles;

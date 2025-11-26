@@ -14,21 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-
-const PDFViewer = dynamic(
-  () => import('@react-pdf/renderer').then((mod) => mod.PDFViewer),
-  { ssr: false, loading: () => <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-8 w-8 animate-spin" /></div> }
-);
-
-const PDFDownloadLink = dynamic(
-  () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
-  { ssr: false }
-);
-
-const PDFDocumentComponent = dynamic(
-  () => import('./pdf-document').then((mod) => mod.PDFDocument),
-  { ssr: false }
-);
+import { PDFDocumentProps } from './pdf-document';
 
 type PDFPreviewProps = {
   bookTitle: string;
@@ -41,6 +27,31 @@ type PDFPreviewProps = {
   authorBioContent?: string;
   coverImageUrl?: string;
 };
+
+const PDFDownloadWrapper = dynamic<{ documentProps: PDFDocumentProps; fileName: string }>(
+  () => import('./pdf-download-wrapper').then((mod) => mod.PDFDownloadWrapper),
+  { 
+    ssr: false,
+    loading: () => (
+      <Button className="w-full gap-2" disabled>
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Loading...
+      </Button>
+    )
+  }
+);
+
+const PDFViewerWrapper = dynamic<{ documentProps: PDFDocumentProps }>(
+  () => import('./pdf-viewer-wrapper').then((mod) => mod.PDFViewerWrapper),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+);
 
 export function PDFPreview({
   bookTitle,
@@ -60,7 +71,7 @@ export function PDFPreview({
     setIsClient(true);
   }, []);
 
-  const documentProps = useMemo(() => ({
+  const documentProps: PDFDocumentProps = useMemo(() => ({
     bookTitle,
     chapters,
     styles,
@@ -109,21 +120,10 @@ export function PDFPreview({
             Preview PDF
           </Button>
           
-          <PDFDownloadLink
-            document={<PDFDocumentComponent {...documentProps} />}
+          <PDFDownloadWrapper
+            documentProps={documentProps}
             fileName={`${bookTitle.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`}
-          >
-            {({ loading }) => (
-              <Button className="w-full gap-2" disabled={loading}>
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                {loading ? 'Generating...' : 'Export PDF'}
-              </Button>
-            )}
-          </PDFDownloadLink>
+          />
         </CardContent>
       </Card>
 
@@ -142,9 +142,9 @@ export function PDFPreview({
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
-            <PDFViewer width="100%" height="100%" className="rounded-lg">
-              <PDFDocumentComponent {...documentProps} />
-            </PDFViewer>
+            {isPreviewOpen && (
+              <PDFViewerWrapper documentProps={documentProps} />
+            )}
           </div>
         </DialogContent>
       </Dialog>
