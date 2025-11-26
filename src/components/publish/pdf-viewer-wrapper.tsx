@@ -9,48 +9,72 @@ type PDFViewerWrapperProps = {
 };
 
 export function PDFViewerWrapper({ documentProps }: PDFViewerWrapperProps) {
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [ViewerComponent, setViewerComponent] = useState<React.ReactNode>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
-    let objectUrl: string | null = null;
+    let mounted = true;
 
-    const generatePdf = async () => {
-      setIsLoading(true);
-      setError(null);
-
+    const loadComponent = async () => {
       try {
-        const { pdf } = await import('@react-pdf/renderer');
+        const { BlobProvider } = await import('@react-pdf/renderer');
         const { PDFDocument } = await import('./pdf-document');
-        
-        const doc = <PDFDocument {...documentProps} />;
-        const blob = await pdf(doc).toBlob();
-        
-        if (isMounted) {
-          objectUrl = URL.createObjectURL(blob);
-          setPdfUrl(objectUrl);
+
+        if (mounted) {
+          setViewerComponent(
+            <BlobProvider document={<PDFDocument {...documentProps} />}>
+              {({ blob, loading, error }) => {
+                if (loading) {
+                  return (
+                    <div className="flex flex-col items-center justify-center h-full gap-4">
+                      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                      <p className="text-muted-foreground">Generating preview...</p>
+                    </div>
+                  );
+                }
+
+                if (error) {
+                  return (
+                    <div className="flex flex-col items-center justify-center h-full gap-4">
+                      <p className="text-destructive">Failed to generate preview: {error.message}</p>
+                    </div>
+                  );
+                }
+
+                if (!blob) {
+                  return (
+                    <div className="flex flex-col items-center justify-center h-full gap-4">
+                      <p className="text-muted-foreground">No PDF content available</p>
+                    </div>
+                  );
+                }
+
+                const url = URL.createObjectURL(blob);
+                
+                return (
+                  <iframe
+                    src={url}
+                    className="w-full h-full rounded-lg border"
+                    title="PDF Preview"
+                  />
+                );
+              }}
+            </BlobProvider>
+          );
+          setIsLoading(false);
         }
       } catch (err) {
-        console.error('Error generating PDF preview:', err);
-        if (isMounted) {
-          setError('Failed to generate preview. Please try exporting directly.');
-        }
-      } finally {
-        if (isMounted) {
+        console.error('Error loading PDF components:', err);
+        if (mounted) {
           setIsLoading(false);
         }
       }
     };
 
-    generatePdf();
+    loadComponent();
 
     return () => {
-      isMounted = false;
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
+      mounted = false;
     };
   }, [documentProps]);
 
@@ -58,28 +82,10 @@ export function PDFViewerWrapper({ documentProps }: PDFViewerWrapperProps) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-muted-foreground">Generating preview...</p>
+        <p className="text-muted-foreground">Loading viewer...</p>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4">
-        <p className="text-destructive">{error}</p>
-      </div>
-    );
-  }
-
-  if (!pdfUrl) {
-    return null;
-  }
-
-  return (
-    <iframe
-      src={pdfUrl}
-      className="w-full h-full rounded-lg border"
-      title="PDF Preview"
-    />
-  );
+  return <>{ViewerComponent}</>;
 }

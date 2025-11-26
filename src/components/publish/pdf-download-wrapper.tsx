@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Download } from 'lucide-react';
 import { PDFDocumentProps } from './pdf-document';
@@ -11,53 +11,68 @@ type PDFDownloadWrapperProps = {
 };
 
 export function PDFDownloadWrapper({ documentProps, fileName }: PDFDownloadWrapperProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [DownloadComponent, setDownloadComponent] = useState<React.ReactNode>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleDownload = useCallback(async () => {
-    setIsGenerating(true);
-    setError(null);
+  useEffect(() => {
+    let mounted = true;
     
-    try {
-      const { pdf } = await import('@react-pdf/renderer');
-      const { PDFDocument } = await import('./pdf-document');
-      
-      const doc = <PDFDocument {...documentProps} />;
-      const blob = await pdf(doc).toBlob();
-      
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Error generating PDF:', err);
-      setError('Failed to generate PDF. Please try again.');
-    } finally {
-      setIsGenerating(false);
-    }
+    const loadComponent = async () => {
+      try {
+        const { PDFDownloadLink } = await import('@react-pdf/renderer');
+        const { PDFDocument } = await import('./pdf-document');
+        
+        if (mounted) {
+          setDownloadComponent(
+            <PDFDownloadLink
+              document={<PDFDocument {...documentProps} />}
+              fileName={fileName}
+              style={{ width: '100%' }}
+            >
+              {({ loading, error }) => (
+                <Button className="w-full gap-2" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating PDF...
+                    </>
+                  ) : error ? (
+                    'Error generating PDF'
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      Export PDF
+                    </>
+                  )}
+                </Button>
+              )}
+            </PDFDownloadLink>
+          );
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('Error loading PDF components:', err);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadComponent();
+
+    return () => {
+      mounted = false;
+    };
   }, [documentProps, fileName]);
 
-  return (
-    <div className="space-y-2">
-      <Button 
-        className="w-full gap-2" 
-        onClick={handleDownload}
-        disabled={isGenerating}
-      >
-        {isGenerating ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Download className="h-4 w-4" />
-        )}
-        {isGenerating ? 'Generating PDF...' : 'Export PDF'}
+  if (isLoading) {
+    return (
+      <Button className="w-full gap-2" disabled>
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Loading...
       </Button>
-      {error && (
-        <p className="text-sm text-destructive text-center">{error}</p>
-      )}
-    </div>
-  );
+    );
+  }
+
+  return <>{DownloadComponent}</>;
 }
