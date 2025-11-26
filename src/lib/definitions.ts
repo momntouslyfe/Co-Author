@@ -102,19 +102,11 @@ export type AIRouting = {
   model?: string;
 };
 
-export type CacheSettings = {
-  enabled: boolean;
-  intervalMinutes: number;
-  clearOnAIError: boolean;
-  lastCleared?: string;
-};
-
 export type AdminSettings = {
   id: string;
   useAdminKeys: boolean;
   allowUserKeys: boolean;
   aiRouting: AIRouting[];
-  cacheSettings?: CacheSettings;
   updatedAt: string;
 };
 

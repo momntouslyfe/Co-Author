@@ -6,18 +6,6 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 ## Recent Changes
 
-### November 26, 2025 - Cache Management Feature
-- **Auto Cache Clearing**: Admin-configurable automatic cache clearing to prevent stale data issues with AI operations
-- **Admin Settings**: New "Cache" tab in admin dashboard with interval options (5 min to 24 hours) and recommendations
-- **Clear on AI Error**: Optional setting to automatically clear cache when AI operations fail
-- **Manual Clear**: Admin can trigger immediate cache clearing from the dashboard
-- **Files Added**:
-  - `src/components/admin/cache-settings.tsx` - Admin UI for cache configuration
-  - `src/contexts/cache-manager-context.tsx` - Client-side cache manager provider
-  - `src/app/api/cache-settings/route.ts` - Public API for cache settings
-  - `src/app/api/admin/cache/clear/route.ts` - Admin API to clear cache
-- **Data Model**: Added `CacheSettings` type with enabled, intervalMinutes, clearOnAIError fields
-
 ### November 26, 2025 - Publish Feature Removed
 - **Publish Module Removed**: The entire publish/PDF export feature has been removed for re-implementation later
 - **Files Removed**: 

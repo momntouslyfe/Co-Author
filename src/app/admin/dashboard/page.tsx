@@ -14,7 +14,6 @@ import { PaymentSettings } from '@/components/admin/payment-settings';
 import { PaymentManagement } from '@/components/admin/payment-management';
 import { CouponManager } from '@/components/admin/coupon-manager';
 import { CurrencySettingsManager } from '@/components/admin/currency-settings';
-import { CacheSettingsManager } from '@/components/admin/cache-settings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AdminDashboard() {
@@ -39,9 +38,8 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="settings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-12">
+          <TabsList className="grid w-full grid-cols-11">
             <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="cache">Cache</TabsTrigger>
             <TabsTrigger value="api-keys">API Keys</TabsTrigger>
             <TabsTrigger value="routing">AI Routing</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
@@ -56,10 +54,6 @@ export default function AdminDashboard() {
 
           <TabsContent value="settings">
             <GlobalSettings />
-          </TabsContent>
-
-          <TabsContent value="cache">
-            <CacheSettingsManager />
           </TabsContent>
 
           <TabsContent value="api-keys">

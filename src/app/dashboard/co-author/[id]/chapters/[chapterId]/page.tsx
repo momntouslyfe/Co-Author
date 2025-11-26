@@ -203,9 +203,6 @@ const ChapterEditor = ({
         } catch (error) {
             console.error("Failed to extend content", error);
             toast({ title: "AI Extend Failed", description: "Could not generate additional content.", variant: "destructive" });
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('ai-operation-error'));
-            }
         } finally {
             setIsExtending(null);
             setExtendInstruction('');
@@ -277,9 +274,6 @@ const ChapterEditor = ({
         } catch (error) {
             console.error("Error writing section:", error);
             toast({ title: "AI Write Failed", variant: "destructive", description: `Could not generate the section. ${error}` });
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('ai-operation-error'));
-            }
         } finally {
             setIsWritingSection(null);
         }
@@ -350,9 +344,6 @@ const ChapterEditor = ({
         } catch (error) {
             console.error("Error rewriting section:", error);
             toast({ title: "AI Rewrite Failed", variant: "destructive", description: `Could not rewrite the section. ${error}` });
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('ai-operation-error'));
-            }
         } finally {
             setIsRewritingSection(null);
             setRewriteSectionInstruction('');
@@ -1003,9 +994,6 @@ export default function ChapterPage() {
     } catch (error) {
         console.error("Error rewriting chapter:", error);
         toast({ title: "AI Rewrite Failed", variant: "destructive", description: "Could not rewrite the chapter. The process may have timed out. Please try again." });
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('ai-operation-error'));
-        }
     } finally {
         setPageState('writing');
     }
