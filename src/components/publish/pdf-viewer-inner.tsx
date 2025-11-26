@@ -3,6 +3,9 @@
 import { BlobProvider } from '@react-pdf/renderer';
 import { Loader2 } from 'lucide-react';
 import { PDFDocument, PDFDocumentProps } from './pdf-document';
+import { registerFonts } from '@/lib/publish/fonts';
+
+registerFonts();
 
 type PDFViewerInnerProps = {
   documentProps: PDFDocumentProps;

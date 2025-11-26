@@ -4,6 +4,9 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 import { Button } from '@/components/ui/button';
 import { Loader2, Download } from 'lucide-react';
 import { PDFDocument, PDFDocumentProps } from './pdf-document';
+import { registerFonts } from '@/lib/publish/fonts';
+
+registerFonts();
 
 type PDFDownloadLinkInnerProps = {
   documentProps: PDFDocumentProps;

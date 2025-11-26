@@ -191,14 +191,7 @@ export function PDFDocument({
   coverImageUrl,
 }: PDFDocumentProps) {
   const getFontFamily = (fontName: string) => {
-    const fontMap: Record<string, string> = {
-      'Times New Roman': 'Times-Roman',
-      'Georgia': 'Times-Roman',
-      'Arial': 'Helvetica',
-      'Helvetica': 'Helvetica',
-      'Courier': 'Courier',
-    };
-    return fontMap[fontName] || 'Helvetica';
+    return fontName;
   };
 
   const pdfStyles = StyleSheet.create({
