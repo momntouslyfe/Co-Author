@@ -1,0 +1,142 @@
+/**
+ * @file Firebase Security Rules for Co-Author Pro.
+ *
+ * @corePhilosophy This ruleset allows public read and write access to all data, as the application is not using authentication. This is ONLY suitable for prototyping or scenarios where data privacy is not a concern.  **In a production application, this is highly insecure.**
+ * @dataStructure Data is stored in three top-level collections: `/users/{userId}`, `/coupons/{couponId}`, and `/blogs/{blogId}`.
+ * @keySecurityDecisions Authentication is disabled, so no security is implemented.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows public read and write access to user data. **THIS IS INSECURE FOR PRODUCTION.**
+     * @path /users/{userId}
+     * @allow (get, list, create, update, delete) Any unauthenticated user can read and write any user document.
+     * @deny (none) Since the application has no auth, there are no scenarios to deny.
+     * @principle No security is enforced due to lack of authentication.
+     */
+    match /users/{userId} {
+      allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+
+      /**
+       * @description A user can manage their own research profiles.
+       * @path /users/{userId}/researchProfiles/{researchProfileId}
+       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
+       */
+      match /researchProfiles/{researchProfileId} {
+        allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      /**
+       * @description A user can manage their own style profiles.
+       * @path /users/{userId}/styleProfiles/{styleProfileId}
+       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
+       */
+      match /styleProfiles/{styleProfileId} {
+        allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+       /**
+       * @description A user can manage their own projects.
+       * @path /users/{userId}/projects/{projectId}
+       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
+       */
+      match /projects/{projectId} {
+        allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    /**
+     * @description CRITICAL SECURITY: User API keys must only be accessible by the owning user.
+     * @path /userApiKeys/{userId}
+     * @allow (get, create, update) Only if the authenticated user's UID matches the document ID (userId).
+     * @deny All other access, including list operations to prevent enumeration.
+     * @principle User API keys contain sensitive encrypted credentials and must be strictly protected.
+     */
+    match /userApiKeys/{userId} {
+      allow get, create, update: if request.auth != null && request.auth.uid == userId;
+      allow list, delete: if false;
+    }
+
+    /**
+     * @description Coupons can be read by anyone but only admins can modify them (server-side).
+     * @path /coupons/{couponId}
+     * @allow (get, list) Public read access for coupon codes
+     * @allow (create, update, delete) Admin-only operations (handled server-side)
+     */
+    match /coupons/{couponId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Blog posts can be read by anyone, modifications handled server-side.
+     * @path /blogs/{blogId}
+     * @allow (get, list) Public read access for blog content
+     * @allow (create, update, delete) Handled server-side with admin privileges
+     */
+    match /blogs/{blogId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Subscription plans can be read by anyone, but only admins can modify them.
+     * @path /subscriptionPlans/{planId}
+     * @allow (get, list) Any authenticated user can view subscription plans.
+     * @allow (create, update, delete) Reserved for admin operations (handled server-side).
+     */
+    match /subscriptionPlans/{planId} {
+      allow get, list: if request.auth != null;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Addon credit plans can be read by anyone, but only admins can modify them.
+     * @path /addonCreditPlans/{planId}
+     * @allow (get, list) Any authenticated user can view addon credit plans.
+     * @allow (create, update, delete) Reserved for admin operations (handled server-side).
+     */
+    match /addonCreditPlans/{planId} {
+      allow get, list: if request.auth != null;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description User subscriptions can only be accessed by the owning user or admin (server-side).
+     * @path /userSubscriptions/{userId}
+     * @allow (get, create, update) Only if the authenticated user's UID matches the document ID.
+     * @deny (list, delete) To prevent enumeration and accidental deletion.
+     */
+    match /userSubscriptions/{userId} {
+      allow get, create, update: if request.auth != null && request.auth.uid == userId;
+      allow list, delete: if false;
+    }
+
+    /**
+     * @description Credit transactions are managed server-side via Firebase Admin SDK.
+     * @path /creditTransactions/{transactionId}
+     * @allow (get) Users can view individual transactions if they own them.
+     * @deny (list, create, update, delete) All modifications handled server-side.
+     * @principle Transactions are created/queried server-side with admin privileges.
+     */
+    match /creditTransactions/{transactionId} {
+      allow get: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow list, create, update, delete: if false;
+    }
+
+    /**
+     * @description Payment records are managed server-side via Firebase Admin SDK.
+     * @path /payments/{orderId}
+     * @allow (get, list) Users can view their own payment records only.
+     * @deny (create, update, delete) All modifications handled server-side.
+     * @principle Payments are created and managed server-side with admin privileges for security.
+     */
+    match /payments/{orderId} {
+      allow get: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow list: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+  }
+}
