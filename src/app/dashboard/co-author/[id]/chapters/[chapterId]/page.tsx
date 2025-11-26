@@ -844,6 +844,59 @@ export default function ChapterPage() {
     let htmlContent = '';
     let plainContent = '';
     
+    const formatContentToHtml = (text: string): string => {
+      const lines = text.split('\n');
+      let result = '';
+      let inList = false;
+      let listType = '';
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) {
+          if (inList) {
+            result += listType === 'ul' ? '</ul>' : '</ol>';
+            inList = false;
+            listType = '';
+          }
+          continue;
+        }
+        
+        const bulletMatch = line.match(/^[-•*]\s+(.+)$/);
+        const numberedMatch = line.match(/^\d+[.)]\s+(.+)$/);
+        
+        if (bulletMatch) {
+          if (!inList || listType !== 'ul') {
+            if (inList) result += listType === 'ul' ? '</ul>' : '</ol>';
+            result += '<ul>';
+            inList = true;
+            listType = 'ul';
+          }
+          result += `<li>${bulletMatch[1]}</li>`;
+        } else if (numberedMatch) {
+          if (!inList || listType !== 'ol') {
+            if (inList) result += listType === 'ul' ? '</ul>' : '</ol>';
+            result += '<ol>';
+            inList = true;
+            listType = 'ol';
+          }
+          result += `<li>${numberedMatch[1]}</li>`;
+        } else {
+          if (inList) {
+            result += listType === 'ul' ? '</ul>' : '</ol>';
+            inList = false;
+            listType = '';
+          }
+          result += `<p>${line}</p>`;
+        }
+      }
+      
+      if (inList) {
+        result += listType === 'ul' ? '</ul>' : '</ol>';
+      }
+      
+      return result;
+    };
+    
     if (chapterDetails) {
       htmlContent += `<h1>${chapterDetails.title}</h1>`;
       plainContent += `${chapterDetails.title}\n\n`;
@@ -859,13 +912,13 @@ export default function ChapterPage() {
         
         if (sectionTitle === 'Introduction') {
           if (nextPart) {
-            htmlContent += `<p>${nextPart.replace(/\n\n/g, '</p><p>')}</p>`;
+            htmlContent += formatContentToHtml(nextPart);
             plainContent += `${nextPart}\n\n`;
           }
           if (nextPart) i++;
         } else if (sectionTitle === 'Your Action Step' || sectionTitle === 'Coming Up Next') {
           if (nextPart) {
-            htmlContent += `<p>${nextPart.replace(/\n\n/g, '</p><p>')}</p>`;
+            htmlContent += formatContentToHtml(nextPart);
             plainContent += `${nextPart}\n\n`;
           }
           if (nextPart) i++;
@@ -873,7 +926,7 @@ export default function ChapterPage() {
           htmlContent += `<h2>${sectionTitle}</h2>`;
           plainContent += `${sectionTitle}\n`;
           if (nextPart) {
-            htmlContent += `<p>${nextPart.replace(/\n\n/g, '</p><p>')}</p>`;
+            htmlContent += formatContentToHtml(nextPart);
             plainContent += `${nextPart}\n\n`;
             i++;
           }
