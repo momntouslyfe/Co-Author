@@ -1,29 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Font, Link, Image } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Link, Image } from '@react-pdf/renderer';
 import { EditorStyles, parseOutlineForTOC } from '@/lib/publish/content-transformer';
 import { EditorChapter } from '@/lib/publish/types';
 import { AuthorProfile } from '@/lib/definitions';
-
-Font.register({
-  family: 'Times New Roman',
-  fonts: [
-    { src: 'https://cdn.jsdelivr.net/npm/@nicholasadamou/canvas-fonts@1.0.0/Times%20New%20Roman.ttf' },
-    { src: 'https://cdn.jsdelivr.net/npm/@nicholasadamou/canvas-fonts@1.0.0/Times%20New%20Roman%20Bold.ttf', fontWeight: 'bold' },
-    { src: 'https://cdn.jsdelivr.net/npm/@nicholasadamou/canvas-fonts@1.0.0/Times%20New%20Roman%20Italic.ttf', fontStyle: 'italic' },
-  ],
-});
-
-Font.register({
-  family: 'Georgia',
-  src: 'https://cdn.jsdelivr.net/npm/@nicholasadamou/canvas-fonts@1.0.0/Georgia.ttf',
-});
-
-Font.register({
-  family: 'Arial',
-  src: 'https://cdn.jsdelivr.net/npm/@nicholasadamou/canvas-fonts@1.0.0/Arial.ttf',
-});
 
 export type PDFDocumentProps = {
   bookTitle: string;
@@ -210,10 +191,14 @@ export function PDFDocument({
   coverImageUrl,
 }: PDFDocumentProps) {
   const getFontFamily = (fontName: string) => {
-    if (['Times New Roman', 'Georgia', 'Arial'].includes(fontName)) {
-      return fontName;
-    }
-    return 'Helvetica';
+    const fontMap: Record<string, string> = {
+      'Times New Roman': 'Times-Roman',
+      'Georgia': 'Times-Roman',
+      'Arial': 'Helvetica',
+      'Helvetica': 'Helvetica',
+      'Courier': 'Courier',
+    };
+    return fontMap[fontName] || 'Helvetica';
   };
 
   const pdfStyles = StyleSheet.create({
