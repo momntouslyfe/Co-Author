@@ -109,7 +109,10 @@ export function CacheManagerProvider({ children }: CacheManagerProviderProps) {
   }, [settings.enabled, settings.intervalMinutes, clearCache]);
 
   useEffect(() => {
-    if (!settings.clearOnAIError) return;
+    if (!settings.enabled || !settings.clearOnAIError) {
+      console.log('[CacheManager] AI error cache clearing disabled - enabled:', settings.enabled, 'clearOnAIError:', settings.clearOnAIError);
+      return;
+    }
 
     const handleAIError = (event: CustomEvent) => {
       console.log('[CacheManager] AI error detected, clearing cache...');
@@ -121,7 +124,7 @@ export function CacheManagerProvider({ children }: CacheManagerProviderProps) {
     return () => {
       window.removeEventListener('ai-operation-error' as any, handleAIError);
     };
-  }, [settings.clearOnAIError, clearCache]);
+  }, [settings.enabled, settings.clearOnAIError, clearCache]);
 
   const value = {
     clearCache,
