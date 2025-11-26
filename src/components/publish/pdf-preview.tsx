@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Eye, X } from 'lucide-react';
+import { Loader2, Eye, X, Download } from 'lucide-react';
 import { EditorStyles } from '@/lib/publish/content-transformer';
 import { EditorChapter } from '@/lib/publish/types';
 import { AuthorProfile } from '@/lib/definitions';
@@ -14,20 +14,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const PDFDocument = dynamic(
   () => import('./pdf-document').then((mod) => mod.PDFDocument),
   { ssr: false, loading: () => <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-8 w-8 animate-spin" /></div> }
-);
-
-const PDFDownloadClient = dynamic(
-  () => import('./pdf-download-client').then((mod) => mod.PDFDownloadClient),
-  { ssr: false }
-);
-
-const PDFViewerClient = dynamic(
-  () => import('./pdf-download-client').then((mod) => mod.PDFViewerClient),
-  { ssr: false }
 );
 
 type PDFPreviewProps = {
@@ -53,7 +44,6 @@ export function PDFPreview({
   authorBioContent,
   coverImageUrl,
 }: PDFPreviewProps) {
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -91,52 +81,25 @@ export function PDFPreview({
   }
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Eye className="h-5 w-5" />
-            Preview & Export
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button
-            className="w-full gap-2"
-            variant="outline"
-            onClick={() => setIsPreviewOpen(true)}
-          >
-            <Eye className="h-4 w-4" />
-            Preview PDF
-          </Button>
-          
-          <PDFDownloadClient
-            document={<PDFDocument {...documentProps} />}
-            fileName={`${bookTitle.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`}
-          />
-        </CardContent>
-      </Card>
-
-      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-5xl h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>PDF Preview - {bookTitle}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsPreviewOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-hidden">
-            <PDFViewerClient
-              document={<PDFDocument {...documentProps} />}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Eye className="h-5 w-5" />
+          Preview & Export
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Alert>
+          <AlertDescription>
+            PDF preview and download features will be available in the next update. Your edited content is being saved automatically.
+          </AlertDescription>
+        </Alert>
+        
+        <Button className="w-full gap-2" disabled variant="secondary">
+          <Download className="h-4 w-4" />
+          Export PDF (Coming Soon)
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
