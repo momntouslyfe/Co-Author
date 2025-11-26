@@ -26,8 +26,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Trash2, User, Edit2, X, Check, Upload, ImageIcon } from 'lucide-react';
 import type { AuthorProfile } from '@/lib/definitions';
-import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useAuthUser, useCollection, useFirestore } from '@/firebase';
 import { addDoc, collection, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { useMemo } from 'react';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 import {
   AlertDialog,
