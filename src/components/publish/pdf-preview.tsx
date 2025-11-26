@@ -15,19 +15,25 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-const PDFViewer = dynamic(
-  () => import('@react-pdf/renderer').then((mod) => mod.PDFViewer),
-  { ssr: false, loading: () => <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-8 w-8 animate-spin" /></div> }
-);
-
 const PDFDownloadLink = dynamic(
-  () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
+  async () => {
+    const { PDFDownloadLink } = await import('@react-pdf/renderer');
+    return PDFDownloadLink;
+  },
   { ssr: false }
 );
 
-const PDFDocumentComponent = dynamic(
-  () => import('./pdf-document').then((mod) => mod.PDFDocument),
+const PDFViewer = dynamic(
+  async () => {
+    const { PDFViewer } = await import('@react-pdf/renderer');
+    return PDFViewer;
+  },
   { ssr: false }
+);
+
+const PDFDocument = dynamic(
+  () => import('./pdf-document').then((mod) => mod.PDFDocument),
+  { ssr: false, loading: () => <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-8 w-8 animate-spin" /></div> }
 );
 
 type PDFPreviewProps = {
@@ -110,10 +116,10 @@ export function PDFPreview({
           </Button>
           
           <PDFDownloadLink
-            document={<PDFDocumentComponent {...documentProps} />}
+            document={<PDFDocument {...documentProps} />}
             fileName={`${bookTitle.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`}
           >
-            {({ loading }) => (
+            {({ loading }: any) => (
               <Button className="w-full gap-2" disabled={loading}>
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -143,7 +149,7 @@ export function PDFPreview({
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
             <PDFViewer width="100%" height="100%" className="rounded-lg">
-              <PDFDocumentComponent {...documentProps} />
+              <PDFDocument {...documentProps} />
             </PDFViewer>
           </div>
         </DialogContent>
