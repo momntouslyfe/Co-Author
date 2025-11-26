@@ -54,6 +54,7 @@ export function BookEditor({ content, onChange, styles, chapterTitle }: BookEdit
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class: 'prose prose-lg max-w-none focus:outline-none min-h-[500px] p-4',
