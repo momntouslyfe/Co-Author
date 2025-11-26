@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useMemoFirebase } from '@/firebase';
 import { useAuthUser } from '@/firebase/auth/use-user';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -12,10 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, BookOpen, ChevronRight, FileText, Calendar } from 'lucide-react';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
-
-function useMemoFirebase<T>(factory: () => T, deps: React.DependencyList): T {
-  return useMemo(factory, deps);
-}
 
 export default function PublishPage() {
   const { user } = useAuthUser();
