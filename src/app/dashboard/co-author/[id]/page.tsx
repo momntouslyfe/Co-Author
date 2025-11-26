@@ -207,6 +207,10 @@ export default function CoAuthorWorkspacePage() {
         description: errorMessage,
         variant: 'destructive',
       });
+      
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ai-operation-error'));
+      }
     } finally {
       setLoading(false);
     }
