@@ -840,23 +840,61 @@ export default function ChapterPage() {
     }
   }, [projectDocRef, chapterDetails, chapterContent, chapterId, project?.chapters, toast]);
   
-  const handleCopyContent = useCallback(() => {
-    let formattedContent = '';
+  const handleCopyContent = useCallback(async () => {
+    let htmlContent = '';
+    let plainContent = '';
     
     if (chapterDetails) {
-      formattedContent += `${chapterDetails.title}\n\n`;
+      htmlContent += `<h1>${chapterDetails.title}</h1>`;
+      plainContent += `${chapterDetails.title}\n\n`;
     }
     
-    const cleanContent = chapterContent
-      .replace(/\$\$(Your Action Step|Coming Up Next)\$\$/gi, '')
-      .replace(/\$\$([^$]+)\$\$/g, (_, sectionTitle) => `\n${sectionTitle.trim()}\n`)
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
+    const parts = chapterContent.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
     
-    formattedContent += cleanContent;
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (part.startsWith('$$') && part.endsWith('$$')) {
+        const sectionTitle = part.replace(/\$\$/g, '').trim();
+        const nextPart = (i + 1 < parts.length && !parts[i + 1].startsWith('$$')) ? parts[i + 1].trim() : '';
+        
+        if (sectionTitle === 'Introduction') {
+          if (nextPart) {
+            htmlContent += `<p>${nextPart.replace(/\n\n/g, '</p><p>')}</p>`;
+            plainContent += `${nextPart}\n\n`;
+          }
+          if (nextPart) i++;
+        } else if (sectionTitle === 'Your Action Step' || sectionTitle === 'Coming Up Next') {
+          if (nextPart) {
+            htmlContent += `<p>${nextPart.replace(/\n\n/g, '</p><p>')}</p>`;
+            plainContent += `${nextPart}\n\n`;
+          }
+          if (nextPart) i++;
+        } else {
+          htmlContent += `<h2>${sectionTitle}</h2>`;
+          plainContent += `${sectionTitle}\n`;
+          if (nextPart) {
+            htmlContent += `<p>${nextPart.replace(/\n\n/g, '</p><p>')}</p>`;
+            plainContent += `${nextPart}\n\n`;
+            i++;
+          }
+        }
+      }
+    }
     
-    navigator.clipboard.writeText(formattedContent);
-    toast({ title: 'Content Copied', description: 'Chapter title, sub-topics, and content have been copied to your clipboard.' });
+    try {
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const plainBlob = new Blob([plainContent.trim()], { type: 'text/plain' });
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': blob,
+          'text/plain': plainBlob,
+        }),
+      ]);
+      toast({ title: 'Content Copied', description: 'Chapter with formatted headings copied to clipboard.' });
+    } catch (err) {
+      navigator.clipboard.writeText(plainContent.trim());
+      toast({ title: 'Content Copied', description: 'Chapter content copied to clipboard.' });
+    }
   }, [chapterContent, chapterDetails, toast]);
 
   const handleRewriteChapter = useCallback(async (instruction?: string) => {
