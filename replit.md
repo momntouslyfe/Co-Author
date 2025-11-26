@@ -6,6 +6,16 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 ## Recent Changes
 
+### November 26, 2025 - Publish Module Implementation
+- **New Publish Module**: Complete module for exporting book projects as publication-ready PDFs
+- **Three-Stage Workflow**: Project list → Chapter selection → PDF editor
+- **Rich Text Editor**: TipTap-based editor with full formatting controls (bold, italic, headings, lists, alignment)
+- **Styling Panel**: Customizable fonts, colors, and sizes for chapter titles, subtopics, body text, headers, and footers
+- **PDF Generation**: @react-pdf/renderer with inline formatting preservation (bold/italic), headers/footers, page numbers
+- **Dynamic TOC**: Auto-generated Table of Contents with internal linking based on book outline
+- **Content Transformation**: Markdown to HTML conversion with excluded headings (Introduction, Action Steps, Coming Up Next)
+- **Files Added**: `src/app/dashboard/publish/*`, `src/components/publish/*`, `src/lib/publish/*`
+
 ### November 24, 2025 - Payment and Coupon System Fixes
 - **Payment Amount Mismatch Fix**: Resolved "Expected 10, got 1200" error caused by comparing amounts in different currency units (USD vs BDT). Payment validation now properly handles currency conversion with multi-layered fallback logic to determine expected BDT amount.
 - **Coupon Validation Fix**: Improved coupon validation with robust timestamp handling supporting all Firestore date formats (Timestamp objects, JSON serialized timestamps, Date objects, strings). Added Firestore indexes for efficient coupon queries and fixed false "expired" errors for coupons without expiration dates.
