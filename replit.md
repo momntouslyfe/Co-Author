@@ -12,7 +12,7 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 - **Visual Preview**: Live preview that mirrors the chapter generation page layout, showing content exactly as it will appear in PDF
 - **ChapterPreview Component**: New component that displays chapters with section headers, paragraphs, and proper typography
 - **FullBookPreview Component**: Complete book preview including cover, title page, TOC, all chapters, and author bio
-- **Template Selector**: Visual grid for choosing templates with mini-previews
+- **Template Selector**: Vertical list layout with mini-previews and checkmark indicator for selected template
 - **Simplified Controls**: Removed complex TipTap toolbar, replaced with template selection and essential options
 - **Single/All Pages View**: Toggle between viewing one chapter at a time or all pages in scrollable view
 - **TemplateStyles PDF Integration**: Full mapping of template values to PDF document styles:
@@ -30,8 +30,18 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
   - Content automatically paginated across multiple pages
   - Shows estimated page count per chapter
   - Template styling applied to preview (fonts, colors, spacing)
+- **Save/Load Typography Styles**: Custom typography overrides persist to Firestore via `project.publishStyles`
+  - Added `PublishStyles` type and `publishStyles` field to Project data model
+  - Save button shows "Save Changes" when unsaved, "All Changes Saved" when synced
+  - `lastTemplateId` guard prevents saved styles from being overwritten on page reload
+  - Only resets to template defaults when user explicitly switches templates
+- **Interactive Table of Contents**:
+  - Chapter titles are clickable buttons that scroll to the chapter in preview
+  - Sub-topics displayed under each chapter with accent-colored bullets
+  - Page numbers shown for each chapter using cumulative page count
+  - Smooth scroll navigation via element IDs
 - **Files Added**: `src/lib/publish/templates.ts`, `src/components/publish/chapter-preview.tsx`, `src/components/publish/template-selector.tsx`, `src/components/publish/paginated-chapter-preview.tsx`, `src/components/publish/lazy-pdf-export.tsx`
-- **Files Modified**: `src/app/dashboard/publish/[projectId]/editor/page.tsx`, `src/components/publish/pdf-download-link-inner.tsx`, `src/components/publish/pdf-document.tsx`, `src/lib/publish/fonts.ts`
+- **Files Modified**: `src/app/dashboard/publish/[projectId]/editor/page.tsx`, `src/components/publish/pdf-download-link-inner.tsx`, `src/components/publish/pdf-document.tsx`, `src/lib/publish/fonts.ts`, `src/lib/definitions.ts`
 
 ### November 26, 2025 - Google Fonts & Multi-Language Support
 - **Google Fonts Integration**: Added 15 Google Fonts with TTF URLs for PDF export
