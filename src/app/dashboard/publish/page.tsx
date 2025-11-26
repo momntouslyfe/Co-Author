@@ -13,20 +13,18 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, BookOpen, ChevronRight, FileText, Calendar } from 'lucide-react';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 
-function useMemoFirebase<T>(factory: () => T, deps: React.DependencyList): T {
-  return useMemo(factory, deps);
-}
-
 export default function PublishPage() {
   const { user } = useAuthUser();
   const firestore = useFirestore();
 
-  const projectsQuery = useMemoFirebase(() => {
+  const projectsQuery = useMemo(() => {
     if (!user) return null;
-    return query(
+    const q = query(
       collection(firestore, 'users', user.uid, 'projects'),
       orderBy('lastUpdated', 'desc')
     );
+    (q as any).__memo = true;
+    return q;
   }, [user, firestore]);
 
   const { data: projects, isLoading } = useCollection<Project>(projectsQuery);
