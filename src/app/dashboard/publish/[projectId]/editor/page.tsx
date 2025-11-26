@@ -1,33 +1,43 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useParams, useSearchParams, useRouter, notFound } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useFirestore, useMemoFirebase } from '@/firebase';
 import { useAuthUser } from '@/firebase/auth/use-user';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc, updateDoc } from 'firebase/firestore';
-import { Project, Chapter, AuthorProfile } from '@/lib/definitions';
-import { 
-  EditorStyles, 
-  defaultStyles,
-} from '@/lib/publish/content-transformer';
-import { EditorChapter } from '@/lib/publish/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Project, AuthorProfile } from '@/lib/definitions';
+import { TEMPLATES, getTemplate, BookTemplate, TemplateStyles } from '@/lib/publish/templates';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, ArrowLeft, BookOpen, List, Upload, ImageIcon, User, X, Eye, Layers } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Loader2, ArrowLeft, Download, Upload, ImageIcon, X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
-import { StylePanel } from '@/components/publish/style-panel';
-import { BookEditor } from '@/components/publish/book-editor';
-import { PDFPreview } from '@/components/publish/pdf-preview';
+import { TemplateSelector } from '@/components/publish/template-selector';
+import { ChapterPreview, FullBookPreview } from '@/components/publish/chapter-preview';
 import { useToast } from '@/hooks/use-toast';
+import dynamic from 'next/dynamic';
+
+const PDFDownloadLinkInner = dynamic(
+  () => import('@/components/publish/pdf-download-link-inner').then(mod => mod.PDFDownloadLinkInner),
+  { ssr: false }
+);
+
+interface Section {
+  title: string;
+  content: string;
+}
+
+interface ParsedChapter {
+  id: string;
+  title: string;
+  partTitle: string;
+  sections: Section[];
+}
 
 const EXCLUDED_HEADINGS = [
   'introduction',
@@ -40,6 +50,35 @@ const EXCLUDED_HEADINGS = [
 function isExcludedHeading(heading: string): boolean {
   const normalized = heading.toLowerCase().trim();
   return EXCLUDED_HEADINGS.some(excluded => normalized.includes(excluded));
+}
+
+function parseChapterContent(rawContent: string): Section[] {
+  if (!rawContent) return [];
+  
+  const sections: Section[] = [];
+  const parts = rawContent.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+  
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part.startsWith('$$') && part.endsWith('$$')) {
+      const title = part.replace(/\$\$/g, '').trim();
+      
+      if (isExcludedHeading(title)) {
+        if (i + 1 < parts.length && !parts[i + 1].startsWith('$$')) {
+          i++;
+        }
+        continue;
+      }
+      
+      const contentPart = (i + 1 < parts.length && !parts[i + 1].startsWith('$$')) ? parts[i + 1].trim() : '';
+      sections.push({ title, content: contentPart });
+      if (contentPart) {
+        i++;
+      }
+    }
+  }
+  
+  return sections;
 }
 
 function convertMarkdownToHtml(content: string): string {
@@ -114,7 +153,7 @@ function convertMarkdownToHtml(content: string): string {
   return result.join('\n');
 }
 
-export default function EditorPage() {
+export default function VisualEditorPage() {
   const params = useParams<{ projectId: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -125,17 +164,12 @@ export default function EditorPage() {
   const { user } = useAuthUser();
   const firestore = useFirestore();
   
-  const [styles, setStyles] = useState<EditorStyles>(defaultStyles);
+  const [selectedTemplate, setSelectedTemplate] = useState<BookTemplate>(TEMPLATES[0]);
   const [showTOC, setShowTOC] = useState(true);
-  const [currentChapterId, setCurrentChapterId] = useState<string>('');
-  const [chapterContents, setChapterContents] = useState<Map<string, string>>(new Map());
-  const [initialized, setInitialized] = useState(false);
-  const [activeTab, setActiveTab] = useState('chapters');
-  const [authorBioContent, setAuthorBioContent] = useState('');
+  const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<'single' | 'all'>('single');
   const [coverImageUrl, setCoverImageUrl] = useState<string>('');
   const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const [viewMode, setViewMode] = useState<'chapter' | 'fullbook'>('chapter');
-  const [fullBookContent, setFullBookContent] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedChapterIds = useMemo(() => {
@@ -154,7 +188,7 @@ export default function EditorPage() {
   }, [user, firestore, authorProfileParam]);
 
   const { data: project, isLoading } = useDoc<Project>(projectDocRef);
-  const { data: authorProfile, isLoading: authorProfileLoading } = useDoc<AuthorProfile>(authorProfileDocRef);
+  const { data: authorProfile } = useDoc<AuthorProfile>(authorProfileDocRef);
 
   useEffect(() => {
     if (project?.coverImageUrl) {
@@ -162,31 +196,7 @@ export default function EditorPage() {
     }
   }, [project?.coverImageUrl]);
 
-  useEffect(() => {
-    if (authorProfile && !authorBioContent) {
-      let bioHtml = `<h2>About the Author</h2>`;
-      if (authorProfile.photoUrl) {
-        bioHtml += `<p><img src="${authorProfile.photoUrl}" alt="${authorProfile.penName}" style="max-width: 200px; border-radius: 8px;" /></p>`;
-      }
-      bioHtml += `<h3>${authorProfile.penName}</h3>`;
-      if (authorProfile.fullName) {
-        bioHtml += `<p><em>${authorProfile.fullName}</em></p>`;
-      }
-      bioHtml += `<p>${authorProfile.bio}</p>`;
-      if (authorProfile.credentials) {
-        bioHtml += `<p><strong>Credentials:</strong> ${authorProfile.credentials}</p>`;
-      }
-      if (authorProfile.website) {
-        bioHtml += `<p><strong>Website:</strong> ${authorProfile.website}</p>`;
-      }
-      if (authorProfile.email) {
-        bioHtml += `<p><strong>Contact:</strong> ${authorProfile.email}</p>`;
-      }
-      setAuthorBioContent(bioHtml);
-    }
-  }, [authorProfile, authorBioContent]);
-
-  const editorChapters: EditorChapter[] = useMemo(() => {
+  const parsedChapters: ParsedChapter[] = useMemo(() => {
     if (!project?.chapters) return [];
     
     return selectedChapterIds
@@ -198,457 +208,398 @@ export default function EditorPage() {
           id: chapter.id,
           title: chapter.title,
           partTitle: chapter.part || '',
-          content: chapter.content || '',
+          sections: parseChapterContent(chapter.content || ''),
         };
       })
-      .filter((c): c is EditorChapter => c !== null);
+      .filter((c): c is ParsedChapter => c !== null);
   }, [project?.chapters, selectedChapterIds]);
 
-  useEffect(() => {
-    if (editorChapters.length > 0 && !currentChapterId) {
-      setCurrentChapterId(editorChapters[0].id);
-    }
-  }, [editorChapters, currentChapterId]);
+  const currentChapter = parsedChapters[currentChapterIndex];
 
-  useEffect(() => {
-    if (project?.chapters && selectedChapterIds.length > 0 && !initialized) {
-      const initialContents = new Map<string, string>();
-      selectedChapterIds.forEach(chapterId => {
-        const chapter = project.chapters?.find(c => c.id === chapterId);
-        if (chapter && chapter.content) {
-          const htmlContent = convertMarkdownToHtml(chapter.content);
-          initialContents.set(chapterId, htmlContent);
-        }
-      });
-      setChapterContents(initialContents);
-      setInitialized(true);
-    }
-  }, [project?.chapters, selectedChapterIds, initialized]);
-
-  const currentChapter = useMemo(() => {
-    return editorChapters.find(c => c.id === currentChapterId);
-  }, [editorChapters, currentChapterId]);
-
-  const handleContentChange = (content: string) => {
-    if (currentChapterId) {
-      setChapterContents(prev => {
-        const newMap = new Map(prev);
-        newMap.set(currentChapterId, content);
-        return newMap;
-      });
+  const handlePrevChapter = () => {
+    if (currentChapterIndex > 0) {
+      setCurrentChapterIndex(currentChapterIndex - 1);
     }
   };
 
-  const handleCoverImageUpload = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid File",
-        description: "Please upload an image file (JPG, PNG, etc.)",
-        variant: "destructive",
-      });
-      return;
+  const handleNextChapter = () => {
+    if (currentChapterIndex < parsedChapters.length - 1) {
+      setCurrentChapterIndex(currentChapterIndex + 1);
     }
+  };
+
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !projectDocRef) return;
 
     setIsUploadingCover(true);
     try {
       const reader = new FileReader();
-      reader.onload = async (e) => {
-        const dataUrl = e.target?.result as string;
+      reader.onloadend = async () => {
+        const dataUrl = reader.result as string;
         setCoverImageUrl(dataUrl);
-        
-        if (user && projectId) {
-          const projectRef = doc(firestore, 'users', user.uid, 'projects', projectId);
-          await updateDoc(projectRef, {
-            coverImageUrl: dataUrl,
-          });
-          toast({
-            title: "Cover Uploaded",
-            description: "Your book cover has been saved.",
-          });
-        }
-        setIsUploadingCover(false);
+        await updateDoc(projectDocRef, { coverImageUrl: dataUrl });
+        toast({ title: 'Cover uploaded', description: 'Your book cover has been saved.' });
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      console.error("Error uploading cover:", error);
-      toast({
-        title: "Upload Failed",
-        description: "Could not upload the cover image. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error uploading cover:', error);
+      toast({ title: 'Upload failed', description: 'Could not upload the cover image.', variant: 'destructive' });
+    } finally {
       setIsUploadingCover(false);
     }
   };
 
-  const handleRemoveCover = async () => {
+  const removeCover = async () => {
+    if (!projectDocRef) return;
     setCoverImageUrl('');
-    if (user && projectId) {
-      try {
-        const projectRef = doc(firestore, 'users', user.uid, 'projects', projectId);
-        await updateDoc(projectRef, {
-          coverImageUrl: null,
-        });
-        toast({
-          title: "Cover Removed",
-          description: "Your book cover has been removed.",
-        });
-      } catch (error) {
-        console.error("Error removing cover:", error);
-      }
-    }
+    await updateDoc(projectDocRef, { coverImageUrl: '' });
+    toast({ title: 'Cover removed', description: 'Book cover has been removed.' });
   };
 
-  const chaptersForPDF = useMemo(() => {
-    return editorChapters.map(ch => ({
-      ...ch,
-      content: chapterContents.get(ch.id) || convertMarkdownToHtml(ch.content),
+  const editorChapters = useMemo(() => {
+    return parsedChapters.map(ch => ({
+      id: ch.id,
+      title: ch.title,
+      partTitle: ch.partTitle,
+      content: ch.sections.map(s => {
+        const sectionHtml = convertSectionToHtml(s.content);
+        return `<h3 class="section-title">${s.title}</h3>\n${sectionHtml}`;
+      }).join('\n'),
     }));
-  }, [editorChapters, chapterContents]);
+  }, [parsedChapters]);
 
-  const CHAPTER_START_MARKER = '<!-- CHAPTER_START:';
-  const CHAPTER_END_MARKER = ' -->';
-
-  const computedFullBookContent = useMemo(() => {
-    return editorChapters.map(ch => {
-      const content = chapterContents.get(ch.id) || convertMarkdownToHtml(ch.content);
-      return `${CHAPTER_START_MARKER}${ch.id}:${ch.title}${CHAPTER_END_MARKER}\n<h1>${ch.title}</h1>\n${content}`;
-    }).join('\n\n<hr style="page-break-before: always; border: none; margin: 40px 0;" />\n\n');
-  }, [editorChapters, chapterContents]);
-
-  useEffect(() => {
-    if (viewMode === 'fullbook' && !fullBookContent) {
-      setFullBookContent(computedFullBookContent);
-    }
-  }, [viewMode, fullBookContent, computedFullBookContent]);
-
-  const handleFullBookContentChange = (content: string) => {
-    setFullBookContent(content);
-  };
-
-  const syncFullBookToChapters = () => {
-    const chapterRegex = /<!-- CHAPTER_START:([\w-]+):(.*?) -->/g;
-    const newContents = new Map<string, string>();
-    let match;
-
-    const matches: { index: number; endIndex: number; chapterId: string; title: string }[] = [];
-    while ((match = chapterRegex.exec(fullBookContent)) !== null) {
-      matches.push({
-        index: match.index,
-        endIndex: match.index + match[0].length,
-        chapterId: match[1].trim(),
-        title: match[2].trim(),
-      });
-    }
-
-    for (let i = 0; i < matches.length; i++) {
-      const current = matches[i];
-      const nextIndex = i < matches.length - 1 ? matches[i + 1].index : fullBookContent.length;
-      
-      let chapterContent = fullBookContent.substring(current.endIndex, nextIndex);
-      
-      chapterContent = chapterContent
-        .replace(/^\s*<h1>[^<]*<\/h1>\s*/i, '')
-        .replace(/<hr[^>]*style="[^"]*page-break[^"]*"[^>]*\/?>\s*$/gi, '')
-        .trim();
-      
-      if (current.chapterId && editorChapters.some(ch => ch.id === current.chapterId)) {
-        newContents.set(current.chapterId, chapterContent);
+  function convertSectionToHtml(content: string): string {
+    if (!content) return '';
+    
+    const lines = content.split('\n');
+    const result: string[] = [];
+    let currentParagraph: string[] = [];
+    let listItems: string[] = [];
+    
+    const flushParagraph = () => {
+      if (currentParagraph.length > 0) {
+        const text = currentParagraph.join(' ')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>');
+        result.push(`<p>${text}</p>`);
+        currentParagraph = [];
       }
+    };
+    
+    const flushList = () => {
+      if (listItems.length > 0) {
+        result.push('<ul>');
+        listItems.forEach(item => {
+          result.push(`<li>${item}</li>`);
+        });
+        result.push('</ul>');
+        listItems = [];
+      }
+    };
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+        flushParagraph();
+        const itemContent = trimmed.substring(2)
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>');
+        listItems.push(itemContent);
+        continue;
+      }
+      
+      if (listItems.length > 0 && trimmed === '') {
+        flushList();
+        continue;
+      }
+      
+      if (listItems.length > 0 && trimmed && !trimmed.startsWith('- ') && !trimmed.startsWith('* ')) {
+        flushList();
+      }
+      
+      if (trimmed === '') {
+        flushParagraph();
+        continue;
+      }
+      
+      currentParagraph.push(trimmed);
     }
     
-    if (newContents.size > 0) {
-      setChapterContents(prev => {
-        const merged = new Map(prev);
-        newContents.forEach((value, key) => merged.set(key, value));
-        return merged;
-      });
-      toast({
-        title: "Synced",
-        description: `Successfully synced ${newContents.size} chapter(s) from full book view.`,
-      });
-    } else {
-      toast({
-        title: "No Changes",
-        description: "No chapter markers found to sync. Make sure chapter markers are preserved.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (!chaptersParam || selectedChapterIds.length === 0) {
-    router.replace(`/dashboard/publish/${projectId}`);
-    return null;
+    flushParagraph();
+    flushList();
+    
+    return result.join('\n');
   }
+
+  const editorStyles = useMemo(() => ({
+    chapterTitleFont: selectedTemplate.styles.chapterTitleFont,
+    chapterTitleSize: selectedTemplate.styles.chapterTitleSize,
+    chapterTitleColor: selectedTemplate.styles.chapterTitleColor,
+    subtopicFont: selectedTemplate.styles.sectionTitleFont,
+    subtopicSize: selectedTemplate.styles.sectionTitleSize,
+    subtopicColor: selectedTemplate.styles.sectionTitleColor,
+    bodyFont: selectedTemplate.styles.bodyFont,
+    bodySize: selectedTemplate.styles.bodySize,
+    bodyColor: selectedTemplate.styles.bodyColor,
+    headerFont: selectedTemplate.styles.headerFont,
+    headerSize: selectedTemplate.styles.headerSize,
+    headerColor: selectedTemplate.styles.headerColor,
+    footerFont: selectedTemplate.styles.footerFont,
+    footerSize: selectedTemplate.styles.footerSize,
+    footerColor: selectedTemplate.styles.footerColor,
+  }), [selectedTemplate]);
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  if (!project && !isLoading) {
-    return notFound();
+  if (!project) {
+    return (
+      <div className="container mx-auto py-8 text-center">
+        <p>Project not found</p>
+        <Button asChild className="mt-4">
+          <Link href="/dashboard/publish">Back to Projects</Link>
+        </Button>
+      </div>
+    );
   }
 
-  const currentContent = currentChapterId 
-    ? (chapterContents.get(currentChapterId) || (currentChapter ? convertMarkdownToHtml(currentChapter.content) : ''))
-    : '';
-
-  const hasAuthorProfile = authorProfileParam && authorProfileParam !== 'none' && authorProfile;
-
   return (
-    <>
+    <div className="min-h-screen bg-muted/30">
       <FloatingCreditWidget />
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href={`/dashboard/publish/${projectId}`}>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex-1">
-            <h1 className="font-headline text-2xl font-bold">{project?.title}</h1>
-            <p className="text-muted-foreground">Co-Editor - Edit and publish your ebook</p>
+      
+      <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={`/dashboard/publish/${projectId}`}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-lg font-semibold">{project.title}</h1>
+                <p className="text-sm text-muted-foreground">
+                  {parsedChapters.length} chapter{parsedChapters.length !== 1 ? 's' : ''} selected
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 border rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'single' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('single')}
+                >
+                  Single
+                </Button>
+                <Button
+                  variant={viewMode === 'all' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('all')}
+                >
+                  All Pages
+                </Button>
+              </div>
+              
+              <PDFDownloadLinkInner
+                bookTitle={project.title}
+                chapters={editorChapters}
+                styles={editorStyles}
+                showTOC={showTOC}
+                authorProfile={authorProfile || undefined}
+                coverImageUrl={coverImageUrl}
+                templateStyles={selectedTemplate.styles}
+              />
+            </div>
           </div>
         </div>
+      </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1 space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  Book Cover
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {coverImageUrl ? (
-                  <div className="relative">
-                    <div className="aspect-[3/4] w-full relative rounded-lg overflow-hidden border">
-                      <Image
-                        src={coverImageUrl}
-                        alt="Book cover"
-                        fill
-                        className="object-cover"
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-3">
+            <div className="sticky top-24 space-y-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Template</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <TemplateSelector
+                    selectedTemplateId={selectedTemplate.id}
+                    onSelect={setSelectedTemplate}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Book Cover</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {coverImageUrl ? (
+                    <div className="relative">
+                      <img 
+                        src={coverImageUrl} 
+                        alt="Book Cover" 
+                        className="w-full aspect-[8.5/11] object-cover rounded-lg border"
                       />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={removeCover}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={handleRemoveCover}
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full aspect-[8.5/11] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                      disabled={isUploadingCover}
                     >
-                      <X className="h-4 w-4" />
-                    </Button>
+                      {isUploadingCover ? (
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                      ) : (
+                        <>
+                          <ImageIcon className="h-8 w-8" />
+                          <span className="text-sm">Upload Cover</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleCoverUpload}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Options</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-toc" className="text-sm">Table of Contents</Label>
+                    <Switch
+                      id="show-toc"
+                      checked={showTOC}
+                      onCheckedChange={setShowTOC}
+                    />
                   </div>
-                ) : (
-                  <div 
-                    className="aspect-[3/4] w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/50 transition-colors"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {isUploadingCover ? (
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    ) : (
-                      <>
-                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground text-center">
-                          Click to upload<br />book cover
-                        </p>
-                      </>
-                    )}
-                  </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleCoverImageUpload(file);
-                  }}
-                />
-              </CardContent>
-            </Card>
+                  
+                  {authorProfile && (
+                    <div className="pt-2 border-t">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <BookOpen className="h-4 w-4" />
+                        <span>Author: {authorProfile.penName}</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Eye className="h-5 w-5" />
-                  View Mode
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant={viewMode === 'chapter' ? 'default' : 'outline'}
-                    size="sm"
-                    className="w-full gap-1"
-                    onClick={() => setViewMode('chapter')}
-                  >
-                    <Layers className="h-3 w-3" />
-                    Chapter
-                  </Button>
-                  <Button
-                    variant={viewMode === 'fullbook' ? 'default' : 'outline'}
-                    size="sm"
-                    className="w-full gap-1"
-                    onClick={() => {
-                      if (viewMode !== 'fullbook') {
-                        setFullBookContent(computedFullBookContent);
-                      }
-                      setViewMode('fullbook');
-                    }}
-                  >
-                    <BookOpen className="h-3 w-3" />
-                    Full Book
-                  </Button>
-                </div>
+              {viewMode === 'single' && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Chapters</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[200px]">
+                      <div className="space-y-1">
+                        {parsedChapters.map((chapter, index) => (
+                          <button
+                            key={chapter.id}
+                            onClick={() => setCurrentChapterIndex(index)}
+                            className={`
+                              w-full text-left px-3 py-2 rounded-md text-sm transition-colors
+                              ${currentChapterIndex === index 
+                                ? 'bg-primary text-primary-foreground' 
+                                : 'hover:bg-muted'
+                              }
+                            `}
+                          >
+                            <span className="font-medium">Ch. {index + 1}:</span> {chapter.title}
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
 
-                {viewMode === 'chapter' && (
-                  <Select value={currentChapterId} onValueChange={setCurrentChapterId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select chapter" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {editorChapters.map((chapter) => (
-                        <SelectItem key={chapter.id} value={chapter.id}>
-                          {chapter.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-
-                {viewMode === 'fullbook' && (
+          <div className="col-span-9">
+            {viewMode === 'single' ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full"
-                    onClick={syncFullBookToChapters}
+                    onClick={handlePrevChapter}
+                    disabled={currentChapterIndex === 0}
                   >
-                    Sync to Chapters
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
                   </Button>
-                )}
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="show-toc" className="flex items-center gap-2">
-                    <List className="h-4 w-4" />
-                    Table of Contents
-                  </Label>
-                  <Switch
-                    id="show-toc"
-                    checked={showTOC}
-                    onCheckedChange={setShowTOC}
-                  />
+                  <span className="text-sm text-muted-foreground">
+                    Chapter {currentChapterIndex + 1} of {parsedChapters.length}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextChapter}
+                    disabled={currentChapterIndex === parsedChapters.length - 1}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
 
-            <StylePanel styles={styles} onStyleChange={setStyles} />
-
-            <PDFPreview
-              bookTitle={project?.title || 'Untitled Book'}
-              chapters={chaptersForPDF}
-              styles={styles}
-              showTOC={showTOC}
-              outline={project?.outline}
-              selectedChapterIds={selectedChapterIds}
-              authorProfile={hasAuthorProfile ? authorProfile : undefined}
-              authorBioContent={authorBioContent}
-              coverImageUrl={coverImageUrl}
-            />
-          </div>
-
-          <div className="lg:col-span-3">
-            {viewMode === 'fullbook' ? (
-              <Tabs value={hasAuthorProfile ? activeTab : 'fullbook'} onValueChange={setActiveTab} className="w-full">
-                <TabsList className={`grid w-full mb-4 ${hasAuthorProfile ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                  <TabsTrigger value="fullbook" className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" />
-                    Full Ebook
-                  </TabsTrigger>
-                  {hasAuthorProfile && (
-                    <TabsTrigger value="author" className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      About the Author
-                    </TabsTrigger>
-                  )}
-                </TabsList>
-                <TabsContent value="fullbook">
-                  <BookEditor
-                    content={fullBookContent}
-                    onChange={handleFullBookContentChange}
-                    styles={styles}
-                    chapterTitle="Full Ebook View"
-                  />
-                </TabsContent>
-                {hasAuthorProfile && (
-                  <TabsContent value="author">
-                    <BookEditor
-                      content={authorBioContent}
-                      onChange={setAuthorBioContent}
-                      styles={styles}
-                      chapterTitle="About the Author"
-                    />
-                  </TabsContent>
+                {currentChapter && (
+                  <div className="flex justify-center">
+                    <div className="w-full max-w-2xl">
+                      <ChapterPreview
+                        chapterNumber={currentChapterIndex + 1}
+                        chapterTitle={currentChapter.title}
+                        sections={currentChapter.sections}
+                        styles={selectedTemplate.styles}
+                        showPageNumbers
+                      />
+                    </div>
+                  </div>
                 )}
-              </Tabs>
-            ) : hasAuthorProfile ? (
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="chapters">Chapters</TabsTrigger>
-                  <TabsTrigger value="author" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    About the Author
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="chapters">
-                  {currentChapter ? (
-                    <BookEditor
-                      content={currentContent}
-                      onChange={handleContentChange}
-                      styles={styles}
-                      chapterTitle={currentChapter.title}
-                    />
-                  ) : (
-                    <Card className="h-[600px] flex items-center justify-center">
-                      <div className="text-center text-muted-foreground">
-                        <BookOpen className="h-12 w-12 mx-auto mb-4" />
-                        <p>Select a chapter to start editing</p>
-                      </div>
-                    </Card>
-                  )}
-                </TabsContent>
-                <TabsContent value="author">
-                  <BookEditor
-                    content={authorBioContent}
-                    onChange={setAuthorBioContent}
-                    styles={styles}
-                    chapterTitle="About the Author"
-                  />
-                </TabsContent>
-              </Tabs>
-            ) : currentChapter ? (
-              <BookEditor
-                content={currentContent}
-                onChange={handleContentChange}
-                styles={styles}
-                chapterTitle={currentChapter.title}
-              />
+              </div>
             ) : (
-              <Card className="h-[600px] flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <BookOpen className="h-12 w-12 mx-auto mb-4" />
-                  <p>Select a chapter to start editing</p>
+              <div className="flex justify-center">
+                <div className="w-full max-w-2xl">
+                  <FullBookPreview
+                    bookTitle={project.title}
+                    chapters={parsedChapters}
+                    styles={selectedTemplate.styles}
+                    authorProfile={authorProfile}
+                    coverImageUrl={coverImageUrl}
+                  />
                 </div>
-              </Card>
+              </div>
             )}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

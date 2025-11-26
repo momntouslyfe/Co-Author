@@ -5,6 +5,7 @@ import { Document, Page, Text, View, StyleSheet, Link, Image } from '@react-pdf/
 import { EditorStyles, parseOutlineForTOC } from '@/lib/publish/content-transformer';
 import { EditorChapter } from '@/lib/publish/types';
 import { AuthorProfile } from '@/lib/definitions';
+import { TemplateStyles } from '@/lib/publish/templates';
 
 export type PDFDocumentProps = {
   bookTitle: string;
@@ -16,6 +17,7 @@ export type PDFDocumentProps = {
   authorProfile?: AuthorProfile;
   authorBioContent?: string;
   coverImageUrl?: string;
+  templateStyles?: TemplateStyles;
 };
 
 const EXCLUDED_HEADINGS = [
@@ -189,19 +191,31 @@ export function PDFDocument({
   authorProfile,
   authorBioContent,
   coverImageUrl,
+  templateStyles,
 }: PDFDocumentProps) {
   const getFontFamily = (fontName: string) => {
     return fontName;
   };
 
+  const marginTop = templateStyles?.marginTop || 50;
+  const marginBottom = templateStyles?.marginBottom || 50;
+  const marginLeft = templateStyles?.marginLeft || 60;
+  const marginRight = templateStyles?.marginRight || 60;
+  const paragraphSpacing = templateStyles?.paragraphSpacing || 12;
+  const sectionSpacing = templateStyles?.sectionSpacing || 28;
+  const bodyLineHeight = templateStyles?.bodyLineHeight || 1.6;
+  const chapterTitleAlign = templateStyles?.chapterTitleAlign || 'center';
+  const pageBackground = templateStyles?.pageBackground || '#FFFFFF';
+  const accentColor = templateStyles?.accentColor || '#3b82f6';
+
   const pdfStyles = StyleSheet.create({
     page: {
       flexDirection: 'column',
-      backgroundColor: '#FFFFFF',
-      paddingTop: 72,
-      paddingBottom: 72,
-      paddingLeft: 72,
-      paddingRight: 72,
+      backgroundColor: pageBackground,
+      paddingTop: marginTop,
+      paddingBottom: marginBottom,
+      paddingLeft: marginLeft,
+      paddingRight: marginRight,
     },
     coverPage: {
       flexDirection: 'column',
@@ -215,9 +229,9 @@ export function PDFDocument({
     },
     header: {
       position: 'absolute',
-      top: 36,
-      left: 72,
-      right: 72,
+      top: marginTop / 2,
+      left: marginLeft,
+      right: marginRight,
       textAlign: 'center',
       fontFamily: getFontFamily(styles.headerFont),
       fontSize: styles.headerSize,
@@ -225,9 +239,9 @@ export function PDFDocument({
     },
     footer: {
       position: 'absolute',
-      bottom: 36,
-      left: 72,
-      right: 72,
+      bottom: marginBottom / 2,
+      left: marginLeft,
+      right: marginRight,
       flexDirection: 'row',
       justifyContent: 'space-between',
       fontFamily: getFontFamily(styles.footerFont),
@@ -238,54 +252,59 @@ export function PDFDocument({
       fontFamily: getFontFamily(styles.chapterTitleFont),
       fontSize: styles.chapterTitleSize,
       color: styles.chapterTitleColor,
-      textAlign: 'center',
-      marginBottom: 30,
+      textAlign: chapterTitleAlign,
+      marginBottom: sectionSpacing,
       fontWeight: 'bold',
     },
     subtopic: {
       fontFamily: getFontFamily(styles.subtopicFont),
       fontSize: styles.subtopicSize,
       color: styles.subtopicColor,
-      marginTop: 20,
-      marginBottom: 10,
+      marginTop: sectionSpacing * 0.7,
+      marginBottom: paragraphSpacing * 0.8,
       fontWeight: 'bold',
+      borderBottomWidth: 1,
+      borderBottomColor: accentColor + '40',
+      paddingBottom: 4,
     },
     bodyText: {
       fontFamily: getFontFamily(styles.bodyFont),
       fontSize: styles.bodySize,
       color: styles.bodyColor,
-      lineHeight: 1.6,
+      lineHeight: bodyLineHeight,
       textAlign: 'justify',
-      marginBottom: 10,
+      marginBottom: paragraphSpacing,
     },
     listItem: {
       fontFamily: getFontFamily(styles.bodyFont),
       fontSize: styles.bodySize,
       color: styles.bodyColor,
-      lineHeight: 1.6,
-      marginBottom: 6,
+      lineHeight: bodyLineHeight,
+      marginBottom: paragraphSpacing * 0.5,
       marginLeft: 20,
     },
     tocTitle: {
       fontFamily: getFontFamily(styles.chapterTitleFont),
       fontSize: 24,
-      textAlign: 'center',
-      marginBottom: 30,
+      textAlign: chapterTitleAlign,
+      marginBottom: sectionSpacing,
       fontWeight: 'bold',
+      color: styles.chapterTitleColor,
     },
     tocChapter: {
       fontFamily: getFontFamily(styles.bodyFont),
       fontSize: 14,
-      marginTop: 12,
-      marginBottom: 4,
+      marginTop: paragraphSpacing,
+      marginBottom: paragraphSpacing * 0.3,
       fontWeight: 'bold',
+      color: styles.bodyColor,
     },
     tocSubtopic: {
       fontFamily: getFontFamily(styles.bodyFont),
       fontSize: 12,
       marginLeft: 20,
-      marginBottom: 3,
-      color: '#444444',
+      marginBottom: paragraphSpacing * 0.25,
+      color: styles.bodyColor,
     },
     titlePage: {
       flex: 1,
@@ -295,55 +314,57 @@ export function PDFDocument({
     bookTitleText: {
       fontFamily: getFontFamily(styles.chapterTitleFont),
       fontSize: 36,
-      textAlign: 'center',
+      textAlign: chapterTitleAlign,
       fontWeight: 'bold',
       color: styles.chapterTitleColor,
     },
     authorPage: {
       flex: 1,
-      padding: 20,
+      padding: marginLeft / 3,
     },
     authorTitle: {
       fontFamily: getFontFamily(styles.chapterTitleFont),
       fontSize: 24,
-      textAlign: 'center',
-      marginBottom: 30,
+      textAlign: chapterTitleAlign,
+      marginBottom: sectionSpacing,
       fontWeight: 'bold',
+      color: styles.chapterTitleColor,
     },
     authorName: {
       fontFamily: getFontFamily(styles.chapterTitleFont),
       fontSize: 20,
-      textAlign: 'center',
-      marginBottom: 10,
+      textAlign: chapterTitleAlign,
+      marginBottom: paragraphSpacing * 0.8,
       fontWeight: 'bold',
+      color: styles.chapterTitleColor,
     },
     authorFullName: {
       fontFamily: getFontFamily(styles.bodyFont),
       fontSize: 14,
-      textAlign: 'center',
-      marginBottom: 20,
+      textAlign: chapterTitleAlign,
+      marginBottom: paragraphSpacing * 1.5,
       fontStyle: 'italic',
-      color: '#666666',
+      color: styles.bodyColor,
     },
     authorBio: {
       fontFamily: getFontFamily(styles.bodyFont),
       fontSize: styles.bodySize,
       color: styles.bodyColor,
-      lineHeight: 1.6,
+      lineHeight: bodyLineHeight,
       textAlign: 'justify',
-      marginBottom: 20,
+      marginBottom: paragraphSpacing * 1.5,
     },
     authorCredentials: {
       fontFamily: getFontFamily(styles.bodyFont),
       fontSize: styles.bodySize - 1,
-      color: '#555555',
-      marginBottom: 15,
+      color: styles.bodyColor,
+      marginBottom: paragraphSpacing,
     },
     authorContact: {
       fontFamily: getFontFamily(styles.bodyFont),
       fontSize: styles.bodySize - 1,
-      color: '#555555',
-      marginBottom: 5,
+      color: styles.bodyColor,
+      marginBottom: paragraphSpacing * 0.5,
     },
     authorPhoto: {
       width: 150,

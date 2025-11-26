@@ -6,15 +6,30 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 ## Recent Changes
 
+### November 26, 2025 - Template-Driven Visual Publish Editor
+- **Complete Publish Editor Rebuild**: Replaced TipTap-based text editor with visual template-driven composer
+- **Template System**: Four professional templates (Modern, Classic, Minimal, Professional) with predefined typography and styling
+- **Visual Preview**: Live preview that mirrors the chapter generation page layout, showing content exactly as it will appear in PDF
+- **ChapterPreview Component**: New component that displays chapters with section headers, paragraphs, and proper typography
+- **FullBookPreview Component**: Complete book preview including cover, title page, TOC, all chapters, and author bio
+- **Template Selector**: Visual grid for choosing templates with mini-previews
+- **Simplified Controls**: Removed complex TipTap toolbar, replaced with template selection and essential options
+- **Single/All Pages View**: Toggle between viewing one chapter at a time or all pages in scrollable view
+- **TemplateStyles PDF Integration**: Full mapping of template values to PDF document styles:
+  - Page margins (marginTop, marginBottom, marginLeft, marginRight)
+  - Spacing (paragraphSpacing, sectionSpacing)
+  - Typography (bodyLineHeight, chapterTitleAlign)
+  - Colors (pageBackground, accentColor applied to section header borders)
+  - Author page, TOC, and title page all use template values
+- **Files Added**: `src/lib/publish/templates.ts`, `src/components/publish/chapter-preview.tsx`, `src/components/publish/template-selector.tsx`
+- **Files Modified**: `src/app/dashboard/publish/[projectId]/editor/page.tsx`, `src/components/publish/pdf-download-link-inner.tsx`, `src/components/publish/pdf-document.tsx`
+
 ### November 26, 2025 - Google Fonts & Multi-Language Support
 - **Google Fonts Integration**: Added 15 Google Fonts with TTF URLs for PDF export
   - **Latin Fonts**: Roboto, Open Sans, Lato, Merriweather, Playfair Display, Noto Sans, Noto Serif, Poppins
   - **Multi-Language Fonts**: Noto Sans Arabic (العربية), Noto Sans Bengali (বাংলা), Noto Sans Devanagari (हिंदी), Noto Sans JP (日本語), Noto Sans KR (한국어), Noto Sans SC (简体中文), Noto Sans Thai (ไทย)
 - **Font Registration**: Async font registration with proper loading state before PDF rendering
-- **Full Ebook View**: New view mode in editor allowing users to view/edit all chapters as a single document
-- **Chapter Sync**: Sync changes from full book view back to individual chapters using HTML comment markers
-- **View Mode Toggle**: UI toggle to switch between Chapter View and Full Book View
-- **Files Added/Modified**: `src/lib/publish/fonts.ts`, `src/lib/publish/content-transformer.ts`, editor page updates, PDF component updates
+- **Files Modified**: `src/lib/publish/fonts.ts`
 
 ### November 26, 2025 - Author Profile & Book Cover Feature
 - **Author Profile Management**: Full CRUD operations for managing multiple author profiles with pen name, bio, credentials, photo, website, and email
