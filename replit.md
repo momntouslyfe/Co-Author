@@ -23,8 +23,15 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
   - Author page, TOC, and title page all use template values
 - **Content Parsing Fix**: Updated `parseChapterContent` to correctly handle markdown headers (`## ` and `# `) instead of `$$section$$` markers, preserving all content including prose before first heading
 - **PDF Multi-Page Flow**: Long chapters now properly flow across multiple pages in exported PDFs
-- **Files Added**: `src/lib/publish/templates.ts`, `src/components/publish/chapter-preview.tsx`, `src/components/publish/template-selector.tsx`
-- **Files Modified**: `src/app/dashboard/publish/[projectId]/editor/page.tsx`, `src/components/publish/pdf-download-link-inner.tsx`, `src/components/publish/pdf-document.tsx`
+- **Lazy PDF Generation**: PDF is only generated when user clicks Export button (not during live preview)
+  - Uses `pdf().toBlob()` API with dynamic imports for on-demand generation
+  - Fonts are registered just-in-time before export with retry support on failures
+- **Paginated Visual Preview**: Real PDF-like pages with proper 8.5x11 sizing
+  - Content automatically paginated across multiple pages
+  - Shows estimated page count per chapter
+  - Template styling applied to preview (fonts, colors, spacing)
+- **Files Added**: `src/lib/publish/templates.ts`, `src/components/publish/chapter-preview.tsx`, `src/components/publish/template-selector.tsx`, `src/components/publish/paginated-chapter-preview.tsx`, `src/components/publish/lazy-pdf-export.tsx`
+- **Files Modified**: `src/app/dashboard/publish/[projectId]/editor/page.tsx`, `src/components/publish/pdf-download-link-inner.tsx`, `src/components/publish/pdf-document.tsx`, `src/lib/publish/fonts.ts`
 
 ### November 26, 2025 - Google Fonts & Multi-Language Support
 - **Google Fonts Integration**: Added 15 Google Fonts with TTF URLs for PDF export

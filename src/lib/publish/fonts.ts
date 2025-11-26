@@ -41,8 +41,13 @@ export async function registerFonts(): Promise<void> {
   }
   
   fontsRegistrationPromise = doRegisterFonts();
-  await fontsRegistrationPromise;
-  fontsRegistered = true;
+  try {
+    await fontsRegistrationPromise;
+    fontsRegistered = true;
+  } catch (error) {
+    fontsRegistrationPromise = null;
+    throw error;
+  }
 }
 
 async function doRegisterFonts(): Promise<void> {
