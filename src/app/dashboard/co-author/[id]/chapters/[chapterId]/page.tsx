@@ -841,11 +841,21 @@ export default function ChapterPage() {
   }, [projectDocRef, chapterDetails, chapterContent, chapterId, project?.chapters, toast]);
   
   const handleCopyContent = useCallback(() => {
-    // We need to strip the $$ markers for a clean copy
-    const cleanContent = chapterContent.replace(/\$\$[^$]+\$\$/g, '\n\n').trim();
-    navigator.clipboard.writeText(cleanContent);
-    toast({ title: 'Content Copied', description: 'The chapter text has been copied to your clipboard.' });
-  }, [chapterContent, toast]);
+    let formattedContent = '';
+    
+    if (chapterDetails) {
+      formattedContent += `# ${chapterDetails.title}\n\n`;
+    }
+    
+    const cleanContent = chapterContent
+      .replace(/\$\$([^$]+)\$\$/g, (_, sectionTitle) => `\n## ${sectionTitle.trim()}\n`)
+      .trim();
+    
+    formattedContent += cleanContent;
+    
+    navigator.clipboard.writeText(formattedContent);
+    toast({ title: 'Content Copied', description: 'Chapter title, sub-topics, and content have been copied to your clipboard.' });
+  }, [chapterContent, chapterDetails, toast]);
 
   const handleRewriteChapter = useCallback(async (instruction?: string) => {
     if (!user) return;
