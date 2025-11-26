@@ -15,7 +15,6 @@ import {
   Settings,
   Archive,
   Palette,
-  BookOpen,
   User,
 } from 'lucide-react';
 import { useAuthUser } from '@/firebase/auth/use-user';
@@ -23,7 +22,6 @@ import { useAuthUser } from '@/firebase/auth/use-user';
 const navItems = [
   { href: '/dashboard', icon: <LayoutDashboard />, label: 'Dashboard' },
   { href: '/dashboard/co-author', icon: <FileText />, label: 'Co-Author' },
-  { href: '/dashboard/publish', icon: <BookOpen />, label: 'Publish' },
   { href: '/dashboard/research', icon: <Search />, label: 'Topic Research' },
   { href: '/dashboard/research/saved', icon: <Archive />, label: 'Saved Research' },
   { href: '/dashboard/style-profile', icon: <Palette />, label: 'Style Profile' },
@@ -43,9 +41,6 @@ export function MainNav() {
   const isActive = (href: string) => {
     if (href === '/dashboard/co-author') {
       return pathname.startsWith('/dashboard/co-author');
-    }
-    if (href === '/dashboard/publish') {
-      return pathname.startsWith('/dashboard/publish');
     }
     return pathname === href;
   }
