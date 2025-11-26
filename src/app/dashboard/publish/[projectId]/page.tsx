@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
 import Link from 'next/link';
-import { useFirestore, useMemoFirebase } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { useAuthUser } from '@/firebase/auth/use-user';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -49,14 +49,18 @@ export default function ChapterSelectionPage() {
   const [selectedChapters, setSelectedChapters] = useState<Set<string>>(new Set());
   const [selectedAuthorProfileId, setSelectedAuthorProfileId] = useState<string>('');
 
-  const projectDocRef = useMemoFirebase(() => {
+  const projectDocRef = useMemo(() => {
     if (!user || !projectId) return null;
-    return doc(firestore, 'users', user.uid, 'projects', projectId);
+    const d = doc(firestore, 'users', user.uid, 'projects', projectId);
+    (d as any).__memo = true;
+    return d;
   }, [user, firestore, projectId]);
 
-  const authorProfilesRef = useMemoFirebase(() => {
+  const authorProfilesRef = useMemo(() => {
     if (!user) return null;
-    return collection(firestore, 'users', user.uid, 'authorProfiles');
+    const c = collection(firestore, 'users', user.uid, 'authorProfiles');
+    (c as any).__memo = true;
+    return c;
   }, [user, firestore]);
 
   const { data: project, isLoading } = useDoc<Project>(projectDocRef);
