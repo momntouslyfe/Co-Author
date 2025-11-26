@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Download, Eye, X } from 'lucide-react';
+import { Loader2, Eye, X } from 'lucide-react';
 import { EditorStyles } from '@/lib/publish/content-transformer';
 import { EditorChapter } from '@/lib/publish/types';
 import { AuthorProfile } from '@/lib/definitions';
@@ -15,24 +15,18 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-const PDFViewer = dynamic(
-  async () => {
-    const { PDFViewer } = await import('@react-pdf/renderer');
-    return PDFViewer;
-  },
-  { ssr: false }
-);
-
 const PDFDocument = dynamic(
   () => import('./pdf-document').then((mod) => mod.PDFDocument),
   { ssr: false, loading: () => <div className="flex items-center justify-center h-[600px]"><Loader2 className="h-8 w-8 animate-spin" /></div> }
 );
 
-const PDFDownloadLink = dynamic(
-  async () => {
-    const { PDFDownloadLink: Link } = await import('@react-pdf/renderer');
-    return Link;
-  },
+const PDFDownloadClient = dynamic(
+  () => import('./pdf-download-client').then((mod) => mod.PDFDownloadClient),
+  { ssr: false }
+);
+
+const PDFViewerClient = dynamic(
+  () => import('./pdf-download-client').then((mod) => mod.PDFViewerClient),
   { ssr: false }
 );
 
@@ -115,21 +109,10 @@ export function PDFPreview({
             Preview PDF
           </Button>
           
-          <PDFDownloadLink
+          <PDFDownloadClient
             document={<PDFDocument {...documentProps} />}
             fileName={`${bookTitle.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`}
-          >
-            {({ loading }: any) => (
-              <Button className="w-full gap-2" disabled={loading}>
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                {loading ? 'Generating...' : 'Export PDF'}
-              </Button>
-            )}
-          </PDFDownloadLink>
+          />
         </CardContent>
       </Card>
 
@@ -148,9 +131,9 @@ export function PDFPreview({
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
-            <PDFViewer width="100%" height="100%" className="rounded-lg">
-              <PDFDocument {...documentProps} />
-            </PDFViewer>
+            <PDFViewerClient
+              document={<PDFDocument {...documentProps} />}
+            />
           </div>
         </DialogContent>
       </Dialog>
