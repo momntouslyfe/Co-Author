@@ -15,7 +15,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, ArrowLeft, Download, Upload, ImageIcon, X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Loader2, ArrowLeft, Download, Upload, ImageIcon, X, ChevronLeft, ChevronRight, BookOpen, ChevronDown, Settings } from 'lucide-react';
+import { AVAILABLE_FONTS } from '@/lib/publish/fonts';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 import { TemplateSelector } from '@/components/publish/template-selector';
 import { ChapterPreview, FullBookPreview } from '@/components/publish/chapter-preview';
@@ -197,6 +200,67 @@ export default function VisualEditorPage() {
   const [coverImageUrl, setCoverImageUrl] = useState<string>('');
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [customStyles, setCustomStyles] = useState({
+    chapterTitleFont: '',
+    chapterTitleSize: 0,
+    chapterTitleColor: '',
+    sectionTitleFont: '',
+    sectionTitleSize: 0,
+    sectionTitleColor: '',
+    bodyFont: '',
+    bodySize: 0,
+    bodyColor: '',
+    headerFont: '',
+    headerSize: 0,
+    headerColor: '',
+    footerFont: '',
+    footerSize: 0,
+    footerColor: '',
+  });
+  
+  useEffect(() => {
+    setCustomStyles({
+      chapterTitleFont: selectedTemplate.styles.chapterTitleFont,
+      chapterTitleSize: selectedTemplate.styles.chapterTitleSize,
+      chapterTitleColor: selectedTemplate.styles.chapterTitleColor,
+      sectionTitleFont: selectedTemplate.styles.sectionTitleFont,
+      sectionTitleSize: selectedTemplate.styles.sectionTitleSize,
+      sectionTitleColor: selectedTemplate.styles.sectionTitleColor,
+      bodyFont: selectedTemplate.styles.bodyFont,
+      bodySize: selectedTemplate.styles.bodySize,
+      bodyColor: selectedTemplate.styles.bodyColor,
+      headerFont: selectedTemplate.styles.headerFont,
+      headerSize: selectedTemplate.styles.headerSize,
+      headerColor: selectedTemplate.styles.headerColor,
+      footerFont: selectedTemplate.styles.footerFont,
+      footerSize: selectedTemplate.styles.footerSize,
+      footerColor: selectedTemplate.styles.footerColor,
+    });
+  }, [selectedTemplate]);
+  
+  const updateCustomStyle = (key: keyof typeof customStyles, value: string | number) => {
+    setCustomStyles(prev => ({ ...prev, [key]: value }));
+  };
+  
+  const mergedTemplateStyles: TemplateStyles = useMemo(() => ({
+    ...selectedTemplate.styles,
+    chapterTitleFont: customStyles.chapterTitleFont || selectedTemplate.styles.chapterTitleFont,
+    chapterTitleSize: customStyles.chapterTitleSize || selectedTemplate.styles.chapterTitleSize,
+    chapterTitleColor: customStyles.chapterTitleColor || selectedTemplate.styles.chapterTitleColor,
+    sectionTitleFont: customStyles.sectionTitleFont || selectedTemplate.styles.sectionTitleFont,
+    sectionTitleSize: customStyles.sectionTitleSize || selectedTemplate.styles.sectionTitleSize,
+    sectionTitleColor: customStyles.sectionTitleColor || selectedTemplate.styles.sectionTitleColor,
+    bodyFont: customStyles.bodyFont || selectedTemplate.styles.bodyFont,
+    bodySize: customStyles.bodySize || selectedTemplate.styles.bodySize,
+    bodyColor: customStyles.bodyColor || selectedTemplate.styles.bodyColor,
+    headerFont: customStyles.headerFont || selectedTemplate.styles.headerFont,
+    headerSize: customStyles.headerSize || selectedTemplate.styles.headerSize,
+    headerColor: customStyles.headerColor || selectedTemplate.styles.headerColor,
+    footerFont: customStyles.footerFont || selectedTemplate.styles.footerFont,
+    footerSize: customStyles.footerSize || selectedTemplate.styles.footerSize,
+    footerColor: customStyles.footerColor || selectedTemplate.styles.footerColor,
+  }), [selectedTemplate.styles, customStyles]);
 
   const selectedChapterIds = useMemo(() => {
     if (!chaptersParam) return [];
@@ -254,9 +318,23 @@ export default function VisualEditorPage() {
     }
   };
 
+  const MAX_COVER_SIZE = 2 * 1024 * 1024; // 2MB
+
   const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !projectDocRef) return;
+
+    if (file.size > MAX_COVER_SIZE) {
+      toast({ 
+        title: 'File too large', 
+        description: 'Book cover must be less than 2MB. Please choose a smaller image.', 
+        variant: 'destructive' 
+      });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
 
     setIsUploadingCover(true);
     try {
@@ -266,12 +344,16 @@ export default function VisualEditorPage() {
         setCoverImageUrl(dataUrl);
         await updateDoc(projectDocRef, { coverImageUrl: dataUrl });
         toast({ title: 'Cover uploaded', description: 'Your book cover has been saved.' });
+        setIsUploadingCover(false);
+      };
+      reader.onerror = () => {
+        toast({ title: 'Upload failed', description: 'Could not read the cover image.', variant: 'destructive' });
+        setIsUploadingCover(false);
       };
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('Error uploading cover:', error);
       toast({ title: 'Upload failed', description: 'Could not upload the cover image.', variant: 'destructive' });
-    } finally {
       setIsUploadingCover(false);
     }
   };
@@ -360,22 +442,22 @@ export default function VisualEditorPage() {
   }
 
   const editorStyles = useMemo(() => ({
-    chapterTitleFont: selectedTemplate.styles.chapterTitleFont,
-    chapterTitleSize: selectedTemplate.styles.chapterTitleSize,
-    chapterTitleColor: selectedTemplate.styles.chapterTitleColor,
-    subtopicFont: selectedTemplate.styles.sectionTitleFont,
-    subtopicSize: selectedTemplate.styles.sectionTitleSize,
-    subtopicColor: selectedTemplate.styles.sectionTitleColor,
-    bodyFont: selectedTemplate.styles.bodyFont,
-    bodySize: selectedTemplate.styles.bodySize,
-    bodyColor: selectedTemplate.styles.bodyColor,
-    headerFont: selectedTemplate.styles.headerFont,
-    headerSize: selectedTemplate.styles.headerSize,
-    headerColor: selectedTemplate.styles.headerColor,
-    footerFont: selectedTemplate.styles.footerFont,
-    footerSize: selectedTemplate.styles.footerSize,
-    footerColor: selectedTemplate.styles.footerColor,
-  }), [selectedTemplate]);
+    chapterTitleFont: mergedTemplateStyles.chapterTitleFont,
+    chapterTitleSize: mergedTemplateStyles.chapterTitleSize,
+    chapterTitleColor: mergedTemplateStyles.chapterTitleColor,
+    subtopicFont: mergedTemplateStyles.sectionTitleFont,
+    subtopicSize: mergedTemplateStyles.sectionTitleSize,
+    subtopicColor: mergedTemplateStyles.sectionTitleColor,
+    bodyFont: mergedTemplateStyles.bodyFont,
+    bodySize: mergedTemplateStyles.bodySize,
+    bodyColor: mergedTemplateStyles.bodyColor,
+    headerFont: mergedTemplateStyles.headerFont,
+    headerSize: mergedTemplateStyles.headerSize,
+    headerColor: mergedTemplateStyles.headerColor,
+    footerFont: mergedTemplateStyles.footerFont,
+    footerSize: mergedTemplateStyles.footerSize,
+    footerColor: mergedTemplateStyles.footerColor,
+  }), [mergedTemplateStyles]);
 
   if (isLoading) {
     return (
@@ -432,7 +514,7 @@ export default function VisualEditorPage() {
                   size="sm"
                   onClick={() => setViewMode('all')}
                 >
-                  All Pages
+                  Full Book
                 </Button>
               </div>
               
@@ -443,7 +525,7 @@ export default function VisualEditorPage() {
                 showTOC={showTOC}
                 authorProfile={authorProfile || undefined}
                 coverImageUrl={coverImageUrl}
-                templateStyles={selectedTemplate.styles}
+                templateStyles={mergedTemplateStyles}
               />
             </div>
           </div>
@@ -538,6 +620,236 @@ export default function VisualEditorPage() {
                 </CardContent>
               </Card>
 
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Typography
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium hover:text-primary">
+                      Chapter Title
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2 space-y-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Font</Label>
+                        <Select value={customStyles.chapterTitleFont} onValueChange={(v) => updateCustomStyle('chapterTitleFont', v)}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AVAILABLE_FONTS.map(font => (
+                              <SelectItem key={font.name} value={font.name} className="text-xs">
+                                {font.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Size</Label>
+                          <Input 
+                            type="number" 
+                            value={customStyles.chapterTitleSize} 
+                            onChange={(e) => updateCustomStyle('chapterTitleSize', parseInt(e.target.value) || 0)}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Color</Label>
+                          <Input 
+                            type="color" 
+                            value={customStyles.chapterTitleColor} 
+                            onChange={(e) => updateCustomStyle('chapterTitleColor', e.target.value)}
+                            className="h-8 p-1"
+                          />
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium hover:text-primary">
+                      Sub-Topics
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2 space-y-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Font</Label>
+                        <Select value={customStyles.sectionTitleFont} onValueChange={(v) => updateCustomStyle('sectionTitleFont', v)}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AVAILABLE_FONTS.map(font => (
+                              <SelectItem key={font.name} value={font.name} className="text-xs">
+                                {font.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Size</Label>
+                          <Input 
+                            type="number" 
+                            value={customStyles.sectionTitleSize} 
+                            onChange={(e) => updateCustomStyle('sectionTitleSize', parseInt(e.target.value) || 0)}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Color</Label>
+                          <Input 
+                            type="color" 
+                            value={customStyles.sectionTitleColor} 
+                            onChange={(e) => updateCustomStyle('sectionTitleColor', e.target.value)}
+                            className="h-8 p-1"
+                          />
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium hover:text-primary">
+                      Body Text
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2 space-y-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Font</Label>
+                        <Select value={customStyles.bodyFont} onValueChange={(v) => updateCustomStyle('bodyFont', v)}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AVAILABLE_FONTS.map(font => (
+                              <SelectItem key={font.name} value={font.name} className="text-xs">
+                                {font.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Size</Label>
+                          <Input 
+                            type="number" 
+                            value={customStyles.bodySize} 
+                            onChange={(e) => updateCustomStyle('bodySize', parseInt(e.target.value) || 0)}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Color</Label>
+                          <Input 
+                            type="color" 
+                            value={customStyles.bodyColor} 
+                            onChange={(e) => updateCustomStyle('bodyColor', e.target.value)}
+                            className="h-8 p-1"
+                          />
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium hover:text-primary">
+                      Page Header
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2 space-y-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Font</Label>
+                        <Select value={customStyles.headerFont} onValueChange={(v) => updateCustomStyle('headerFont', v)}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AVAILABLE_FONTS.map(font => (
+                              <SelectItem key={font.name} value={font.name} className="text-xs">
+                                {font.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Size</Label>
+                          <Input 
+                            type="number" 
+                            value={customStyles.headerSize} 
+                            onChange={(e) => updateCustomStyle('headerSize', parseInt(e.target.value) || 0)}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Color</Label>
+                          <Input 
+                            type="color" 
+                            value={customStyles.headerColor} 
+                            onChange={(e) => updateCustomStyle('headerColor', e.target.value)}
+                            className="h-8 p-1"
+                          />
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium hover:text-primary">
+                      Page Footer
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2 space-y-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Font</Label>
+                        <Select value={customStyles.footerFont} onValueChange={(v) => updateCustomStyle('footerFont', v)}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AVAILABLE_FONTS.map(font => (
+                              <SelectItem key={font.name} value={font.name} className="text-xs">
+                                {font.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Size</Label>
+                          <Input 
+                            type="number" 
+                            value={customStyles.footerSize} 
+                            onChange={(e) => updateCustomStyle('footerSize', parseInt(e.target.value) || 0)}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Color</Label>
+                          <Input 
+                            type="color" 
+                            value={customStyles.footerColor} 
+                            onChange={(e) => updateCustomStyle('footerColor', e.target.value)}
+                            className="h-8 p-1"
+                          />
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </CardContent>
+              </Card>
+
               {viewMode === 'single' && (
                 <Card>
                   <CardHeader className="pb-3">
@@ -603,7 +915,7 @@ export default function VisualEditorPage() {
                         chapterNumber={currentChapterIndex + 1}
                         chapterTitle={currentChapter.title}
                         sections={currentChapter.sections}
-                        styles={selectedTemplate.styles}
+                        styles={mergedTemplateStyles}
                       />
                     </div>
                   </div>
@@ -611,15 +923,39 @@ export default function VisualEditorPage() {
               </div>
             ) : (
               <div className="flex justify-center">
-                <div className="w-full max-w-2xl">
-                  <FullBookPreview
-                    bookTitle={project.title}
-                    chapters={parsedChapters}
-                    styles={selectedTemplate.styles}
-                    authorProfile={authorProfile}
-                    coverImageUrl={coverImageUrl}
-                  />
-                </div>
+                <ScrollArea className="h-[calc(100vh-200px)]">
+                  <div className="w-full max-w-2xl mx-auto space-y-8 pb-8">
+                    {coverImageUrl && (
+                      <div
+                        className="bg-white shadow-lg mx-auto"
+                        style={{
+                          width: 612 * 0.75,
+                          height: 792 * 0.75,
+                        }}
+                      >
+                        <img 
+                          src={coverImageUrl} 
+                          alt="Book Cover" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    
+                    {parsedChapters.map((chapter, index) => (
+                      <div key={chapter.id}>
+                        <div className="text-center text-sm text-muted-foreground mb-2 font-medium">
+                          Chapter {index + 1}: {chapter.title}
+                        </div>
+                        <PaginatedChapterPreview
+                          chapterNumber={index + 1}
+                          chapterTitle={chapter.title}
+                          sections={chapter.sections}
+                          styles={mergedTemplateStyles}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
             )}
           </div>

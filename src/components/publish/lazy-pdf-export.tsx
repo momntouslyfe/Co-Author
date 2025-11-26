@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, createElement } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Download } from 'lucide-react';
 import { registerFonts } from '@/lib/publish/fonts';
@@ -37,8 +37,8 @@ export function LazyPDFExport({
     try {
       await registerFonts();
 
-      const { pdf } = await import('@react-pdf/renderer');
-      const { PDFDocument } = await import('./pdf-document');
+      const reactPdf = await import('@react-pdf/renderer');
+      const pdfDocModule = await import('@/components/publish/pdf-document');
 
       const defaultStyles: EditorStyles = {
         chapterTitleFont: 'Poppins',
@@ -74,7 +74,9 @@ export function LazyPDFExport({
         templateStyles,
       };
 
-      const blob = await pdf(<PDFDocument {...documentProps} />).toBlob();
+      const PDFDocument = pdfDocModule.PDFDocument;
+      const documentElement = createElement(PDFDocument, documentProps) as any;
+      const blob = await reactPdf.pdf(documentElement).toBlob();
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
