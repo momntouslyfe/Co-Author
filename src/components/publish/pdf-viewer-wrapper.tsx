@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { pdf } from '@react-pdf/renderer';
+import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { PDFDocument, PDFDocumentProps } from './pdf-document';
+import { PDFDocumentProps } from './pdf-document';
 
 type PDFViewerWrapperProps = {
   documentProps: PDFDocumentProps;
@@ -23,6 +22,9 @@ export function PDFViewerWrapper({ documentProps }: PDFViewerWrapperProps) {
       setError(null);
 
       try {
+        const { pdf } = await import('@react-pdf/renderer');
+        const { PDFDocument } = await import('./pdf-document');
+        
         const doc = <PDFDocument {...documentProps} />;
         const blob = await pdf(doc).toBlob();
         
