@@ -6,70 +6,21 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 ## Recent Changes
 
-### November 26, 2025 - Template-Driven Visual Publish Editor
-- **Complete Publish Editor Rebuild**: Replaced TipTap-based text editor with visual template-driven composer
-- **Template System**: Four professional templates (Modern, Classic, Minimal, Professional) with predefined typography and styling
-- **Visual Preview**: Live preview that mirrors the chapter generation page layout, showing content exactly as it will appear in PDF
-- **ChapterPreview Component**: New component that displays chapters with section headers, paragraphs, and proper typography
-- **FullBookPreview Component**: Complete book preview including cover, title page, TOC, all chapters, and author bio
-- **Template Selector**: Vertical list layout with mini-previews and checkmark indicator for selected template
-- **Simplified Controls**: Removed complex TipTap toolbar, replaced with template selection and essential options
-- **Single/All Pages View**: Toggle between viewing one chapter at a time or all pages in scrollable view
-- **TemplateStyles PDF Integration**: Full mapping of template values to PDF document styles:
-  - Page margins (marginTop, marginBottom, marginLeft, marginRight)
-  - Spacing (paragraphSpacing, sectionSpacing)
-  - Typography (bodyLineHeight, chapterTitleAlign)
-  - Colors (pageBackground, accentColor applied to section header borders)
-  - Author page, TOC, and title page all use template values
-- **Content Parsing Fix**: Updated `parseChapterContent` to correctly handle markdown headers (`## ` and `# `) instead of `$$section$$` markers, preserving all content including prose before first heading
-- **PDF Multi-Page Flow**: Long chapters now properly flow across multiple pages in exported PDFs
-- **Lazy PDF Generation**: PDF is only generated when user clicks Export button (not during live preview)
-  - Uses `pdf().toBlob()` API with dynamic imports for on-demand generation
-  - Fonts are registered just-in-time before export with retry support on failures
-- **Paginated Visual Preview**: Real PDF-like pages with proper 8.5x11 sizing
-  - Content automatically paginated across multiple pages
-  - Shows estimated page count per chapter
-  - Template styling applied to preview (fonts, colors, spacing)
-- **Save/Load Typography Styles**: Custom typography overrides persist to Firestore via `project.publishStyles`
-  - Added `PublishStyles` type and `publishStyles` field to Project data model
-  - Save button shows "Save Changes" when unsaved, "All Changes Saved" when synced
-  - `lastTemplateId` guard prevents saved styles from being overwritten on page reload
-  - Only resets to template defaults when user explicitly switches templates
-- **Interactive Table of Contents**:
-  - Chapter titles are clickable buttons that scroll to the chapter in preview
-  - Sub-topics displayed under each chapter with accent-colored bullets
-  - Page numbers shown for each chapter using cumulative page count
-  - Smooth scroll navigation via element IDs
-- **Files Added**: `src/lib/publish/templates.ts`, `src/components/publish/chapter-preview.tsx`, `src/components/publish/template-selector.tsx`, `src/components/publish/paginated-chapter-preview.tsx`, `src/components/publish/lazy-pdf-export.tsx`
-- **Files Modified**: `src/app/dashboard/publish/[projectId]/editor/page.tsx`, `src/components/publish/pdf-download-link-inner.tsx`, `src/components/publish/pdf-document.tsx`, `src/lib/publish/fonts.ts`, `src/lib/definitions.ts`
+### November 26, 2025 - Publish Feature Removed
+- **Publish Module Removed**: The entire publish/PDF export feature has been removed for re-implementation later
+- **Files Removed**: 
+  - `src/app/dashboard/publish/*` (all pages)
+  - `src/components/publish/*` (all components)
+  - `src/lib/publish/*` (templates, fonts, content-transformer, types)
+- **Navigation Updated**: Removed "Publish" link from main sidebar navigation
+- **Data Model Cleaned**: Removed `PublishStyles` type and `publishStyles` field from Project type
+- **Author Profile Retained**: The author profile feature remains available for future use
 
-### November 26, 2025 - Google Fonts & Multi-Language Support
-- **Google Fonts Integration**: Added 15 Google Fonts with TTF URLs for PDF export
-  - **Latin Fonts**: Roboto, Open Sans, Lato, Merriweather, Playfair Display, Noto Sans, Noto Serif, Poppins
-  - **Multi-Language Fonts**: Noto Sans Arabic (العربية), Noto Sans Bengali (বাংলা), Noto Sans Devanagari (हिंदी), Noto Sans JP (日本語), Noto Sans KR (한국어), Noto Sans SC (简体中文), Noto Sans Thai (ไทย)
-- **Font Registration**: Async font registration with proper loading state before PDF rendering
-- **Files Modified**: `src/lib/publish/fonts.ts`
-
-### November 26, 2025 - Author Profile & Book Cover Feature
+### November 26, 2025 - Author Profile Feature
 - **Author Profile Management**: Full CRUD operations for managing multiple author profiles with pen name, bio, credentials, photo, website, and email
-- **Author Profile Integration**: Optional author profile selection during project creation and in the publish workflow chapter selection
-- **Book Cover Upload**: Upload custom book covers in the PDF editor with image preview and persistence to Firestore
-- **Enhanced PDF Export**: 
-  - Book cover displayed as full-page first page when uploaded
-  - "About the Author" page appended at end of PDF when author profile selected
-  - Author photo, bio, credentials, and contact info rendered in styled format
-- **Files Added/Modified**: `src/app/dashboard/author-profile/page.tsx`, editor page updates, PDF document enhancements
+- **Author Profile Integration**: Optional author profile selection during project creation
+- **Files Added/Modified**: `src/app/dashboard/author-profile/page.tsx`
 - **Data Model**: Added `AuthorProfile` type with penName, fullName, bio, credentials, photoUrl, website, email fields
-
-### November 26, 2025 - Publish Module Implementation
-- **New Publish Module**: Complete module for exporting book projects as publication-ready PDFs
-- **Three-Stage Workflow**: Project list → Chapter selection → PDF editor
-- **Rich Text Editor**: TipTap-based editor with full formatting controls (bold, italic, headings, lists, alignment)
-- **Styling Panel**: Customizable fonts, colors, and sizes for chapter titles, subtopics, body text, headers, and footers
-- **PDF Generation**: @react-pdf/renderer with inline formatting preservation (bold/italic), headers/footers, page numbers
-- **Dynamic TOC**: Auto-generated Table of Contents with internal linking based on book outline
-- **Content Transformation**: Markdown to HTML conversion with excluded headings (Introduction, Action Steps, Coming Up Next)
-- **Files Added**: `src/app/dashboard/publish/*`, `src/components/publish/*`, `src/lib/publish/*`
 
 ### November 24, 2025 - Payment and Coupon System Fixes
 - **Payment Amount Mismatch Fix**: Resolved "Expected 10, got 1200" error caused by comparing amounts in different currency units (USD vs BDT). Payment validation now properly handles currency conversion with multi-layered fallback logic to determine expected BDT amount.
@@ -101,7 +52,7 @@ Preferred communication style: Simple, everyday language.
 ### Data Storage
 
 **Database**: Cloud Firestore (NoSQL) for real-time syncing and offline support, secured by rules-based access control.
-**Data Models**: User, Coupon, Project (with `currentStep` for workflow), ResearchProfile, StyleProfile, and Chapter.
+**Data Models**: User, Coupon, Project (with `currentStep` for workflow), ResearchProfile, StyleProfile, AuthorProfile, and Chapter.
 **Workflow**: `currentStep` field in projects manages user progress through the book creation workflow.
 
 ### Admin Features
@@ -139,10 +90,19 @@ Preferred communication style: Simple, everyday language.
 - **patch-package**: For `node_modules` patches.
 - **dotenv**: Environment variable management.
 
-**PDF Generation**:
-- **@react-pdf/renderer v4.1+**: Client-side PDF generation with React components
-- **Google Fonts**: 8 registered fonts (Roboto, Open Sans, Lato, Merriweather, Playfair Display, Noto Sans, Noto Serif, Poppins)
-- **Dynamic imports with SSR disabled**: Required for Next.js compatibility
-
 **Image Hosting**:
 - Whitelisted domains: `placehold.co`, `images.unsplash.com`, `picsum.photos`.
+
+## Future Features (Removed for Re-implementation)
+
+### Publish Module (Planned)
+The publish feature for exporting books as PDFs was removed on November 26, 2025 for re-implementation. Key features that were in development:
+- PDF export with customizable templates
+- Google Fonts support (15 fonts including multi-language)
+- Typography customization (fonts, sizes, colors)
+- Template-driven visual editor with live preview
+- Table of Contents with page numbers
+- Author profile integration for "About the Author" page
+- Book cover upload support
+
+This feature will be re-implemented with a simpler, more robust architecture.
