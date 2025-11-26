@@ -6,6 +6,14 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 ## Recent Changes
 
+### November 26, 2025 - Google Fonts & Full Ebook View
+- **Google Fonts Integration**: Added 8 Google Fonts (Roboto, Open Sans, Lato, Merriweather, Playfair Display, Noto Sans, Noto Serif, Poppins) with TTF URLs for PDF export
+- **Font Registration**: Fonts registered dynamically with @react-pdf/renderer, supports regular, bold, italic, and bold-italic weights
+- **Full Ebook View**: New view mode in editor allowing users to view/edit all chapters as a single document
+- **Chapter Sync**: Sync changes from full book view back to individual chapters using HTML comment markers
+- **View Mode Toggle**: UI toggle to switch between Chapter View and Full Book View
+- **Files Added/Modified**: `src/lib/publish/fonts.ts`, `src/lib/publish/content-transformer.ts`, editor page updates
+
 ### November 26, 2025 - Author Profile & Book Cover Feature
 - **Author Profile Management**: Full CRUD operations for managing multiple author profiles with pen name, bio, credentials, photo, website, and email
 - **Author Profile Integration**: Optional author profile selection during project creation and in the publish workflow chapter selection
@@ -92,9 +100,13 @@ Preferred communication style: Simple, everyday language.
 
 **Development Tools**:
 - **TypeScript**: For type safety.
-- **Turbopack**: Next.js development server.
 - **patch-package**: For `node_modules` patches.
 - **dotenv**: Environment variable management.
+
+**PDF Generation**:
+- **@react-pdf/renderer v4.1+**: Client-side PDF generation with React components
+- **Google Fonts**: 8 registered fonts (Roboto, Open Sans, Lato, Merriweather, Playfair Display, Noto Sans, Noto Serif, Poppins)
+- **Dynamic imports with SSR disabled**: Required for Next.js compatibility
 
 **Image Hosting**:
 - Whitelisted domains: `placehold.co`, `images.unsplash.com`, `picsum.photos`.

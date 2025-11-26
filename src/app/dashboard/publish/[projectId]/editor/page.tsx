@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, ArrowLeft, BookOpen, List, Upload, ImageIcon, User, X } from 'lucide-react';
+import { Loader2, ArrowLeft, BookOpen, List, Upload, ImageIcon, User, X, Eye, Layers } from 'lucide-react';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 import { StylePanel } from '@/components/publish/style-panel';
 import { BookEditor } from '@/components/publish/book-editor';
@@ -134,6 +134,8 @@ export default function EditorPage() {
   const [authorBioContent, setAuthorBioContent] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState<string>('');
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [viewMode, setViewMode] = useState<'chapter' | 'fullbook'>('chapter');
+  const [fullBookContent, setFullBookContent] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedChapterIds = useMemo(() => {
@@ -303,6 +305,76 @@ export default function EditorPage() {
     }));
   }, [editorChapters, chapterContents]);
 
+  const CHAPTER_START_MARKER = '<!-- CHAPTER_START:';
+  const CHAPTER_END_MARKER = ' -->';
+
+  const computedFullBookContent = useMemo(() => {
+    return editorChapters.map(ch => {
+      const content = chapterContents.get(ch.id) || convertMarkdownToHtml(ch.content);
+      return `${CHAPTER_START_MARKER}${ch.id}:${ch.title}${CHAPTER_END_MARKER}\n<h1>${ch.title}</h1>\n${content}`;
+    }).join('\n\n<hr style="page-break-before: always; border: none; margin: 40px 0;" />\n\n');
+  }, [editorChapters, chapterContents]);
+
+  useEffect(() => {
+    if (viewMode === 'fullbook' && !fullBookContent) {
+      setFullBookContent(computedFullBookContent);
+    }
+  }, [viewMode, fullBookContent, computedFullBookContent]);
+
+  const handleFullBookContentChange = (content: string) => {
+    setFullBookContent(content);
+  };
+
+  const syncFullBookToChapters = () => {
+    const chapterRegex = /<!-- CHAPTER_START:([\w-]+):(.*?) -->/g;
+    const newContents = new Map<string, string>();
+    let match;
+
+    const matches: { index: number; endIndex: number; chapterId: string; title: string }[] = [];
+    while ((match = chapterRegex.exec(fullBookContent)) !== null) {
+      matches.push({
+        index: match.index,
+        endIndex: match.index + match[0].length,
+        chapterId: match[1].trim(),
+        title: match[2].trim(),
+      });
+    }
+
+    for (let i = 0; i < matches.length; i++) {
+      const current = matches[i];
+      const nextIndex = i < matches.length - 1 ? matches[i + 1].index : fullBookContent.length;
+      
+      let chapterContent = fullBookContent.substring(current.endIndex, nextIndex);
+      
+      chapterContent = chapterContent
+        .replace(/^\s*<h1>[^<]*<\/h1>\s*/i, '')
+        .replace(/<hr[^>]*style="[^"]*page-break[^"]*"[^>]*\/?>\s*$/gi, '')
+        .trim();
+      
+      if (current.chapterId && editorChapters.some(ch => ch.id === current.chapterId)) {
+        newContents.set(current.chapterId, chapterContent);
+      }
+    }
+    
+    if (newContents.size > 0) {
+      setChapterContents(prev => {
+        const merged = new Map(prev);
+        newContents.forEach((value, key) => merged.set(key, value));
+        return merged;
+      });
+      toast({
+        title: "Synced",
+        description: `Successfully synced ${newContents.size} chapter(s) from full book view.`,
+      });
+    } else {
+      toast({
+        title: "No Changes",
+        description: "No chapter markers found to sync. Make sure chapter markers are preserved.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!chaptersParam || selectedChapterIds.length === 0) {
     router.replace(`/dashboard/publish/${projectId}`);
     return null;
@@ -404,23 +476,62 @@ export default function EditorPage() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  Chapter
+                  <Eye className="h-5 w-5" />
+                  View Mode
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Select value={currentChapterId} onValueChange={setCurrentChapterId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select chapter" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {editorChapters.map((chapter) => (
-                      <SelectItem key={chapter.id} value={chapter.id}>
-                        {chapter.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant={viewMode === 'chapter' ? 'default' : 'outline'}
+                    size="sm"
+                    className="w-full gap-1"
+                    onClick={() => setViewMode('chapter')}
+                  >
+                    <Layers className="h-3 w-3" />
+                    Chapter
+                  </Button>
+                  <Button
+                    variant={viewMode === 'fullbook' ? 'default' : 'outline'}
+                    size="sm"
+                    className="w-full gap-1"
+                    onClick={() => {
+                      if (viewMode !== 'fullbook') {
+                        setFullBookContent(computedFullBookContent);
+                      }
+                      setViewMode('fullbook');
+                    }}
+                  >
+                    <BookOpen className="h-3 w-3" />
+                    Full Book
+                  </Button>
+                </div>
+
+                {viewMode === 'chapter' && (
+                  <Select value={currentChapterId} onValueChange={setCurrentChapterId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select chapter" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {editorChapters.map((chapter) => (
+                        <SelectItem key={chapter.id} value={chapter.id}>
+                          {chapter.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {viewMode === 'fullbook' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={syncFullBookToChapters}
+                  >
+                    Sync to Chapters
+                  </Button>
+                )}
                 
                 <div className="flex items-center justify-between">
                   <Label htmlFor="show-toc" className="flex items-center gap-2">
@@ -452,7 +563,40 @@ export default function EditorPage() {
           </div>
 
           <div className="lg:col-span-3">
-            {hasAuthorProfile ? (
+            {viewMode === 'fullbook' ? (
+              <Tabs value={hasAuthorProfile ? activeTab : 'fullbook'} onValueChange={setActiveTab} className="w-full">
+                <TabsList className={`grid w-full mb-4 ${hasAuthorProfile ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  <TabsTrigger value="fullbook" className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    Full Ebook
+                  </TabsTrigger>
+                  {hasAuthorProfile && (
+                    <TabsTrigger value="author" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      About the Author
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+                <TabsContent value="fullbook">
+                  <BookEditor
+                    content={fullBookContent}
+                    onChange={handleFullBookContentChange}
+                    styles={styles}
+                    chapterTitle="Full Ebook View"
+                  />
+                </TabsContent>
+                {hasAuthorProfile && (
+                  <TabsContent value="author">
+                    <BookEditor
+                      content={authorBioContent}
+                      onChange={setAuthorBioContent}
+                      styles={styles}
+                      chapterTitle="About the Author"
+                    />
+                  </TabsContent>
+                )}
+              </Tabs>
+            ) : hasAuthorProfile ? (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-4">
                   <TabsTrigger value="chapters">Chapters</TabsTrigger>
