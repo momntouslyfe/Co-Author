@@ -1,17 +1,31 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BlobProvider } from '@react-pdf/renderer';
 import { Loader2 } from 'lucide-react';
 import { PDFDocument, PDFDocumentProps } from './pdf-document';
 import { registerFonts } from '@/lib/publish/fonts';
-
-registerFonts();
 
 type PDFViewerInnerProps = {
   documentProps: PDFDocumentProps;
 };
 
 export default function PDFViewerInner({ documentProps }: PDFViewerInnerProps) {
+  const [fontsReady, setFontsReady] = useState(false);
+
+  useEffect(() => {
+    registerFonts().then(() => setFontsReady(true));
+  }, []);
+
+  if (!fontsReady) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground">Loading fonts...</p>
+      </div>
+    );
+  }
+
   return (
     <BlobProvider document={<PDFDocument {...documentProps} />}>
       {({ blob, loading, error }) => {

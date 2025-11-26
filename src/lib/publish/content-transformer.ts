@@ -252,4 +252,11 @@ export const fontOptions = [
   'Noto Sans',
   'Noto Serif',
   'Poppins',
+  'Noto Sans Arabic',
+  'Noto Sans Bengali',
+  'Noto Sans Devanagari',
+  'Noto Sans JP',
+  'Noto Sans KR',
+  'Noto Sans SC',
+  'Noto Sans Thai',
 ];

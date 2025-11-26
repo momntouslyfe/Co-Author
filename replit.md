@@ -6,13 +6,15 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 ## Recent Changes
 
-### November 26, 2025 - Google Fonts & Full Ebook View
-- **Google Fonts Integration**: Added 8 Google Fonts (Roboto, Open Sans, Lato, Merriweather, Playfair Display, Noto Sans, Noto Serif, Poppins) with TTF URLs for PDF export
-- **Font Registration**: Fonts registered dynamically with @react-pdf/renderer, supports regular, bold, italic, and bold-italic weights
+### November 26, 2025 - Google Fonts & Multi-Language Support
+- **Google Fonts Integration**: Added 15 Google Fonts with TTF URLs for PDF export
+  - **Latin Fonts**: Roboto, Open Sans, Lato, Merriweather, Playfair Display, Noto Sans, Noto Serif, Poppins
+  - **Multi-Language Fonts**: Noto Sans Arabic (العربية), Noto Sans Bengali (বাংলা), Noto Sans Devanagari (हिंदी), Noto Sans JP (日本語), Noto Sans KR (한국어), Noto Sans SC (简体中文), Noto Sans Thai (ไทย)
+- **Font Registration**: Async font registration with proper loading state before PDF rendering
 - **Full Ebook View**: New view mode in editor allowing users to view/edit all chapters as a single document
 - **Chapter Sync**: Sync changes from full book view back to individual chapters using HTML comment markers
 - **View Mode Toggle**: UI toggle to switch between Chapter View and Full Book View
-- **Files Added/Modified**: `src/lib/publish/fonts.ts`, `src/lib/publish/content-transformer.ts`, editor page updates
+- **Files Added/Modified**: `src/lib/publish/fonts.ts`, `src/lib/publish/content-transformer.ts`, editor page updates, PDF component updates
 
 ### November 26, 2025 - Author Profile & Book Cover Feature
 - **Author Profile Management**: Full CRUD operations for managing multiple author profiles with pen name, bio, credentials, photo, website, and email

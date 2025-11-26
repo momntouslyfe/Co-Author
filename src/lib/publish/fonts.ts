@@ -1,6 +1,6 @@
 import { Font } from '@react-pdf/renderer';
 
-export const AVAILABLE_FONTS = [
+export const LATIN_FONTS = [
   { name: 'Roboto', label: 'Roboto' },
   { name: 'Open Sans', label: 'Open Sans' },
   { name: 'Lato', label: 'Lato' },
@@ -11,11 +11,26 @@ export const AVAILABLE_FONTS = [
   { name: 'Poppins', label: 'Poppins' },
 ] as const;
 
+export const MULTILANG_FONTS = [
+  { name: 'Noto Sans Arabic', label: 'Noto Sans Arabic (العربية)' },
+  { name: 'Noto Sans Bengali', label: 'Noto Sans Bengali (বাংলা)' },
+  { name: 'Noto Sans Devanagari', label: 'Noto Sans Devanagari (हिंदी)' },
+  { name: 'Noto Sans JP', label: 'Noto Sans JP (日本語)' },
+  { name: 'Noto Sans KR', label: 'Noto Sans KR (한국어)' },
+  { name: 'Noto Sans SC', label: 'Noto Sans SC (简体中文)' },
+  { name: 'Noto Sans Thai', label: 'Noto Sans Thai (ไทย)' },
+] as const;
+
+export const AVAILABLE_FONTS = [
+  ...LATIN_FONTS,
+  ...MULTILANG_FONTS,
+] as const;
+
 export type FontName = typeof AVAILABLE_FONTS[number]['name'];
 
 let fontsRegistered = false;
 
-export function registerFonts() {
+export async function registerFonts(): Promise<void> {
   if (fontsRegistered) {
     return;
   }
@@ -99,6 +114,62 @@ export function registerFonts() {
       { src: 'https://fonts.gstatic.com/s/poppins/v21/pxiByp8kv8JHgFVrLCz7Z1xlFQ.ttf', fontWeight: 700 },
       { src: 'https://fonts.gstatic.com/s/poppins/v21/pxiGyp8kv8JHgFVrJJLucHtA.ttf', fontWeight: 400, fontStyle: 'italic' },
       { src: 'https://fonts.gstatic.com/s/poppins/v21/pxiDyp8kv8JHgFVrJJLmy15VF9eO.ttf', fontWeight: 700, fontStyle: 'italic' },
+    ],
+  });
+
+  Font.register({
+    family: 'Noto Sans Arabic',
+    fonts: [
+      { src: 'https://fonts.gstatic.com/s/notosansarabic/v33/nwpxtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlhQ5l3sQWIHPqzCfyGyfvHqF.ttf', fontWeight: 400 },
+      { src: 'https://fonts.gstatic.com/s/notosansarabic/v33/nwpxtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlhQ5l3sQWIHPqzCfL2ufvHqF.ttf', fontWeight: 700 },
+    ],
+  });
+
+  Font.register({
+    family: 'Noto Sans Bengali',
+    fonts: [
+      { src: 'https://fonts.gstatic.com/s/notosansbengali/v32/Cn-SJsCGWQxOjaGwMQ6fIiMywrNJIky6nvd8BjzVMvJx2mcSPVFpVEqE-6KmsolLideu9g.ttf', fontWeight: 400 },
+      { src: 'https://fonts.gstatic.com/s/notosansbengali/v32/Cn-SJsCGWQxOjaGwMQ6fIiMywrNJIky6nvd8BjzVMvJx2mcSPVFpVEqE-6Kmsm5Mideu9g.ttf', fontWeight: 700 },
+    ],
+  });
+
+  Font.register({
+    family: 'Noto Sans Devanagari',
+    fonts: [
+      { src: 'https://fonts.gstatic.com/s/notosansdevanagari/v30/TuGoUUFzXI5FBtUq5a8bjKYTZjtRU6Sgv3NaV_SNmI0b8QQCQmHn6B2OHjbL_08AlXQl--c5pA.ttf', fontWeight: 400 },
+      { src: 'https://fonts.gstatic.com/s/notosansdevanagari/v30/TuGoUUFzXI5FBtUq5a8bjKYTZjtRU6Sgv3NaV_SNmI0b8QQCQmHn6B2OHjbL_08AlZMi--c5pA.ttf', fontWeight: 700 },
+    ],
+  });
+
+  Font.register({
+    family: 'Noto Sans JP',
+    fonts: [
+      { src: 'https://fonts.gstatic.com/s/notosansjp/v55/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFBEj35zS1g.ttf', fontWeight: 400 },
+      { src: 'https://fonts.gstatic.com/s/notosansjp/v55/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFPYk35zS1g.ttf', fontWeight: 700 },
+    ],
+  });
+
+  Font.register({
+    family: 'Noto Sans KR',
+    fonts: [
+      { src: 'https://fonts.gstatic.com/s/notosanskr/v38/PbyxFmXiEBPT4ITbgNA5Cgms3VYcOA-vvnIzzuoySLPg9A.ttf', fontWeight: 400 },
+      { src: 'https://fonts.gstatic.com/s/notosanskr/v38/PbyxFmXiEBPT4ITbgNA5Cgms3VYcOA-vvnIzzg01SLPg9A.ttf', fontWeight: 700 },
+    ],
+  });
+
+  Font.register({
+    family: 'Noto Sans SC',
+    fonts: [
+      { src: 'https://fonts.gstatic.com/s/notosanssc/v39/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FrYtHaA.ttf', fontWeight: 400 },
+      { src: 'https://fonts.gstatic.com/s/notosanssc/v39/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGzjCrYtHaA.ttf', fontWeight: 700 },
+    ],
+  });
+
+  Font.register({
+    family: 'Noto Sans Thai',
+    fonts: [
+      { src: 'https://fonts.gstatic.com/s/notosansthai/v29/iJWnBXeUZi_OHPqn4wq6hQ2_hbJ1xyN9wd43SofNWcd1MKVQt_So_9CdU5RtlzZ0RQ.ttf', fontWeight: 400 },
+      { src: 'https://fonts.gstatic.com/s/notosansthai/v29/iJWnBXeUZi_OHPqn4wq6hQ2_hbJ1xyN9wd43SofNWcd1MKVQt_So_9CdU3NqlzZ0RQ.ttf', fontWeight: 700 },
     ],
   });
 
