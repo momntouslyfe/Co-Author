@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
+import { CacheManagerProvider } from '@/contexts/cache-manager-context';
 
 export const metadata: Metadata = {
   title: 'Co-Author Pro',
@@ -22,7 +23,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <FirebaseClientProvider>
-          {children}
+          <CacheManagerProvider>
+            {children}
+          </CacheManagerProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>
