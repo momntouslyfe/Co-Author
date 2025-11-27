@@ -42,7 +42,7 @@ export default function CoWriterPage() {
               </Button>
               <Button asChild variant="outline" className="flex-1">
                 <Link href="/dashboard/co-writer/content-ideas/saved">
-                  View Saved
+                  View Saved Ideas
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
