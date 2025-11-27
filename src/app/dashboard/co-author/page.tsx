@@ -158,27 +158,11 @@ export default function CoAuthorPage() {
         if (!user) return;
         setIsDeleting(projectId);
         try {
-            const project = projects?.find(p => p.id === projectId);
             await deleteDoc(doc(firestore, 'users', user.uid, 'projects', projectId));
-            
-            if (project) {
-                const token = await user.getIdToken();
-                await fetch('/api/user/refund-book-credit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        projectId,
-                        projectTitle: project.title,
-                    }),
-                });
-            }
             
             toast({
                 title: 'Project Deleted',
-                description: 'Your project has been successfully deleted and credit refunded.'
+                description: 'Your project has been successfully deleted.'
             });
         } catch (error) {
             console.error("Error deleting project:", error);
