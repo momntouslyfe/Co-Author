@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -49,7 +49,7 @@ const languages = [
     { value: 'Hindi', label: 'Hindi' },
 ];
 
-export default function ResearchPage() {
+function ResearchPageContent() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,29 +61,33 @@ export default function ResearchPage() {
   const { user } = useAuthUser();
   const firestore = useFirestore();
   const { refreshCredits } = useCreditSummary();
+  const [paramsCleared, setParamsCleared] = useState(false);
 
-  const prefillTopic = searchParams.get('topic') || '';
-  const prefillDescription = searchParams.get('description') || '';
-  const sourceFunnelProjectId = searchParams.get('sourceFunnelProjectId') || '';
-  const sourceFunnelIdeaId = searchParams.get('sourceFunnelIdeaId') || '';
+  const [funnelSource] = useState({
+    projectId: searchParams.get('sourceFunnelProjectId') || '',
+    ideaId: searchParams.get('sourceFunnelIdeaId') || '',
+  });
+
+  const [initialValues] = useState({
+    topic: searchParams.get('topic') || '',
+    description: searchParams.get('description') || '',
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      topic: prefillTopic,
-      topicDescription: prefillDescription,
+      topic: initialValues.topic,
+      topicDescription: initialValues.description,
       targetMarket: '',
     },
   });
 
   useEffect(() => {
-    if (prefillTopic) {
-      form.setValue('topic', prefillTopic);
+    if (!paramsCleared && (initialValues.topic || initialValues.description || funnelSource.projectId)) {
+      router.replace('/dashboard/research', { scroll: false });
+      setParamsCleared(true);
     }
-    if (prefillDescription) {
-      form.setValue('topicDescription', prefillDescription);
-    }
-  }, [prefillTopic, prefillDescription, form]);
+  }, [paramsCleared, initialValues, funnelSource, router]);
 
   async function onSubmit(values: FormValues) {
     if (!user) {
@@ -240,11 +244,11 @@ Research Summary: ${result.deepTopicResearch.substring(0, 1000)}${result.deepTop
         sourceType: 'research',
       };
 
-      if (sourceFunnelProjectId) {
-        projectData.sourceFunnelProjectId = sourceFunnelProjectId;
+      if (funnelSource.projectId) {
+        projectData.sourceFunnelProjectId = funnelSource.projectId;
       }
-      if (sourceFunnelIdeaId) {
-        projectData.sourceFunnelIdeaId = sourceFunnelIdeaId;
+      if (funnelSource.ideaId) {
+        projectData.sourceFunnelIdeaId = funnelSource.ideaId;
       }
 
       const projectCollection = collection(firestore, 'users', user.uid, 'projects');
@@ -434,5 +438,17 @@ Research Summary: ${result.deepTopicResearch.substring(0, 1000)}${result.deepTop
       )}
       </div>
     </>
+  );
+}
+
+export default function ResearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center p-16">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    }>
+      <ResearchPageContent />
+    </Suspense>
   );
 }
