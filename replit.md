@@ -6,6 +6,25 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 ## Recent Changes
 
+### November 27, 2025 - Co-Marketer Feature
+- **Offer Creator**: Generate bonus material ideas across 12 categories to create irresistible book offers
+  - Categories: Complementary Skill Guide, Workbook, 30 Day Challenge, Quick Start Guide, Cheat-Sheet, Small Ebook, Template, Frameworks, Resource List, Advanced Chapter, Self Assessment Quiz, Troubleshooting Guide
+  - Supports single category or "All Categories" (3 ideas each) generation
+  - Integrates with Research Profile, Style Profile, Author Profile, and book blueprint for context
+  - Ideas can be saved and managed per project
+  - Old ideas preserved on regeneration
+- **Funnel Creator**: Build a 7-step book funnel based on the Value Ladder principle
+  - Each step addresses challenges that emerge after completing previous steps
+  - Progressive context: each step uses main book + previous step ideas for generation
+  - Visual step-by-step UI with saved ideas tracking
+  - Steps: First Challenge, Intermediate Growth, Advanced Techniques, Optimization & Scale, Teaching & Systems, Monetization, Mastery & Legacy
+- **Files Added**:
+  - `src/app/dashboard/co-marketer/*` (main page, offer-creator, funnel-creator)
+  - `src/ai/flows/generate-offer-ideas.ts`
+  - `src/ai/flows/generate-funnel-ideas.ts`
+- **Data Models Added**: OfferCategory, OfferIdea, ProjectOffers, BookIdea, FunnelStep, ProjectFunnel
+- **Navigation Updated**: Added "Co-Marketer" to main sidebar
+
 ### November 26, 2025 - Publish Feature Removed
 - **Publish Module Removed**: The entire publish/PDF export feature has been removed for re-implementation later
 - **Files Removed**: 
