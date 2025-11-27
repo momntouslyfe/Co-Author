@@ -9,7 +9,7 @@ interface CreditSummaryContextValue {
   creditSummary: CreditSummary | null;
   isLoading: boolean;
   error: Error | null;
-  refreshCredits: () => void;
+  refreshCredits: () => Promise<CreditSummary | undefined>;
 }
 
 const CreditSummaryContext = createContext<CreditSummaryContextValue | null>(null);
@@ -38,8 +38,8 @@ export function CreditSummaryProvider({ children }: { children: ReactNode }) {
     }
   );
 
-  const refreshCredits = () => {
-    mutate();
+  const refreshCredits = async () => {
+    return await mutate();
   };
 
   const value: CreditSummaryContextValue = {

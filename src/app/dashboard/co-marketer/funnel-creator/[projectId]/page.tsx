@@ -396,7 +396,7 @@ export default function FunnelBuilderPage() {
         }),
       });
 
-      refreshCredits();
+      await refreshCredits();
 
       toast({
         title: 'Book Project Created',
