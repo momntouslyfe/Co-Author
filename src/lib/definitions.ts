@@ -207,3 +207,38 @@ export type ProjectFunnel = {
   updatedAt: string;
 };
 
+export type ContentIdea = {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  createdAt: string;
+};
+
+export type ProjectContentIdeas = {
+  id: string;
+  userId: string;
+  projectId: string;
+  ideas: ContentIdea[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ContentDraft = {
+  id: string;
+  userId: string;
+  projectId: string;
+  contentIdeaId?: string;
+  contentIdeaTitle?: string;
+  title: string;
+  content: string;
+  wordCount: number;
+  targetWordCount?: number;
+  customInstructions?: string;
+  contentFramework?: string;
+  storytellingFramework?: string;
+  language?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
