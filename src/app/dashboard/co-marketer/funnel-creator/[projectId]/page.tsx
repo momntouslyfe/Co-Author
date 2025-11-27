@@ -351,6 +351,16 @@ export default function FunnelBuilderPage() {
         return;
       }
 
+      const creditCheck = await checkResponse.json();
+      if (!creditCheck.hasCredits) {
+        toast({
+          title: 'Insufficient Book Credits',
+          description: creditCheck.message || "You don't have enough book credits to create a new book. Please purchase more credits to continue.",
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const coreIdea = `${idea.description}\n\nTarget Problem: ${idea.targetProblem}`;
 
       const projectData: any = {
@@ -385,6 +395,8 @@ export default function FunnelBuilderPage() {
           projectTitle: idea.title,
         }),
       });
+
+      refreshCredits();
 
       toast({
         title: 'Book Project Created',
