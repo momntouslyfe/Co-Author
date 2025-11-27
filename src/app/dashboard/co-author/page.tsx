@@ -47,12 +47,14 @@ import {
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useCreditSummary } from '@/contexts/credit-summary-context';
 
 
 export default function CoAuthorPage() {
     const { user, isUserLoading } = useAuthUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { refreshCredits } = useCreditSummary();
     const router = useRouter();
 
     const [isCreating, setIsCreating] = useState(false);
@@ -133,6 +135,8 @@ export default function CoAuthorPage() {
                     projectTitle: newProjectName,
                 }),
             });
+            
+            await refreshCredits();
             
             toast({
                 title: "Project Created",
