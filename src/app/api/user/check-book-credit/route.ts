@@ -1,32 +1,33 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUserId } from '@/lib/server-auth';
-import { checkBookCreationCredit } from '@/lib/credit-tracker';
+import { getUserCreditSummary } from '@/lib/credits';
 
 export async function GET() {
   try {
     const userId = await getAuthenticatedUserId();
-    await checkBookCreationCredit(userId);
+    const creditSummary = await getUserCreditSummary(userId);
     
-    return NextResponse.json({ sufficient: true });
+    const hasCredits = creditSummary.bookCreditsAvailable >= 1;
+    
+    return NextResponse.json({ 
+      hasCredits,
+      bookCreditsAvailable: creditSummary.bookCreditsAvailable,
+      message: hasCredits 
+        ? `You have ${creditSummary.bookCreditsAvailable} book credits available.`
+        : `Insufficient book creation credits. You have ${creditSummary.bookCreditsAvailable} credits remaining. Please purchase more credits or upgrade your plan to continue.`
+    });
   } catch (error: any) {
     console.error('Check book credit error:', error);
     
-    if (error.message.includes('Insufficient')) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 403 }
-      );
-    }
-    
     if (error.message.includes('Not authenticated')) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized', hasCredits: false },
         { status: 401 }
       );
     }
     
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: error.message || 'Internal server error', hasCredits: false },
       { status: 500 }
     );
   }
