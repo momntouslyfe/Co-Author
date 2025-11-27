@@ -328,30 +328,39 @@ function WriteContentPageContent() {
     try {
       const draftsCollection = collection(firestore, 'users', user.uid, 'projects', selectedProjectId, 'contentDrafts');
 
-      const draftData = {
+      const draftData: Record<string, any> = {
         userId: user.uid,
         projectId: selectedProjectId,
-        contentIdeaId: selectedIdeaId || undefined,
-        contentIdeaTitle: selectedIdea?.title || undefined,
         title: contentTitle,
         content: generatedContent,
         wordCount: currentWordCount,
         targetWordCount: targetWordCount,
-        customInstructions: customInstructions || undefined,
-        contentFramework: contentFramework || undefined,
-        storytellingFramework: storytellingFramework || undefined,
         language: selectedLanguage,
         updatedAt: serverTimestamp(),
       };
+
+      if (selectedIdeaId && selectedIdeaId !== 'none') {
+        draftData.contentIdeaId = selectedIdeaId;
+      }
+      if (selectedIdea?.title) {
+        draftData.contentIdeaTitle = selectedIdea.title;
+      }
+      if (customInstructions) {
+        draftData.customInstructions = customInstructions;
+      }
+      if (contentFramework) {
+        draftData.contentFramework = contentFramework;
+      }
+      if (storytellingFramework) {
+        draftData.storytellingFramework = storytellingFramework;
+      }
 
       if (currentDraftId) {
         const draftRef = doc(firestore, 'users', user.uid, 'projects', selectedProjectId, 'contentDrafts', currentDraftId);
         await updateDoc(draftRef, draftData);
       } else {
-        const newDraftRef = await addDoc(draftsCollection, {
-          ...draftData,
-          createdAt: serverTimestamp(),
-        });
+        draftData.createdAt = serverTimestamp();
+        const newDraftRef = await addDoc(draftsCollection, draftData);
         setCurrentDraftId(newDraftRef.id);
       }
 
@@ -363,7 +372,7 @@ function WriteContentPageContent() {
       console.error('Error saving draft:', error);
       toast({
         title: 'Save Failed',
-        description: 'Failed to save draft. Please try again.',
+        description: error.message || 'Failed to save draft. Please try again.',
         variant: 'destructive',
       });
     } finally {
