@@ -1,0 +1,41 @@
+I want to add a new feature in the app and It will be called "Co-Marketer". I am giving you the workflow for this feature below:
+1. The Co-Marketer will have two options
+A. Offer Creator- It will generate bonus materials ideas for any book project to make an irresgistible and high-converting offer.
+B. Funnel Creator- It will generate The Next Book ideas for any Book Project That will transform the readers in a journey.
+
+Now let me give you the individual workflow,
+
+A. Offer Creator:
+- users will click on offer creator and they will land on where all they will have two options saved offers and Generate New offers ideas. If they select any sections, they will see all the book projects they have.
+- If they click on a book project from saved offers, they will see all the offers ideas they saved for the book project earlier, also, they will have the option to generate new offers ideas for the book project again, and it will take them to offers workflow with selected book project.
+- If they click on generate offers, they will see all the book projects they have. Then they will select a book project by click on the book project and it take them to next flow- where they can see the selected book and options to select "Research profile", "Storytelling Framework", "Style Profile",  "Author Profile", "language", "Also, Selected Book's Master Blueprint" for better Context for AI. These option will be auto/pre selected from the book project, also, users can select different one. Also, there will be option to select Bonus Materials category and it will be called Offers Category-let me give you the list of the category:
+
+ - 1. Complementary Skill Guide: It will give complementary Skill guide relevant for the selected book project. For example, If the book is about writing, the bonus could be about formatting.
+ - 2. Workbook / Actionbook: A guide for people with questions and space for them to write their answers.
+ - 3. 30 Day Challenge: A step by Step guide for people that will show people exactly what to do each day for a month.
+ - 4. Quick Start Guide: A 10 Minute guide to getting the first result immediately.
+ - 5. Cheat-Sheet: A 1-3 page summary of the entire system.
+ - 6. Small Ebook:Small Complementary Skill Book relevant for the selected book.
+ - 7. Template: Fill in the blank file or pre-made resources.
+ - 8. Frameworks: Step by Step Framework for readers relevant to the selected book. Curated from the selected book's blueprint and research profile.
+ - 9. Resource List: A curated list of the tools or something readers need relevant to the selected book.
+ - 10. Advanced chapter: A "missing Chapter" that was too advanced for the main book or selected book but valuable for high achievers. This chapter will be structured like the chapters of selected book with chapter title and sub-topics, but there will be at least 7-10 sub-topics.
+ - 11. Self Assessments Quiz: 15-30 multiple choice question to test the readers knowledge, along with an answer key.
+ - 12. Troubleshooting Guide: What to do when things go wrong.
+
+ - Note: These are categories for generating bonus material ideas, not for writing actual content. Users will use co-author workspace for writing from creating project on co-author.
+ 
+- After selecting all option, users will click on generate offers ideas button.
+- AI will take all the context and generate 5-7 bonus material ideas or offers ideas for the selected offers category. Users also will have the option to select all categories as well from the dropdown. If users select all categories, AI will generate 3 bonus material ideas or offers ideas for every offers category relevant for the selected book.
+- Users then can save offers ideas. They can select individual ideas from each offers category. They can also re-generate offers ideas for each category or all categories. and save again.
+- The saved offers ideas will be saved for the book project and structured by offers Category inside the save offers section under the book project.
+
+B. Funnel Creator
+ - On the funnel creator, users will see all the book project and select one.
+ - Then they will land on a page like creating flowchart as the funnel creator will generate ebook ideas releted to the selected book. The funnels will be steps for generating ebook ideas for every steps of the users journey. The funnel will have 7 flows or steps.
+- for each step, ai will generate 5-7 ebook ideas. these ideas will be based the next learning scopes for readers. If users create a funnel steps or flow for the first time means the first step, it will take context from selected book, and in the next funnel step or flow, it will take the selected book and the ebook ideas from step 1 and generate ideas for step 2 and the pattern will follow for every steps like in the step or flow 7, ai will take the selected book and all the ideas from step 1-6 as context.
+- For generating book ideas for every step, users will have the option to select, "Author Profile", "Style Profile", "Storytelling Framework", "Language",. Also, it will take "Research Profile" and "Master Blueprint" and "Title" of the selected book for better context to understand the pattern better.
+- Then users will have option to generate book ideas for that specific funnel flow or step.
+- Users can select and save book ideas individual or multiple ideas.And it will be saved in the funnel step. Users also can re-generate and save book ideas again if they want, but previous ideas will also remain.
+
+This feature will work like a value ladder: The logic is "solving one problem creates a new problem. The next step in the funnel solves the new problem. And The AI needs to work as a " Customer Journey Architect". The workflow logic also is like, in step 1, readers just finished the main book, what is the immediate next struggle they will face, it will generate book ideas for that. in step 2, readers just finished the main book and books from step 1, what do they need next, it will generate new ideas for step 2. 
