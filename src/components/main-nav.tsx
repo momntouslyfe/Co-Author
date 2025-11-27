@@ -17,6 +17,7 @@ import {
   Palette,
   User,
   Megaphone,
+  PenTool,
 } from 'lucide-react';
 import { useAuthUser } from '@/firebase/auth/use-user';
 
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/dashboard', icon: <LayoutDashboard />, label: 'Dashboard' },
   { href: '/dashboard/co-author', icon: <FileText />, label: 'Co-Author' },
   { href: '/dashboard/co-marketer', icon: <Megaphone />, label: 'Co-Marketer' },
+  { href: '/dashboard/co-writer', icon: <PenTool />, label: 'Co-Writer' },
   { href: '/dashboard/research', icon: <Search />, label: 'Topic Research' },
   { href: '/dashboard/research/saved', icon: <Archive />, label: 'Saved Research' },
   { href: '/dashboard/style-profile', icon: <Palette />, label: 'Style Profile' },
@@ -46,6 +48,9 @@ export function MainNav() {
     }
     if (href === '/dashboard/co-marketer') {
       return pathname.startsWith('/dashboard/co-marketer');
+    }
+    if (href === '/dashboard/co-writer') {
+      return pathname.startsWith('/dashboard/co-writer');
     }
     return pathname === href;
   }
