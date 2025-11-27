@@ -233,7 +233,14 @@ export default function FunnelBuilderPage() {
     try {
       const funnelDoc = await getDoc(funnelDocRef);
 
-      const newIdeas: BookIdea[] = selectedIdeas.map(({ selected, ...idea }) => idea);
+      const newIdeas: BookIdea[] = selectedIdeas.map(({ selected, ...idea }) => ({
+        id: idea.id,
+        title: idea.title,
+        subtitle: idea.subtitle || null,
+        description: idea.description,
+        targetProblem: idea.targetProblem,
+        createdAt: idea.createdAt,
+      }));
       const newSelectedIds = newIdeas.map(i => i.id);
 
       if (funnelDoc.exists()) {
