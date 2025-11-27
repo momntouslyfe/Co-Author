@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, PenTool, ArrowRight, Sparkles } from 'lucide-react';
+import { Lightbulb, PenTool, ArrowRight, Sparkles, FileText } from 'lucide-react';
 
 export default function CoWriterPage() {
   return (
@@ -67,13 +67,20 @@ export default function CoWriterPage() {
               Write complete marketing content from your saved ideas. Customize with word count, 
               frameworks, and custom instructions. Rewrite and expand as needed.
             </p>
-            <Button asChild className="w-full">
-              <Link href="/dashboard/co-writer/write-content">
-                <PenTool className="mr-2 h-4 w-4" />
-                Start Writing
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button asChild className="flex-1">
+                <Link href="/dashboard/co-writer/write-content">
+                  <PenTool className="mr-2 h-4 w-4" />
+                  Start Writing
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1">
+                <Link href="/dashboard/co-writer/saved-drafts">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Saved Drafts
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -60,6 +60,7 @@ function WriteContentPageContent() {
   const searchParams = useSearchParams();
   const projectIdParam = searchParams.get('projectId');
   const ideaIdParam = searchParams.get('ideaId');
+  const draftIdParam = searchParams.get('draftId');
   const { toast } = useToast();
   const { user, isUserLoading } = useAuthUser();
   const firestore = useFirestore();
@@ -80,7 +81,8 @@ function WriteContentPageContent() {
 
   const [generatedContent, setGeneratedContent] = useState<string>('');
   const [currentWordCount, setCurrentWordCount] = useState<number>(0);
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(draftIdParam);
+  const [draftLoaded, setDraftLoaded] = useState(false);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
@@ -105,6 +107,13 @@ function WriteContentPageContent() {
     if (!user || !selectedProjectId) return null;
     return doc(firestore, 'users', user.uid, 'projectContentIdeas', selectedProjectId);
   }, [user, firestore, selectedProjectId]);
+
+  const draftDocRef = useMemoFirebase(() => {
+    if (!user || !selectedProjectId || !draftIdParam) return null;
+    return doc(firestore, 'users', user.uid, 'projects', selectedProjectId, 'contentDrafts', draftIdParam);
+  }, [user, firestore, selectedProjectId, draftIdParam]);
+
+  const { data: loadedDraft, isLoading: draftLoading } = useDoc<ContentDraft>(draftDocRef);
 
   const researchProfilesQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -142,11 +151,32 @@ function WriteContentPageContent() {
   const isLoading = isUserLoading || projectsLoading;
 
   useEffect(() => {
-    if (selectedIdea) {
+    if (selectedIdea && !draftLoaded) {
       setContentTitle(selectedIdea.title);
       setContentDescription(selectedIdea.description);
     }
-  }, [selectedIdea]);
+  }, [selectedIdea, draftLoaded]);
+
+  useEffect(() => {
+    if (loadedDraft && !draftLoaded) {
+      setContentTitle(loadedDraft.title || '');
+      setGeneratedContent(loadedDraft.content || '');
+      setTargetWordCount(loadedDraft.targetWordCount || 500);
+      setSelectedLanguage(loadedDraft.language || 'English');
+      setCustomInstructions(loadedDraft.customInstructions || '');
+      setContentFramework(loadedDraft.contentFramework || '');
+      setStorytellingFramework(loadedDraft.storytellingFramework || '');
+      if (loadedDraft.contentIdeaId) {
+        setSelectedIdeaId(loadedDraft.contentIdeaId);
+      }
+      setShowSettings(false);
+      setDraftLoaded(true);
+      toast({
+        title: 'Draft Loaded',
+        description: 'Your saved draft has been loaded.',
+      });
+    }
+  }, [loadedDraft, draftLoaded, toast]);
 
   useEffect(() => {
     if (generatedContent) {
