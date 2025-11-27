@@ -18,6 +18,12 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
   - Progressive context: each step uses main book + previous step ideas for generation
   - Visual step-by-step UI with saved ideas tracking
   - Steps: First Challenge, Intermediate Growth, Advanced Techniques, Optimization & Scale, Teaching & Systems, Monetization, Mastery & Legacy
+  - **Write Book from Funnel Idea**: Create a new book project directly from any saved funnel idea
+    - Credit check: Validates book credits before project creation
+    - Pre-fills project with idea title and description (core idea + target problem)
+    - Tracks source as funnel-originated (sourceType, sourceFunnelProjectId, sourceFunnelIdeaId)
+    - Navigates to Co-Author workspace after creation
+    - Refreshes credit display after book creation
 - **Files Added**:
   - `src/app/dashboard/co-marketer/*` (main page, offer-creator, funnel-creator)
   - `src/ai/flows/generate-offer-ideas.ts`
