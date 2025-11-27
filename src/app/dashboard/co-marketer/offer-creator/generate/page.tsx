@@ -358,12 +358,12 @@ export default function GenerateOffersPage() {
 
                     <div className="space-y-2">
                       <Label>Research Profile (Optional)</Label>
-                      <Select value={selectedResearchProfileId} onValueChange={setSelectedResearchProfileId}>
+                      <Select value={selectedResearchProfileId || '__none__'} onValueChange={(v) => setSelectedResearchProfileId(v === '__none__' ? '' : v)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select research profile" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="__none__">None</SelectItem>
                           {researchProfiles?.map(profile => (
                             <SelectItem key={profile.id} value={profile.id}>
                               {profile.topic}
@@ -375,12 +375,12 @@ export default function GenerateOffersPage() {
 
                     <div className="space-y-2">
                       <Label>Style Profile (Optional)</Label>
-                      <Select value={selectedStyleProfileId} onValueChange={setSelectedStyleProfileId}>
+                      <Select value={selectedStyleProfileId || '__none__'} onValueChange={(v) => setSelectedStyleProfileId(v === '__none__' ? '' : v)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select style profile" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="__none__">None</SelectItem>
                           {styleProfiles?.map(profile => (
                             <SelectItem key={profile.id} value={profile.id}>
                               {profile.name}
@@ -392,12 +392,12 @@ export default function GenerateOffersPage() {
 
                     <div className="space-y-2">
                       <Label>Author Profile (Optional)</Label>
-                      <Select value={selectedAuthorProfileId} onValueChange={setSelectedAuthorProfileId}>
+                      <Select value={selectedAuthorProfileId || '__none__'} onValueChange={(v) => setSelectedAuthorProfileId(v === '__none__' ? '' : v)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select author profile" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="__none__">None</SelectItem>
                           {authorProfiles?.map(profile => (
                             <SelectItem key={profile.id} value={profile.id}>
                               {profile.penName}
