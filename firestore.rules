@@ -44,6 +44,33 @@ service cloud.firestore {
        */
       match /projects/{projectId} {
         allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+
+        /**
+         * @description A user can manage their own content drafts within a project.
+         * @path /users/{userId}/projects/{projectId}/contentDrafts/{draftId}
+         * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
+         */
+        match /contentDrafts/{draftId} {
+          allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+
+      /**
+       * @description A user can manage their own project content ideas.
+       * @path /users/{userId}/projectContentIdeas/{projectId}
+       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
+       */
+      match /projectContentIdeas/{projectId} {
+        allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      /**
+       * @description A user can manage their own author profiles.
+       * @path /users/{userId}/authorProfiles/{authorProfileId}
+       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
+       */
+      match /authorProfiles/{authorProfileId} {
+        allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
 

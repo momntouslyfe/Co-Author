@@ -6,6 +6,35 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 ## Recent Changes
 
+### November 27, 2025 - Co-Writer Feature
+- **Content Idea Generator**: Generate content ideas for marketing your book
+  - Select book project and enter content category (text input for flexibility)
+  - Supports multiple languages (English, Spanish, French, German, Bangla, Hindi)
+  - Optional integration with Research Profile, Style Profile for context
+  - Optional storytelling framework customization
+  - Save selected ideas per project for later use
+- **Write Content**: Write full marketing content from ideas or from scratch
+  - Select from saved content ideas or write custom content
+  - Configurable word count (200-3000 words)
+  - Custom instructions support
+  - Advanced settings: Content Framework, Storytelling Framework, Research Profile, Style Profile, Author Profile
+  - **Rewrite**: AI-powered content rewriting with optional guided instructions
+  - **Expand**: AI-powered content expansion with target word count and optional focus instructions
+  - Save drafts to project, copy to clipboard
+- **AI Flows Added**:
+  - `src/ai/flows/generate-content-ideas.ts`
+  - `src/ai/flows/write-marketing-content.ts`
+  - `src/ai/flows/rewrite-marketing-content.ts`
+  - `src/ai/flows/expand-marketing-content.ts`
+- **Pages Added**:
+  - `src/app/dashboard/co-writer/page.tsx` (main hub)
+  - `src/app/dashboard/co-writer/content-ideas/generate/page.tsx`
+  - `src/app/dashboard/co-writer/content-ideas/saved/page.tsx`
+  - `src/app/dashboard/co-writer/write-content/page.tsx`
+- **Data Models Added**: ContentIdea, ProjectContentIdeas, ContentDraft
+- **Navigation Updated**: Added "Co-Writer" to main sidebar
+- **Firebase Rules Updated**: Added rules for projectContentIdeas and contentDrafts collections
+
 ### November 27, 2025 - Co-Marketer Feature
 - **Offer Creator**: Generate bonus material ideas across 12 categories to create irresistible book offers
   - Categories: Complementary Skill Guide, Workbook, 30 Day Challenge, Quick Start Guide, Cheat-Sheet, Small Ebook, Template, Frameworks, Resource List, Advanced Chapter, Self Assessment Quiz, Troubleshooting Guide
