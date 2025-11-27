@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useParams, notFound } from 'next/navigation';
+import { useParams, notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,9 +33,10 @@ import {
   ChevronUp,
   Plus,
   Settings2,
+  PenTool,
 } from 'lucide-react';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, updateDoc, serverTimestamp, addDoc } from 'firebase/firestore';
 import type { Project, ResearchProfile, StyleProfile, AuthorProfile, ProjectFunnel, FunnelStep, BookIdea } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
 import { generateFunnelIdeas } from '@/ai/flows/generate-funnel-ideas';
@@ -62,6 +63,7 @@ export default function FunnelBuilderPage() {
   const { user, isUserLoading } = useAuthUser();
   const firestore = useFirestore();
   const { refreshCredits } = useCreditSummary();
+  const router = useRouter();
 
   const [selectedResearchProfileId, setSelectedResearchProfileId] = useState<string>('');
   const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string>('');
@@ -69,6 +71,7 @@ export default function FunnelBuilderPage() {
   const [activeStep, setActiveStep] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCreatingBook, setIsCreatingBook] = useState<string | null>(null);
   const [generatedIdeas, setGeneratedIdeas] = useState<GeneratedIdea[]>([]);
   const [stepContext, setStepContext] = useState<string>('');
   const [showSettings, setShowSettings] = useState(false);
@@ -319,6 +322,88 @@ export default function FunnelBuilderPage() {
     });
   };
 
+  const handleWriteBook = async (idea: BookIdea) => {
+    if (!user) {
+      toast({
+        title: 'Not Authenticated',
+        description: 'Please log in to create a new book project.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsCreatingBook(idea.id);
+
+    try {
+      const token = await user.getIdToken();
+
+      const checkResponse = await fetch('/api/user/check-book-credit', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!checkResponse.ok) {
+        const error = await checkResponse.json();
+        toast({
+          title: 'Insufficient Book Credits',
+          description: error.error || "You don't have enough book credits to create a new book. Please purchase more credits to continue.",
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const coreIdea = `${idea.description}\n\nTarget Problem: ${idea.targetProblem}`;
+
+      const projectData: any = {
+        userId: user.uid,
+        title: idea.title,
+        description: coreIdea,
+        status: 'Draft',
+        createdAt: serverTimestamp(),
+        lastUpdated: serverTimestamp(),
+        imageUrl: `https://picsum.photos/seed/${Math.random()}/600/800`,
+        imageHint: 'book cover',
+        sourceType: 'funnel',
+        sourceFunnelProjectId: projectId,
+        sourceFunnelIdeaId: idea.id,
+      };
+
+      if (selectedAuthorProfileId) {
+        projectData.authorProfileId = selectedAuthorProfileId;
+      }
+
+      const projectCollection = collection(firestore, 'users', user.uid, 'projects');
+      const newProjectDoc = await addDoc(projectCollection, projectData);
+
+      await fetch('/api/user/track-book-creation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          projectId: newProjectDoc.id,
+          projectTitle: idea.title,
+        }),
+      });
+
+      toast({
+        title: 'Book Project Created',
+        description: `Successfully created "${idea.title}". Taking you to the workspace...`,
+      });
+
+      router.push(`/dashboard/co-author/${newProjectDoc.id}`);
+    } catch (error: any) {
+      console.error('Error creating book from funnel idea:', error);
+      toast({
+        title: 'Error Creating Project',
+        description: error.message || 'Could not create the book project. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingBook(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -437,14 +522,32 @@ export default function FunnelBuilderPage() {
                             key={idea.id}
                             className="p-3 bg-muted/50 rounded-lg"
                           >
-                            <h4 className="font-medium text-sm">{idea.title}</h4>
-                            {idea.subtitle && (
-                              <p className="text-xs text-primary">{idea.subtitle}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1">{idea.description}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              <strong>Problem Solved:</strong> {idea.targetProblem}
-                            </p>
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm">{idea.title}</h4>
+                                {idea.subtitle && (
+                                  <p className="text-xs text-primary">{idea.subtitle}</p>
+                                )}
+                                <p className="text-xs text-muted-foreground mt-1">{idea.description}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  <strong>Problem Solved:</strong> {idea.targetProblem}
+                                </p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-shrink-0"
+                                onClick={() => handleWriteBook(idea)}
+                                disabled={isCreatingBook !== null}
+                              >
+                                {isCreatingBook === idea.id ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <PenTool className="mr-2 h-4 w-4" />
+                                )}
+                                Write Book
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
