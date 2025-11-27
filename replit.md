@@ -18,6 +18,9 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
   - Progressive context: each step uses main book + previous step ideas for generation
   - Visual step-by-step UI with saved ideas tracking
   - Steps: First Challenge, Intermediate Growth, Advanced Techniques, Optimization & Scale, Teaching & Systems, Monetization, Mastery & Legacy
+  - **Research from Funnel Idea**: Navigate to topic research page with idea pre-filled
+    - Pre-fills topic (title) and description (core idea + target problem) from funnel idea
+    - Tracks funnel source for provenance (sourceFunnelProjectId, sourceFunnelIdeaId)
   - **Write Book from Funnel Idea**: Create a new book project directly from any saved funnel idea
     - Credit check: Validates book credits before project creation
     - Pre-fills project with idea title and description (core idea + target problem)
@@ -30,6 +33,21 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
   - `src/ai/flows/generate-funnel-ideas.ts`
 - **Data Models Added**: OfferCategory, OfferIdea, ProjectOffers, BookIdea, FunnelStep, ProjectFunnel
 - **Navigation Updated**: Added "Co-Marketer" to main sidebar
+
+### November 27, 2025 - Topic Research Enhancement
+- **Topic Description Field**: Optional textarea for providing additional context to AI research
+  - Helps AI generate more relevant and targeted research
+  - Pre-filled when navigating from funnel ideas
+- **Write Book from Research**: Create book project directly from research results
+  - Credit check: Validates book credits before project creation using hasCredits flag
+  - Saves research profile automatically before project creation
+  - Pre-fills project with research topic, description, audience insights, and pain points
+  - Attaches researchProfileId to project for reference
+  - Tracks funnel source if originated from funnel idea
+  - Navigates to Co-Author workspace with enriched core idea
+  - Refreshes credit display after book creation
+- **URL Parameter Support**: Research page accepts pre-fill params (topic, description, sourceFunnelProjectId, sourceFunnelIdeaId)
+- **Files Modified**: `src/app/dashboard/research/page.tsx`
 
 ### November 26, 2025 - Publish Feature Removed
 - **Publish Module Removed**: The entire publish/PDF export feature has been removed for re-implementation later
