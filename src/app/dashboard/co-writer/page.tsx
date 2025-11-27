@@ -77,7 +77,7 @@ export default function CoWriterPage() {
               <Button asChild variant="outline" className="flex-1">
                 <Link href="/dashboard/co-writer/saved-drafts">
                   <FileText className="mr-2 h-4 w-4" />
-                  Saved Drafts
+                  Saved Content
                 </Link>
               </Button>
             </div>

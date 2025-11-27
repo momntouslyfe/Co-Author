@@ -395,8 +395,8 @@ function WriteContentPageContent() {
       }
 
       toast({
-        title: 'Draft Saved',
-        description: 'Your content draft has been saved.',
+        title: 'Content Saved',
+        description: 'Your content has been saved.',
       });
     } catch (error: any) {
       console.error('Error saving draft:', error);
@@ -819,7 +819,7 @@ function WriteContentPageContent() {
                         ) : (
                           <Save className="mr-2 h-4 w-4" />
                         )}
-                        Save Draft
+                        Save Content
                       </Button>
                     </div>
                   )}

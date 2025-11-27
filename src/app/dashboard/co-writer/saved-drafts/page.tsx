@@ -78,8 +78,8 @@ export default function SavedDraftsPage() {
       await deleteDoc(draftRef);
 
       toast({
-        title: 'Draft Deleted',
-        description: 'The content draft has been deleted.',
+        title: 'Content Deleted',
+        description: 'The saved content has been deleted.',
       });
     } catch (error: any) {
       console.error('Error deleting draft:', error);
@@ -118,7 +118,7 @@ export default function SavedDraftsPage() {
       <div className="container mx-auto py-8 px-4 max-w-4xl">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">Please sign in to view your saved drafts.</p>
+            <p className="text-center text-muted-foreground">Please sign in to view your saved content.</p>
           </CardContent>
         </Card>
       </div>
@@ -134,16 +134,16 @@ export default function SavedDraftsPage() {
             Back to Co-Writer
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">Saved Content Drafts</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Saved Content</h1>
         <p className="text-muted-foreground mt-2">
-          View and manage your saved marketing content drafts.
+          View and manage your saved marketing content.
         </p>
       </div>
 
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-lg">Select Book</CardTitle>
-          <CardDescription>Choose a book project to view its saved drafts</CardDescription>
+          <CardDescription>Choose a book project to view its saved content</CardDescription>
         </CardHeader>
         <CardContent>
           <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
@@ -211,7 +211,7 @@ export default function SavedDraftsPage() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Draft</AlertDialogTitle>
+                            <AlertDialogTitle>Delete Content</AlertDialogTitle>
                             <AlertDialogDescription>
                               Are you sure you want to delete "{draft.title}"? This action cannot be undone.
                             </AlertDialogDescription>
@@ -237,9 +237,9 @@ export default function SavedDraftsPage() {
               <CardContent className="pt-6">
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-medium mb-2">No Saved Drafts</h3>
+                  <h3 className="font-medium mb-2">No Saved Content</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    You haven't saved any content drafts for "{selectedProject?.title}" yet.
+                    You haven't saved any content for "{selectedProject?.title}" yet.
                   </p>
                   <Button asChild>
                     <Link href={`/dashboard/co-writer/write-content?projectId=${selectedProjectId}`}>
