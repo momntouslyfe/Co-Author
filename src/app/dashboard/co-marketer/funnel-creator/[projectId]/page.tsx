@@ -34,6 +34,7 @@ import {
   Plus,
   Settings2,
   PenTool,
+  Search,
 } from 'lucide-react';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, getDoc, setDoc, updateDoc, serverTimestamp, addDoc } from 'firebase/firestore';
@@ -545,20 +546,38 @@ export default function FunnelBuilderPage() {
                                   <strong>Problem Solved:</strong> {idea.targetProblem}
                                 </p>
                               </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-shrink-0"
-                                onClick={() => handleWriteBook(idea)}
-                                disabled={isCreatingBook !== null}
-                              >
-                                {isCreatingBook === idea.id ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                  <PenTool className="mr-2 h-4 w-4" />
-                                )}
-                                Write Book
-                              </Button>
+                              <div className="flex flex-col gap-2 flex-shrink-0">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const params = new URLSearchParams({
+                                      topic: idea.title,
+                                      description: `${idea.description}\n\nTarget Problem: ${idea.targetProblem}`,
+                                      sourceFunnelProjectId: projectId,
+                                      sourceFunnelIdeaId: idea.id,
+                                    });
+                                    router.push(`/dashboard/research?${params.toString()}`);
+                                  }}
+                                  disabled={isCreatingBook !== null}
+                                >
+                                  <Search className="mr-2 h-4 w-4" />
+                                  Research
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleWriteBook(idea)}
+                                  disabled={isCreatingBook !== null}
+                                >
+                                  {isCreatingBook === idea.id ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <PenTool className="mr-2 h-4 w-4" />
+                                  )}
+                                  Write Book
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         ))}

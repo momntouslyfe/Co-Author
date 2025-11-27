@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -9,17 +10,19 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { researchBookTopic } from '@/ai/flows/research-book-topic';
 import type { ResearchBookTopicOutput } from '@/ai/flows/research-book-topic';
-import { Loader2, Save, Search } from 'lucide-react';
+import { Loader2, Save, Search, PenTool } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthUser } from '@/firebase/auth/use-user';
 import { useFirestore } from '@/firebase';
@@ -30,6 +33,7 @@ import { FloatingCreditWidget } from '@/components/credits/floating-credit-widge
 
 const formSchema = z.object({
   topic: z.string().min(3, 'Topic must be at least 3 characters.'),
+  topicDescription: z.string().optional(),
   language: z.string({ required_error: 'Please select a language.' }),
   targetMarket: z.string().optional(),
 });
@@ -47,21 +51,39 @@ const languages = [
 
 export default function ResearchPage() {
   const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [creatingBook, setCreatingBook] = useState(false);
   const [result, setResult] = useState<ResearchBookTopicOutput | null>(null);
   const [currentValues, setCurrentValues] = useState<FormValues | null>(null);
   const { user } = useAuthUser();
   const firestore = useFirestore();
   const { refreshCredits } = useCreditSummary();
 
+  const prefillTopic = searchParams.get('topic') || '';
+  const prefillDescription = searchParams.get('description') || '';
+  const sourceFunnelProjectId = searchParams.get('sourceFunnelProjectId') || '';
+  const sourceFunnelIdeaId = searchParams.get('sourceFunnelIdeaId') || '';
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      topic: '',
+      topic: prefillTopic,
+      topicDescription: prefillDescription,
       targetMarket: '',
     },
   });
+
+  useEffect(() => {
+    if (prefillTopic) {
+      form.setValue('topic', prefillTopic);
+    }
+    if (prefillDescription) {
+      form.setValue('topicDescription', prefillDescription);
+    }
+  }, [prefillTopic, prefillDescription, form]);
 
   async function onSubmit(values: FormValues) {
     if (!user) {
@@ -78,10 +100,16 @@ export default function ResearchPage() {
     setCurrentValues(values);
     try {
       const idToken = await getIdToken(user);
+      const topicWithDescription = values.topicDescription 
+        ? `${values.topic}\n\nAdditional Context: ${values.topicDescription}`
+        : values.topic;
+      
       const researchData = await researchBookTopic({
         userId: user.uid,
         idToken,
-        ...values
+        topic: topicWithDescription,
+        language: values.language,
+        targetMarket: values.targetMarket,
       });
       setResult(researchData);
       refreshCredits();
@@ -98,6 +126,29 @@ export default function ResearchPage() {
     }
   }
 
+  async function saveResearchProfile(): Promise<string | null> {
+    if (!result || !currentValues || !user) {
+      return null;
+    }
+    
+    try {
+      const researchProfileCollection = collection(firestore, 'users', user.uid, 'researchProfiles');
+      const docRef = await addDoc(researchProfileCollection, {
+        userId: user.uid,
+        topic: currentValues.topic,
+        topicDescription: currentValues.topicDescription || null,
+        language: currentValues.language,
+        targetMarket: currentValues.targetMarket || '',
+        ...result,
+        createdAt: serverTimestamp(),
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  }
+
   async function handleSaveResearch() {
     if (!result || !currentValues || !user) {
       toast({ title: 'Cannot save', description: 'No research data or user session available.', variant: 'destructive'});
@@ -105,21 +156,129 @@ export default function ResearchPage() {
     }
     setSaving(true);
     try {
-      const researchProfileCollection = collection(firestore, 'users', user.uid, 'researchProfiles');
-      await addDoc(researchProfileCollection, {
-        userId: user.uid,
-        topic: currentValues.topic,
-        language: currentValues.language,
-        targetMarket: currentValues.targetMarket || '',
-        ...result,
-        createdAt: serverTimestamp(),
-      });
-      toast({ title: 'Success', description: 'Research profile saved successfully.' });
+      const profileId = await saveResearchProfile();
+      if (profileId) {
+        toast({ title: 'Success', description: 'Research profile saved successfully.' });
+      } else {
+        throw new Error('Failed to save');
+      }
     } catch (error) {
       console.error(error);
       toast({ title: 'Error Saving', description: 'Could not save the research profile.', variant: 'destructive'});
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleWriteBook() {
+    if (!result || !currentValues || !user) {
+      toast({ 
+        title: 'Cannot create book', 
+        description: 'No research data or user session available.', 
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setCreatingBook(true);
+
+    try {
+      const token = await user.getIdToken();
+
+      const checkResponse = await fetch('/api/user/check-book-credit', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!checkResponse.ok) {
+        const error = await checkResponse.json();
+        toast({
+          title: 'Insufficient Book Credits',
+          description: error.error || "You don't have enough book credits to create a new book.",
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const creditCheck = await checkResponse.json();
+      if (!creditCheck.hasCredits) {
+        toast({
+          title: 'Insufficient Book Credits',
+          description: creditCheck.message || "You don't have enough book credits to create a new book.",
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const researchProfileId = await saveResearchProfile();
+      if (!researchProfileId) {
+        toast({
+          title: 'Error Saving Research',
+          description: 'Could not save the research profile before creating the book.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const coreIdea = `Topic: ${currentValues.topic}
+
+${currentValues.topicDescription ? `Description: ${currentValues.topicDescription}\n\n` : ''}Target Audience: ${result.targetAudienceSuggestion}
+
+Pain Points: ${result.painPointAnalysis}
+
+Research Summary: ${result.deepTopicResearch.substring(0, 1000)}${result.deepTopicResearch.length > 1000 ? '...' : ''}`;
+
+      const projectData: any = {
+        userId: user.uid,
+        title: currentValues.topic,
+        description: coreIdea,
+        status: 'Draft',
+        createdAt: serverTimestamp(),
+        lastUpdated: serverTimestamp(),
+        imageUrl: `https://picsum.photos/seed/${Math.random()}/600/800`,
+        imageHint: 'book cover',
+        researchProfileId: researchProfileId,
+        sourceType: 'research',
+      };
+
+      if (sourceFunnelProjectId) {
+        projectData.sourceFunnelProjectId = sourceFunnelProjectId;
+      }
+      if (sourceFunnelIdeaId) {
+        projectData.sourceFunnelIdeaId = sourceFunnelIdeaId;
+      }
+
+      const projectCollection = collection(firestore, 'users', user.uid, 'projects');
+      const newProjectDoc = await addDoc(projectCollection, projectData);
+
+      await fetch('/api/user/track-book-creation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          projectId: newProjectDoc.id,
+          projectTitle: currentValues.topic,
+        }),
+      });
+
+      await refreshCredits();
+
+      toast({
+        title: 'Book Project Created',
+        description: `Successfully created "${currentValues.topic}" with research. Taking you to the workspace...`,
+      });
+
+      router.push(`/dashboard/co-author/${newProjectDoc.id}`);
+    } catch (error: any) {
+      console.error('Error creating book from research:', error);
+      toast({
+        title: 'Error Creating Project',
+        description: error.message || 'Could not create the book project. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingBook(false);
     }
   }
 
@@ -147,6 +306,26 @@ export default function ResearchPage() {
                     <FormControl>
                       <Input placeholder="e.g., 'The Future of Renewable Energy'" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="topicDescription"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Topic Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Provide additional context about your topic to help the AI generate more relevant research..."
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Add more details about your topic, target audience, or specific angles you want to explore.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -215,10 +394,14 @@ export default function ResearchPage() {
 
       {result && (
         <div className="space-y-6">
-            <div className="flex justify-end">
-              <Button onClick={handleSaveResearch} disabled={saving}>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={handleSaveResearch} disabled={saving || creatingBook}>
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save Research
+              </Button>
+              <Button onClick={handleWriteBook} disabled={saving || creatingBook}>
+                {creatingBook ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PenTool className="mr-2 h-4 w-4" />}
+                Write Book
               </Button>
             </div>
             <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
