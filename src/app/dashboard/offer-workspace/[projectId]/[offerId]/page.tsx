@@ -284,19 +284,24 @@ export default function OfferDraftPage() {
 
     setSaving(true);
     try {
-      const checkResponse = await fetch('/api/user/check-offer-credit', {
-        headers: { Authorization: `Bearer ${await getIdToken(user)}` },
-      });
-
-      if (!checkResponse.ok) {
-        const error = await checkResponse.json();
-        toast({
-          title: 'Insufficient Credits',
-          description: error.error || "You don't have enough offer creation credits.",
-          variant: 'destructive',
+      const idToken = await getIdToken(user);
+      
+      if (!offerDraft) {
+        const checkResponse = await fetch('/api/user/check-offer-credit', {
+          headers: { Authorization: `Bearer ${idToken}` },
         });
-        setSaving(false);
-        return;
+
+        const checkData = await checkResponse.json();
+        
+        if (!checkResponse.ok || !checkData.hasCredits) {
+          toast({
+            title: 'Insufficient Credits',
+            description: checkData.error || "You don't have enough offer creation credits.",
+            variant: 'destructive',
+          });
+          setSaving(false);
+          return;
+        }
       }
 
       const currentFormValues = form.getValues();
@@ -359,7 +364,7 @@ export default function OfferDraftPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${await getIdToken(user)}`,
+            Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({ 
             draftId: offerId,

@@ -186,7 +186,7 @@ export default function OfferWorkspacePage() {
                           </p>
                         </div>
                         <Button asChild size="sm" className="shrink-0">
-                          <Link href={`/dashboard/offer-workspace/blueprints?projectId=${selectedProjectId}&offerId=${offer.id}`}>
+                          <Link href={`/dashboard/offer-workspace/${selectedProjectId}/${offer.id}`}>
                             <Plus className="mr-2 h-4 w-4" />
                             Develop
                           </Link>
