@@ -47,6 +47,7 @@ export interface SubscriptionPlan {
   description?: string;
   bookCreditsPerMonth: number;
   wordCreditsPerMonth: number;
+  offerCreditsPerMonth: number;
   price: number;
   currency: string;
   isActive: boolean;
@@ -55,7 +56,7 @@ export interface SubscriptionPlan {
   updatedAt: Timestamp;
 }
 
-export type AddonCreditType = 'words' | 'books';
+export type AddonCreditType = 'words' | 'books' | 'offers';
 
 export interface AddonCreditPlan {
   id: string;
@@ -79,14 +80,19 @@ export interface UserSubscription {
   billingCycleEnd: Timestamp;
   bookCreditsUsedThisCycle: number;
   wordCreditsUsedThisCycle: number;
+  offerCreditsUsedThisCycle: number;
   remainingBookCreditsFromAddons: number;
   remainingWordCreditsFromAddons: number;
+  remainingOfferCreditsFromAddons: number;
   remainingBookCreditsFromAdmin: number;
   remainingWordCreditsFromAdmin: number;
+  remainingOfferCreditsFromAdmin: number;
   totalBookCreditsFromAddonsThisCycle?: number;
   totalWordCreditsFromAddonsThisCycle?: number;
+  totalOfferCreditsFromAddonsThisCycle?: number;
   totalBookCreditsFromAdminThisCycle?: number;
   totalWordCreditsFromAdminThisCycle?: number;
+  totalOfferCreditsFromAdminThisCycle?: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -94,12 +100,15 @@ export interface UserSubscription {
 export type CreditTransactionType = 
   | 'word_usage' 
   | 'book_creation' 
+  | 'offer_creation'
   | 'word_purchase' 
   | 'book_purchase' 
+  | 'offer_purchase'
   | 'admin_allocation'
-  | 'book_deletion';
+  | 'book_deletion'
+  | 'offer_deletion';
 
-export type CreditTypeCategory = 'words' | 'books';
+export type CreditTypeCategory = 'words' | 'books' | 'offers';
 
 export interface CreditTransaction {
   id: string;
@@ -126,6 +135,9 @@ export interface CreditSummary {
   wordCreditsAvailable: number;
   wordCreditsUsed: number;
   wordCreditsTotal: number;
+  offerCreditsAvailable: number;
+  offerCreditsUsed: number;
+  offerCreditsTotal: number;
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
   subscriptionPlan: SubscriptionPlan | null;
@@ -136,6 +148,7 @@ export interface CreateSubscriptionPlanInput {
   description?: string;
   bookCreditsPerMonth: number;
   wordCreditsPerMonth: number;
+  offerCreditsPerMonth: number;
   price: number;
   currency: string;
   isActive: boolean;
@@ -146,6 +159,7 @@ export interface UpdateSubscriptionPlanInput {
   description?: string;
   bookCreditsPerMonth?: number;
   wordCreditsPerMonth?: number;
+  offerCreditsPerMonth?: number;
   price?: number;
   currency?: string;
   isActive?: boolean;

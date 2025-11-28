@@ -173,14 +173,19 @@ export async function initializeUserSubscription(
     billingCycleEnd,
     bookCreditsUsedThisCycle: 0,
     wordCreditsUsedThisCycle: 0,
+    offerCreditsUsedThisCycle: 0,
     remainingBookCreditsFromAddons: 0,
     remainingWordCreditsFromAddons: 0,
+    remainingOfferCreditsFromAddons: 0,
     remainingBookCreditsFromAdmin: 0,
     remainingWordCreditsFromAdmin: 0,
+    remainingOfferCreditsFromAdmin: 0,
     totalBookCreditsFromAddonsThisCycle: 0,
     totalWordCreditsFromAddonsThisCycle: 0,
+    totalOfferCreditsFromAddonsThisCycle: 0,
     totalBookCreditsFromAdminThisCycle: 0,
     totalWordCreditsFromAdminThisCycle: 0,
+    totalOfferCreditsFromAdminThisCycle: 0,
     createdAt: now,
     updatedAt: now,
   });
@@ -226,14 +231,19 @@ export async function activateSubscriptionPlan(
         billingCycleEnd,
         bookCreditsUsedThisCycle: 0,
         wordCreditsUsedThisCycle: 0,
+        offerCreditsUsedThisCycle: 0,
         remainingBookCreditsFromAddons: 0,
         remainingWordCreditsFromAddons: 0,
+        remainingOfferCreditsFromAddons: 0,
         remainingBookCreditsFromAdmin: 0,
         remainingWordCreditsFromAdmin: 0,
+        remainingOfferCreditsFromAdmin: 0,
         totalBookCreditsFromAddonsThisCycle: 0,
         totalWordCreditsFromAddonsThisCycle: 0,
+        totalOfferCreditsFromAddonsThisCycle: 0,
         totalBookCreditsFromAdminThisCycle: 0,
         totalWordCreditsFromAdminThisCycle: 0,
+        totalOfferCreditsFromAdminThisCycle: 0,
         createdAt: now,
         updatedAt: now,
       });
@@ -248,10 +258,13 @@ export async function activateSubscriptionPlan(
         billingCycleEnd,
         bookCreditsUsedThisCycle: 0,
         wordCreditsUsedThisCycle: 0,
+        offerCreditsUsedThisCycle: 0,
         totalBookCreditsFromAddonsThisCycle: userSub.remainingBookCreditsFromAddons || 0,
         totalWordCreditsFromAddonsThisCycle: userSub.remainingWordCreditsFromAddons || 0,
+        totalOfferCreditsFromAddonsThisCycle: userSub.remainingOfferCreditsFromAddons || 0,
         totalBookCreditsFromAdminThisCycle: userSub.remainingBookCreditsFromAdmin || 0,
         totalWordCreditsFromAdminThisCycle: userSub.remainingWordCreditsFromAdmin || 0,
+        totalOfferCreditsFromAdminThisCycle: userSub.remainingOfferCreditsFromAdmin || 0,
         updatedAt: now,
       });
     }
@@ -295,23 +308,30 @@ function calculateCreditSummary(
 ): CreditSummary {
   const bookCreditsFromPlan = plan?.bookCreditsPerMonth || 0;
   const wordCreditsFromPlan = plan?.wordCreditsPerMonth || 0;
+  const offerCreditsFromPlan = plan?.offerCreditsPerMonth || 0;
   
   const bookCreditsFromPlanAvailable = Math.max(0, bookCreditsFromPlan - userSub.bookCreditsUsedThisCycle);
   const wordCreditsFromPlanAvailable = Math.max(0, wordCreditsFromPlan - userSub.wordCreditsUsedThisCycle);
+  const offerCreditsFromPlanAvailable = Math.max(0, offerCreditsFromPlan - (userSub.offerCreditsUsedThisCycle || 0));
   
   const bookCreditsAvailable = bookCreditsFromPlanAvailable + userSub.remainingBookCreditsFromAddons + userSub.remainingBookCreditsFromAdmin;
   const wordCreditsAvailable = wordCreditsFromPlanAvailable + userSub.remainingWordCreditsFromAddons + userSub.remainingWordCreditsFromAdmin;
+  const offerCreditsAvailable = offerCreditsFromPlanAvailable + (userSub.remainingOfferCreditsFromAddons || 0) + (userSub.remainingOfferCreditsFromAdmin || 0);
   
   const totalBookCreditsFromAddons = userSub.totalBookCreditsFromAddonsThisCycle ?? userSub.remainingBookCreditsFromAddons;
   const totalWordCreditsFromAddons = userSub.totalWordCreditsFromAddonsThisCycle ?? userSub.remainingWordCreditsFromAddons;
+  const totalOfferCreditsFromAddons = userSub.totalOfferCreditsFromAddonsThisCycle ?? (userSub.remainingOfferCreditsFromAddons || 0);
   const totalBookCreditsFromAdmin = userSub.totalBookCreditsFromAdminThisCycle ?? userSub.remainingBookCreditsFromAdmin;
   const totalWordCreditsFromAdmin = userSub.totalWordCreditsFromAdminThisCycle ?? userSub.remainingWordCreditsFromAdmin;
+  const totalOfferCreditsFromAdmin = userSub.totalOfferCreditsFromAdminThisCycle ?? (userSub.remainingOfferCreditsFromAdmin || 0);
   
   const bookCreditsTotal = bookCreditsFromPlan + totalBookCreditsFromAddons + totalBookCreditsFromAdmin;
   const wordCreditsTotal = wordCreditsFromPlan + totalWordCreditsFromAddons + totalWordCreditsFromAdmin;
+  const offerCreditsTotal = offerCreditsFromPlan + totalOfferCreditsFromAddons + totalOfferCreditsFromAdmin;
   
   const totalBookCreditsUsed = bookCreditsTotal - bookCreditsAvailable;
   const totalWordCreditsUsed = wordCreditsTotal - wordCreditsAvailable;
+  const totalOfferCreditsUsed = offerCreditsTotal - offerCreditsAvailable;
   
   return {
     bookCreditsAvailable,
@@ -320,6 +340,9 @@ function calculateCreditSummary(
     wordCreditsAvailable,
     wordCreditsUsed: totalWordCreditsUsed,
     wordCreditsTotal,
+    offerCreditsAvailable,
+    offerCreditsUsed: totalOfferCreditsUsed,
+    offerCreditsTotal,
     currentPeriodStart: userSub.billingCycleStart.toDate(),
     currentPeriodEnd: userSub.billingCycleEnd.toDate(),
     subscriptionPlan: plan,
@@ -354,10 +377,13 @@ async function resetBillingCycle(userId: string): Promise<void> {
     transaction.update(userSubRef, {
       bookCreditsUsedThisCycle: 0,
       wordCreditsUsedThisCycle: 0,
+      offerCreditsUsedThisCycle: 0,
       totalBookCreditsFromAddonsThisCycle: userSub.remainingBookCreditsFromAddons,
       totalWordCreditsFromAddonsThisCycle: userSub.remainingWordCreditsFromAddons,
+      totalOfferCreditsFromAddonsThisCycle: userSub.remainingOfferCreditsFromAddons || 0,
       totalBookCreditsFromAdminThisCycle: userSub.remainingBookCreditsFromAdmin,
       totalWordCreditsFromAdminThisCycle: userSub.remainingWordCreditsFromAdmin,
+      totalOfferCreditsFromAdminThisCycle: userSub.remainingOfferCreditsFromAdmin || 0,
       billingCycleStart: cycleStart,
       billingCycleEnd: cycleEnd,
       updatedAt: now,
@@ -410,10 +436,13 @@ export async function deductCredits(
       transaction.update(userSubRef, {
         bookCreditsUsedThisCycle: 0,
         wordCreditsUsedThisCycle: 0,
+        offerCreditsUsedThisCycle: 0,
         totalBookCreditsFromAddonsThisCycle: userSub.remainingBookCreditsFromAddons,
         totalWordCreditsFromAddonsThisCycle: userSub.remainingWordCreditsFromAddons,
+        totalOfferCreditsFromAddonsThisCycle: userSub.remainingOfferCreditsFromAddons || 0,
         totalBookCreditsFromAdminThisCycle: userSub.remainingBookCreditsFromAdmin,
         totalWordCreditsFromAdminThisCycle: userSub.remainingWordCreditsFromAdmin,
+        totalOfferCreditsFromAdminThisCycle: userSub.remainingOfferCreditsFromAdmin || 0,
         billingCycleStart: newCycleStartTimestamp,
         billingCycleEnd: newCycleEndTimestamp,
         updatedAt: nowTimestamp,
@@ -421,10 +450,13 @@ export async function deductCredits(
       
       userSub.bookCreditsUsedThisCycle = 0;
       userSub.wordCreditsUsedThisCycle = 0;
+      userSub.offerCreditsUsedThisCycle = 0;
       userSub.totalBookCreditsFromAddonsThisCycle = userSub.remainingBookCreditsFromAddons;
       userSub.totalWordCreditsFromAddonsThisCycle = userSub.remainingWordCreditsFromAddons;
+      userSub.totalOfferCreditsFromAddonsThisCycle = userSub.remainingOfferCreditsFromAddons || 0;
       userSub.totalBookCreditsFromAdminThisCycle = userSub.remainingBookCreditsFromAdmin;
       userSub.totalWordCreditsFromAdminThisCycle = userSub.remainingWordCreditsFromAdmin;
+      userSub.totalOfferCreditsFromAdminThisCycle = userSub.remainingOfferCreditsFromAdmin || 0;
       userSub.billingCycleStart = newCycleStartTimestamp as any;
       userSub.billingCycleEnd = newCycleEndTimestamp as any;
     }
@@ -478,6 +510,29 @@ export async function deductCredits(
       if (remainingToDeduct > 0) {
         updateData.bookCreditsUsedThisCycle = admin.firestore.FieldValue.increment(remainingToDeduct);
       }
+    } else if (creditType === 'offers') {
+      if (summary.offerCreditsAvailable < amount) {
+        throw new Error(`Insufficient offer credits. Available: ${summary.offerCreditsAvailable}, Needed: ${amount}`);
+      }
+      
+      const remainingOfferCreditsFromAddons = userSub.remainingOfferCreditsFromAddons || 0;
+      const remainingOfferCreditsFromAdmin = userSub.remainingOfferCreditsFromAdmin || 0;
+      
+      if (remainingOfferCreditsFromAddons > 0 && remainingToDeduct > 0) {
+        const addonDeduction = Math.min(remainingToDeduct, remainingOfferCreditsFromAddons);
+        updateData.remainingOfferCreditsFromAddons = admin.firestore.FieldValue.increment(-addonDeduction);
+        remainingToDeduct -= addonDeduction;
+      }
+      
+      if (remainingOfferCreditsFromAdmin > 0 && remainingToDeduct > 0) {
+        const adminDeduction = Math.min(remainingToDeduct, remainingOfferCreditsFromAdmin);
+        updateData.remainingOfferCreditsFromAdmin = admin.firestore.FieldValue.increment(-adminDeduction);
+        remainingToDeduct -= adminDeduction;
+      }
+      
+      if (remainingToDeduct > 0) {
+        updateData.offerCreditsUsedThisCycle = admin.firestore.FieldValue.increment(remainingToDeduct);
+      }
     }
     
     transaction.update(userSubRef, updateData);
@@ -507,7 +562,7 @@ export async function addCredits(
   }
   
   const userSubRef = getDb().collection(COLLECTIONS.USER_SUBSCRIPTIONS).doc(userId);
-  const isAddonPurchase = transactionType === 'word_purchase' || transactionType === 'book_purchase';
+  const isAddonPurchase = transactionType === 'word_purchase' || transactionType === 'book_purchase' || transactionType === 'offer_purchase';
   
   await getDb().runTransaction(async (transaction: admin.firestore.Transaction) => {
     const userSubDoc = await transaction.get(userSubRef);
@@ -526,13 +581,21 @@ export async function addCredits(
         updateData.remainingWordCreditsFromAdmin = admin.firestore.FieldValue.increment(amount);
         updateData.totalWordCreditsFromAdminThisCycle = admin.firestore.FieldValue.increment(amount);
       }
-    } else {
+    } else if (creditType === 'books') {
       if (isAddonPurchase) {
         updateData.remainingBookCreditsFromAddons = admin.firestore.FieldValue.increment(amount);
         updateData.totalBookCreditsFromAddonsThisCycle = admin.firestore.FieldValue.increment(amount);
       } else {
         updateData.remainingBookCreditsFromAdmin = admin.firestore.FieldValue.increment(amount);
         updateData.totalBookCreditsFromAdminThisCycle = admin.firestore.FieldValue.increment(amount);
+      }
+    } else if (creditType === 'offers') {
+      if (isAddonPurchase) {
+        updateData.remainingOfferCreditsFromAddons = admin.firestore.FieldValue.increment(amount);
+        updateData.totalOfferCreditsFromAddonsThisCycle = admin.firestore.FieldValue.increment(amount);
+      } else {
+        updateData.remainingOfferCreditsFromAdmin = admin.firestore.FieldValue.increment(amount);
+        updateData.totalOfferCreditsFromAdminThisCycle = admin.firestore.FieldValue.increment(amount);
       }
     }
     

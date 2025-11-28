@@ -165,3 +165,57 @@ export async function checkWordCredits(userId: string, estimatedWords: number): 
     );
   }
 }
+
+export async function checkOfferCreationCredit(userId: string): Promise<void> {
+  await checkActiveSubscription(userId);
+  
+  const creditSummary = await getUserCreditSummary(userId);
+  
+  if (creditSummary.offerCreditsAvailable < 1) {
+    throw new Error(
+      `Insufficient offer creation credits. You have ${creditSummary.offerCreditsAvailable} credits remaining. ` +
+      'Please purchase more credits or upgrade your plan to continue.'
+    );
+  }
+}
+
+export async function trackOfferCreation(
+  userId: string,
+  offerProjectId: string,
+  offerTitle: string
+): Promise<void> {
+  try {
+    await deductCredits(
+      userId,
+      'offers',
+      1,
+      'offer_creation',
+      `Created new offer project: ${offerTitle}`,
+      { offerProjectId }
+    );
+  } catch (error: any) {
+    console.error('Offer creation credit tracking error:', error);
+    throw new Error(
+      `Failed to deduct offer creation credit: ${error.message}`
+    );
+  }
+}
+
+export async function refundOfferCreationCredit(
+  userId: string,
+  offerProjectId: string,
+  offerTitle: string
+): Promise<void> {
+  try {
+    await deductCredits(
+      userId,
+      'offers',
+      -1,
+      'offer_deletion',
+      `Refunded offer creation credit for deleted project: ${offerTitle}`,
+      { offerProjectId }
+    );
+  } catch (error: any) {
+    console.error('Offer deletion credit refund error:', error);
+  }
+}
