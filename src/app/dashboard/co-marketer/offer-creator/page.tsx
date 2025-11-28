@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Archive, Sparkles, ArrowRight, ArrowLeft, BookOpen } from 'lucide-react';
+import { Archive, Sparkles, ArrowRight, ArrowLeft, BookOpen, PenLine } from 'lucide-react';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Project } from '@/lib/definitions';
@@ -38,7 +38,7 @@ export default function OfferCreatorPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 mb-8">
+      <div className="grid gap-6 md:grid-cols-3 mb-8">
         <Card className="hover:shadow-lg transition-shadow border-primary/20">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -84,6 +84,31 @@ export default function OfferCreatorPage() {
               <Link href="/dashboard/co-marketer/offer-creator/generate">
                 Generate New Ideas
                 <Sparkles className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow border-primary/20">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-orange-500/10 rounded-lg">
+                <PenLine className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <CardTitle>Offer Workspace</CardTitle>
+                <CardDescription>Develop your offer drafts</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Develop your saved offer ideas into full bonus materials with AI assistance.
+            </p>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/dashboard/offer-workspace">
+                Go to Workspace
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </CardContent>
