@@ -631,49 +631,29 @@ const PartEditor = ({
             </div>
           ) : hasContent ? (
             sectionContent.trim().split('\n\n').filter(p => p.trim()).map((paragraph, pIndex) => {
-              const lines = paragraph.trim().split('\n');
-              const elements: JSX.Element[] = [];
-              let textBuffer: string[] = [];
-              
-              const flushTextBuffer = () => {
-                if (textBuffer.length > 0) {
-                  const text = textBuffer.join('\n');
-                  textBuffer = [];
-                  return text;
-                }
-                return null;
-              };
+              const trimmedParagraph = paragraph.trim();
+              const h2Match = trimmedParagraph.match(/^##\s+(.+)$/m);
+              const h3Match = trimmedParagraph.match(/^###\s+(.+)$/m);
 
-              for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-                const line = lines[lineIdx];
-                const h3Match = line.match(/^###\s+(.+)$/);
-                const h2Match = line.match(/^##\s+(.+)$/);
-
-                if (h3Match) {
-                  const bufferedText = flushTextBuffer();
-                  if (bufferedText) {
-                    elements.push(<p key={`${pIndex}-text-${elements.length}`} className="text-base leading-relaxed whitespace-pre-wrap mb-2">{bufferedText}</p>);
-                  }
-                  elements.push(<h5 key={`${pIndex}-h5-${lineIdx}`} className="text-base font-semibold text-foreground mt-4 mb-2">{h3Match[1]}</h5>);
-                } else if (h2Match) {
-                  const bufferedText = flushTextBuffer();
-                  if (bufferedText) {
-                    elements.push(<p key={`${pIndex}-text-${elements.length}`} className="text-base leading-relaxed whitespace-pre-wrap mb-2">{bufferedText}</p>);
-                  }
-                  elements.push(<h4 key={`${pIndex}-h4-${lineIdx}`} className="text-lg font-semibold text-foreground mt-4 mb-2">{h2Match[1]}</h4>);
-                } else {
-                  textBuffer.push(line);
-                }
+              if (h3Match) {
+                return (
+                  <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4">
+                    <h5 className="text-base font-semibold text-foreground">{h3Match[1]}</h5>
+                  </div>
+                );
               }
-              
-              const remainingText = flushTextBuffer();
-              if (remainingText) {
-                elements.push(<p key={`${pIndex}-text-final`} className="text-base leading-relaxed whitespace-pre-wrap">{remainingText}</p>);
+
+              if (h2Match) {
+                return (
+                  <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4">
+                    <h4 className="text-lg font-semibold text-foreground">{h2Match[1]}</h4>
+                  </div>
+                );
               }
 
               return (
                 <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4 group/paragraph">
-                  {elements.length > 0 ? elements : <p className="text-base leading-relaxed whitespace-pre-wrap">{paragraph}</p>}
+                  <p className="text-base leading-relaxed whitespace-pre-wrap">{paragraph}</p>
                   <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
                     <Popover open={openExtendPopoverIndex === (sectionIndex * 1000 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (sectionIndex * 1000 + pIndex) : null)}>
                       <PopoverTrigger asChild>
@@ -940,65 +920,6 @@ export default function PartWritingPage() {
         return cleanedText.trim().split(/\s+/).filter(word => word.length > 0).length;
       };
 
-      const currentPartSections = offerDraft.sections.filter(s => s.partNumber === partNumber);
-      const hasIntro = currentPartSections.some(s => getCanonicalType(s) === 'introduction');
-      const hasAction = currentPartSections.some(s => getCanonicalType(s) === 'actionSteps');
-      const hasComingUp = currentPartSections.some(s => getCanonicalType(s) === 'comingUp');
-
-      const newSections: OfferSection[] = [];
-      const maxModuleNum = Math.max(0, ...currentPartSections.map(s => s.moduleNumber));
-
-      if (!hasIntro) {
-        const introContent = extractSectionContent(content, 'Introduction');
-        newSections.push({
-          id: `part-${partNumber}-intro`,
-          partNumber,
-          moduleNumber: 0,
-          partTitle,
-          moduleTitle: 'Introduction',
-          description: 'Opening section for this part',
-          targetWordCount: 200,
-          content: introContent,
-          wordCount: countWords(introContent),
-          status: introContent ? 'completed' : 'pending',
-          sectionType: 'introduction',
-        });
-      }
-
-      if (!hasAction) {
-        const actionContent = extractSectionContent(content, 'Your Action Steps');
-        newSections.push({
-          id: `part-${partNumber}-action`,
-          partNumber,
-          moduleNumber: maxModuleNum + 1,
-          partTitle,
-          moduleTitle: 'Your Action Steps',
-          description: 'Actionable steps for this part',
-          targetWordCount: 200,
-          content: actionContent,
-          wordCount: countWords(actionContent),
-          status: actionContent ? 'completed' : 'pending',
-          sectionType: 'actionSteps',
-        });
-      }
-
-      if (!hasComingUp) {
-        const comingContent = extractSectionContent(content, 'Coming Up Next');
-        newSections.push({
-          id: `part-${partNumber}-coming`,
-          partNumber,
-          moduleNumber: maxModuleNum + 2,
-          partTitle,
-          moduleTitle: 'Coming Up Next',
-          description: 'Preview of next part',
-          targetWordCount: 100,
-          content: comingContent,
-          wordCount: countWords(comingContent),
-          status: comingContent ? 'completed' : 'pending',
-          sectionType: 'comingUp',
-        });
-      }
-
       const updatedSections = offerDraft.sections.map(section => {
         if (section.partNumber === partNumber) {
           let sectionContent = '';
@@ -1025,10 +946,8 @@ export default function PartWritingPage() {
         return section;
       });
 
-      const allSections = [...updatedSections, ...newSections];
-
       const updateData: Record<string, any> = {
-        sections: allSections,
+        sections: updatedSections,
         updatedAt: new Date().toISOString(),
       };
 
@@ -1054,7 +973,7 @@ export default function PartWritingPage() {
         if (!prev) return null;
         const updated: OfferDraft = {
           ...prev,
-          sections: allSections as OfferSection[],
+          sections: updatedSections as OfferSection[],
         };
         if (selectedResearchId !== 'none') {
           updated.researchProfileId = selectedResearchId;
@@ -1080,7 +999,7 @@ export default function PartWritingPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [user, firestore, projectId, offerId, offerDraft, content, partNumber, partTitle, selectedResearchId, selectedStyleId, selectedFramework, toast]);
+  }, [user, firestore, projectId, offerId, offerDraft, content, partNumber, selectedResearchId, selectedStyleId, selectedFramework, toast]);
 
   const handleCopyContent = useCallback(async () => {
     let htmlContent = '';
