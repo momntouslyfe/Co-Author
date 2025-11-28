@@ -124,9 +124,9 @@ export default function OfferWorkspacePage() {
     <div className="container mx-auto py-8 px-4 max-w-5xl overflow-hidden">
       <div className="mb-6">
         <Button variant="ghost" size="sm" asChild className="mb-4">
-          <Link href="/dashboard/co-marketer">
+          <Link href="/dashboard/co-marketer/offer-creator">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Co-Marketer
+            Back to Offer Creator
           </Link>
         </Button>
         <h1 className="text-3xl font-bold tracking-tight">Offers Creation Workspace</h1>
