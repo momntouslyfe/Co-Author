@@ -242,3 +242,59 @@ export type ContentDraft = {
   updatedAt: string;
 };
 
+export type OfferBlueprintPart = {
+  title: string;
+  modules: string[];
+};
+
+export type OfferBlueprint = {
+  id: string;
+  title: string;
+  summary: string;
+  parts: OfferBlueprintPart[];
+  estimatedWordCount: number;
+};
+
+export type OfferSection = {
+  id: string;
+  partIndex: number;
+  moduleIndex: number;
+  partTitle: string;
+  moduleTitle: string;
+  content: string;
+  wordCount: number;
+  status: 'pending' | 'writing' | 'completed';
+};
+
+export type OfferProject = {
+  id: string;
+  userId: string;
+  sourceProjectId: string;
+  sourceOfferIdeaId: string;
+  offerIdeaTitle: string;
+  offerIdeaDescription: string;
+  offerCategory: Exclude<OfferCategory, 'all'>;
+  language: string;
+  selectedBlueprintIndex?: number;
+  blueprints?: OfferBlueprint[];
+  sections?: OfferSection[];
+  status: 'blueprint' | 'writing' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const OFFER_CATEGORY_STRUCTURE: Record<Exclude<OfferCategory, 'all'>, { parts: number; modulesPerPart: number; wordsPerModule: number }> = {
+  'complementary-skill-guide': { parts: 3, modulesPerPart: 3, wordsPerModule: 600 },
+  'workbook': { parts: 3, modulesPerPart: 4, wordsPerModule: 500 },
+  '30-day-challenge': { parts: 3, modulesPerPart: 4, wordsPerModule: 500 },
+  'quick-start-guide': { parts: 2, modulesPerPart: 4, wordsPerModule: 500 },
+  'cheat-sheet': { parts: 2, modulesPerPart: 3, wordsPerModule: 500 },
+  'small-ebook': { parts: 3, modulesPerPart: 4, wordsPerModule: 600 },
+  'template': { parts: 2, modulesPerPart: 4, wordsPerModule: 500 },
+  'frameworks': { parts: 3, modulesPerPart: 3, wordsPerModule: 600 },
+  'resource-list': { parts: 2, modulesPerPart: 4, wordsPerModule: 500 },
+  'advanced-chapter': { parts: 3, modulesPerPart: 3, wordsPerModule: 600 },
+  'self-assessment-quiz': { parts: 3, modulesPerPart: 4, wordsPerModule: 500 },
+  'troubleshooting-guide': { parts: 3, modulesPerPart: 4, wordsPerModule: 500 },
+};
+
