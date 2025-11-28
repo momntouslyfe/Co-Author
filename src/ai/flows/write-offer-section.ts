@@ -106,20 +106,28 @@ Structure your content using the "{{{storytellingFramework}}}" framework to crea
 
 3. **CONTENT FOCUS:** Write ONLY the content for the module "{{{moduleTitle}}}". Stay focused on this specific topic.
 
-4. **FORMATTING:**
+4. **SECTION-SPECIFIC RULES:**
+   - **If moduleTitle is "Introduction":** Write an engaging opening that sets context for what readers will learn in this part. Preview the key topics but don't dive into details.
+   - **If moduleTitle is "Your Action Steps":** Provide 3-5 specific, actionable steps readers can take immediately to apply what they learned. Use numbered list format.
+   - **If moduleTitle is "Coming Up Next":** Write ONLY 2-3 sentences that briefly preview what the VERY NEXT part covers. Keep it short and enticing - just a teaser, not a full summary.
+   - **For all other modules:** Provide substantive, valuable content that teaches the topic thoroughly.
+
+5. **FORMATTING:**
    - Use clear paragraphs with proper spacing
-   - Use subheadings (##) if the section needs subdivision
+   - Use subheadings (## Subheading) ONLY for long sections that need subdivision - not for short sections
    - Use bullet points or numbered lists where appropriate
    - Keep paragraphs readable (3-5 sentences each)
+   - Start directly with content - no preamble or meta-commentary
 
-5. **CATEGORY-SPECIFIC GUIDANCE for ${categoryLabel}:**
+6. **CATEGORY-SPECIFIC GUIDANCE for ${categoryLabel}:**
 ${getCategoryWritingGuidance(category)}
 
-6. **DO NOT:**
+7. **DO NOT:**
    - Include the module title as a heading (it will be added automatically)
    - Write generic filler content
    - Repeat content from previous sections
    - Add meta-commentary about what you're writing
+   - Start with "In this section..." or similar phrases
 
 Write the section content now.`,
       });

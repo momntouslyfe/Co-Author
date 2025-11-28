@@ -133,6 +133,12 @@ const PartEditor = ({
 
   const handleExtendClick = async (paragraph: string, sectionIndex: number, paragraphIndex: number, instruction?: string) => {
     if (!user) return;
+    
+    if (!paragraph || paragraph.trim().length === 0) {
+      toast({ title: "No Content", description: "There is no content to extend.", variant: "destructive" });
+      return;
+    }
+    
     const uniqueIndex = sectionIndex * 1000 + paragraphIndex;
     setIsExtending(uniqueIndex);
     setOpenExtendPopoverIndex(null);
@@ -278,6 +284,12 @@ const PartEditor = ({
 
   const handleRewriteSection = async (sectionIndex: number, sectionContentToRewrite: string, instruction?: string) => {
     if (!user) return;
+    
+    if (!sectionContentToRewrite || sectionContentToRewrite.trim().length === 0) {
+      toast({ title: "No Content", description: "There is no content to rewrite. Please write the section first.", variant: "destructive" });
+      return;
+    }
+    
     const language = offerDraft.language || project.language;
     if (!language) {
       toast({ title: "Language not set", description: "Project language is required to rewrite.", variant: "destructive" });
@@ -1115,6 +1127,13 @@ export default function PartWritingPage() {
 
   const handleRewritePart = useCallback(async (instruction?: string) => {
     if (!user || !project) return;
+    
+    const contentToRewrite = content.replace(/\$\$[^$]+\$\$/g, '').trim();
+    if (!contentToRewrite || contentToRewrite.length === 0) {
+      toast({ title: "No Content", description: "There is no written content to rewrite. Please write some sections first.", variant: "destructive" });
+      return;
+    }
+    
     setPageState('rewriting');
 
     try {

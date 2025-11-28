@@ -28,8 +28,14 @@ export async function POST(request: Request) {
     } = body;
 
     if (!originalContent || !moduleTitle) {
+      console.error('Rewrite section missing required fields:', { 
+        hasOriginalContent: !!originalContent, 
+        originalContentLength: originalContent?.length,
+        hasModuleTitle: !!moduleTitle,
+        moduleTitle 
+      });
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: `Missing required fields: originalContent=${!!originalContent}, moduleTitle=${!!moduleTitle}` },
         { status: 400 }
       );
     }
