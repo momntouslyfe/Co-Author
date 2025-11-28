@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       moduleTitle,
       language = 'English',
       rewriteInstructions,
+      styleProfile,
     } = body;
 
     if (!originalContent || !moduleTitle) {
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
       moduleTitle,
       language,
       rewriteInstructions: rewriteInstructions || undefined,
+      styleProfile: styleProfile || undefined,
     });
 
     return NextResponse.json(result);

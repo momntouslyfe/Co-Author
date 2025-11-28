@@ -28,6 +28,8 @@ export async function POST(request: Request) {
       previousContent,
       bookContext,
       language = 'English',
+      styleProfile,
+      researchProfile,
       customInstructions,
     } = body;
 
@@ -51,6 +53,8 @@ export async function POST(request: Request) {
       previousContent: previousContent || undefined,
       bookContext: bookContext || undefined,
       language,
+      styleProfile: styleProfile || undefined,
+      researchProfile: researchProfile || undefined,
       customInstructions: customInstructions || undefined,
     });
 

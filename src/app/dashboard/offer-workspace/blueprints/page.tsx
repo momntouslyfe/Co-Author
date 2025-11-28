@@ -30,7 +30,6 @@ import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { Project, ProjectOffers, OfferIdea, OfferBlueprint, OfferDraft, OfferCategory, ResearchProfile, StyleProfile, AuthorProfile } from '@/lib/definitions';
 import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
-import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 import { Label } from '@/components/ui/label';
 
 const languages = [
@@ -283,7 +282,7 @@ export default function BlueprintSelectionPage() {
         description: 'Your offer draft is ready. Redirecting to the writing workspace...',
       });
 
-      router.push(`/dashboard/offer-workspace/write/${draftId}?projectId=${selectedProjectId}`);
+      router.push(`/dashboard/offer-workspace/${selectedProjectId}/${draftId}`);
     } catch (error: any) {
       console.error('Draft creation error:', error);
       toast({
@@ -297,9 +296,7 @@ export default function BlueprintSelectionPage() {
   };
 
   return (
-    <div>
-      <FloatingCreditWidget />
-      <div className="container mx-auto py-8 px-4 max-w-5xl overflow-hidden">
+    <div className="container mx-auto py-8 px-4 max-w-5xl overflow-hidden">
       <div className="mb-6">
         <Button variant="ghost" size="sm" asChild className="mb-4">
           <Link href="/dashboard/offer-workspace">
@@ -599,7 +596,6 @@ export default function BlueprintSelectionPage() {
           </Tabs>
         </div>
       )}
-      </div>
     </div>
   );
 }

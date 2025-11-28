@@ -4,11 +4,19 @@
 Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and Firebase, designed to assist authors from concept to completion. It offers AI-driven topic research, blueprint generation, interactive chapter writing, and tools for creating marketing content and bonus materials. The platform features a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It leverages Google's Gemini AI via Genkit for all AI operations and Firebase for authentication and data. The UI is built with shadcn/ui and Tailwind CSS. The project aims to provide authoritative, well-researched, and credible writing support, avoiding fabricated information, and includes an administrative panel for centralized management and enhanced security. Key features include an "Offer Workspace" for developing bonus materials, a "Co-Writer" for marketing content generation, and a "Co-Marketer" for creating book offers and sales funnels.
 
 ## Recent Changes
+- **Offer Workspace Restructuring**: Complete restructuring of offer workspace to match co-author workflow:
+  - Created dynamic routing structure `/offer-workspace/[projectId]/[offerId]/...`
+  - Built OfferWorkflowNavigation component mirroring book workflow navigation
+  - Created offer draft page with blueprint generation/editing and master blueprint saving
+  - Created offer title generator page (using `/api/offers/generate-titles` API)
+  - Created sections list page with grouped sections by parts
+  - Section writing page uses offer-specific API routes (`/api/offers/write-section`, `/api/offers/rewrite-section`, `/api/offers/expand-section`) with proper context (styleProfile, researchProfile, blueprintSummary, book context)
+- **Offer Credit API Routes**: Added `/api/user/check-offer-credit` and `/api/user/track-offer-creation` API routes for offer credit management
+- **Offer API Routes Updated**: Added styleProfile and researchProfile support to write-section, rewrite-section, and expand-section API routes
+- **FloatingCreditWidget in Layout**: Moved FloatingCreditWidget to offer-workspace layout for consistent display across all pages
 - **Offer Blueprint Schema Fix**: Flattened the Genkit output schema to avoid Gemini's nesting depth limit (max 2 levels). Blueprint parts are now returned as JSON strings and parsed client-side with robust fallback handling.
 - **Offer Credits Display**: Added offer credits (with Gift icon) to FloatingCreditWidget and CreditSummaryCard, with progress bars showing usage.
 - **Admin Credit Allocation**: CreditAllocator now supports allocating offer credits in addition to word and book credits.
-- **Blueprint Profile Selectors**: Offer workspace blueprint page now includes Language, Research Profile, Style Profile, and Author Profile selectors to provide AI context.
-- **UI Overflow Fixes**: Fixed content overflow on offer workspace pages using proper overflow handling classes.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

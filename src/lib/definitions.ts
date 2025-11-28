@@ -282,9 +282,17 @@ export type OfferDraft = {
   category: Exclude<OfferCategory, 'all'>;
   title: string;
   subtitle?: string;
+  description?: string;
   blueprint: OfferBlueprint;
+  masterBlueprint?: string;
   sections: OfferSection[];
   status: 'draft' | 'completed';
+  currentStep?: 'blueprint' | 'title' | 'sections';
+  language?: string;
+  storytellingFramework?: string;
+  researchProfileId?: string;
+  styleProfileId?: string;
+  authorProfileId?: string;
   createdAt: string;
   updatedAt: string;
 };

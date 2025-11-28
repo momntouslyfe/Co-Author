@@ -23,7 +23,6 @@ import {
   Plus,
   ArrowRight,
 } from 'lucide-react';
-import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, query, orderBy } from 'firebase/firestore';
 import type { Project, ProjectOffers, OfferDraft, OfferCategory, OfferSection } from '@/lib/definitions';
@@ -69,8 +68,6 @@ export default function OfferWorkspacePage() {
   const completedDrafts = offerDrafts?.filter(d => d.status === 'completed') || [];
 
   return (
-    <>
-    <FloatingCreditWidget />
     <div className="container mx-auto py-8 px-4 max-w-5xl overflow-hidden">
       <div className="mb-6">
         <Button variant="ghost" size="sm" asChild className="mb-4">
@@ -235,7 +232,7 @@ export default function OfferWorkspacePage() {
                             </p>
                           </div>
                           <Button asChild size="sm" variant="outline" className="shrink-0">
-                            <Link href={`/dashboard/offer-workspace/write/${draft.id}?projectId=${selectedProjectId}`}>
+                            <Link href={`/dashboard/offer-workspace/${selectedProjectId}/${draft.id}`}>
                               Continue
                               <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
@@ -277,7 +274,7 @@ export default function OfferWorkspacePage() {
                             </p>
                           </div>
                           <Button asChild size="sm" variant="outline" className="shrink-0">
-                            <Link href={`/dashboard/offer-workspace/write/${draft.id}?projectId=${selectedProjectId}`}>
+                            <Link href={`/dashboard/offer-workspace/${selectedProjectId}/${draft.id}`}>
                               View/Edit
                               <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
@@ -293,6 +290,5 @@ export default function OfferWorkspacePage() {
         </div>
       )}
     </div>
-    </>
   );
 }

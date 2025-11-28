@@ -23,6 +23,7 @@ export async function POST(request: Request) {
       moduleTitle,
       language = 'English',
       expansionFocus,
+      styleProfile,
     } = body;
 
     if (!originalContent || !moduleTitle) {
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
       moduleTitle,
       language,
       expansionFocus: expansionFocus || undefined,
+      styleProfile: styleProfile || undefined,
     });
 
     return NextResponse.json(result);
