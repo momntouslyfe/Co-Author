@@ -739,7 +739,7 @@ export default function PartWritingPage() {
   const projectId = params.projectId;
   const offerId = params.offerId;
   const partId = params.partId;
-  const partNumber = parseInt(partId, 10);
+  const partNumber = partId.startsWith('part-') ? parseInt(partId.replace('part-', ''), 10) : parseInt(partId, 10);
 
   const { user } = useAuthUser();
   const firestore = useFirestore();
