@@ -243,6 +243,7 @@ export function AddonCreditPlanManager() {
 
   const wordPlans = plans.filter(p => p.type === 'words');
   const bookPlans = plans.filter(p => p.type === 'books');
+  const offerPlans = plans.filter(p => p.type === 'offers');
 
   if (isLoading) {
     return (
@@ -350,10 +351,22 @@ export function AddonCreditPlanManager() {
             {renderPlanTable(bookPlans, 'book')}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Offer Creation Credit Plans</CardTitle>
+            <CardDescription>
+              Manage purchasable offer creation credit packages
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {renderPlanTable(offerPlans, 'offer')}
+          </CardContent>
+        </Card>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingPlan ? 'Edit Addon Credit Plan' : 'Create Addon Credit Plan'}
@@ -376,6 +389,7 @@ export function AddonCreditPlanManager() {
                 <SelectContent>
                   <SelectItem value="words">Word Credits</SelectItem>
                   <SelectItem value="books">Book Creation Credits</SelectItem>
+                  <SelectItem value="offers">Offer Creation Credits</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -399,7 +413,7 @@ export function AddonCreditPlanManager() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="creditAmount">
-                {formData.type === 'words' ? 'Word Credits' : 'Book Creation Credits'}*
+                {formData.type === 'words' ? 'Word Credits' : formData.type === 'books' ? 'Book Creation Credits' : 'Offer Creation Credits'}*
               </Label>
               <Input
                 id="creditAmount"

@@ -34,6 +34,7 @@ interface PlanFormData {
   description: string;
   bookCreditsPerMonth: number;
   wordCreditsPerMonth: number;
+  offerCreditsPerMonth: number;
   price: number;
   currency: string;
   isActive: boolean;
@@ -55,6 +56,7 @@ export function SubscriptionPlanManager() {
     description: '',
     bookCreditsPerMonth: 0,
     wordCreditsPerMonth: 0,
+    offerCreditsPerMonth: 0,
     price: 0,
     currency: 'USD',
     isActive: true,
@@ -109,6 +111,7 @@ export function SubscriptionPlanManager() {
         description: plan.description || '',
         bookCreditsPerMonth: plan.bookCreditsPerMonth,
         wordCreditsPerMonth: plan.wordCreditsPerMonth,
+        offerCreditsPerMonth: plan.offerCreditsPerMonth || 0,
         price: plan.price,
         currency: plan.currency,
         isActive: plan.isActive,
@@ -121,6 +124,7 @@ export function SubscriptionPlanManager() {
         description: '',
         bookCreditsPerMonth: 0,
         wordCreditsPerMonth: 0,
+        offerCreditsPerMonth: 0,
         price: 0,
         currency: defaultCurrency,
         isActive: true,
@@ -270,11 +274,12 @@ export function SubscriptionPlanManager() {
             {plans.length === 0 ? (
               <p className="text-sm text-muted-foreground">No subscription plans found</p>
             ) : (
-              <div className="rounded-md border">
-                <div className="grid grid-cols-6 gap-4 border-b bg-muted/50 p-3 text-sm font-medium">
+              <div className="rounded-md border overflow-x-auto">
+                <div className="grid grid-cols-7 gap-4 border-b bg-muted/50 p-3 text-sm font-medium min-w-[700px]">
                   <div>Name</div>
                   <div>Book Credits</div>
                   <div>Word Credits</div>
+                  <div>Offer Credits</div>
                   <div>Price</div>
                   <div>Status</div>
                   <div className="text-right">Actions</div>
@@ -282,7 +287,7 @@ export function SubscriptionPlanManager() {
                 {plans.map((plan) => (
                   <div
                     key={plan.id}
-                    className="grid grid-cols-6 gap-4 border-b p-3 text-sm last:border-0"
+                    className="grid grid-cols-7 gap-4 border-b p-3 text-sm last:border-0 min-w-[700px]"
                   >
                     <div>
                       <div className="font-medium">{plan.name}</div>
@@ -299,6 +304,7 @@ export function SubscriptionPlanManager() {
                     </div>
                     <div>{plan.bookCreditsPerMonth.toLocaleString()}</div>
                     <div>{plan.wordCreditsPerMonth.toLocaleString()}</div>
+                    <div>{(plan.offerCreditsPerMonth || 0).toLocaleString()}</div>
                     <div>{plan.price.toFixed(2)} {plan.currency}</div>
                     <div className="flex items-center gap-2">
                       <Switch
@@ -338,7 +344,7 @@ export function SubscriptionPlanManager() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingPlan ? 'Edit Subscription Plan' : 'Create Subscription Plan'}
@@ -366,9 +372,9 @@ export function SubscriptionPlanManager() {
                 placeholder="Brief description of the plan"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="bookCredits">Book Credits per Month*</Label>
+                <Label htmlFor="bookCredits">Book Credits/Month*</Label>
                 <Input
                   id="bookCredits"
                   type="number"
@@ -378,13 +384,23 @@ export function SubscriptionPlanManager() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="wordCredits">Word Credits per Month*</Label>
+                <Label htmlFor="wordCredits">Word Credits/Month*</Label>
                 <Input
                   id="wordCredits"
                   type="number"
                   value={formData.wordCreditsPerMonth}
                   onChange={(e) => setFormData({ ...formData, wordCreditsPerMonth: parseInt(e.target.value) || 0 })}
                   placeholder="e.g., 100000"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="offerCredits">Offer Credits/Month*</Label>
+                <Input
+                  id="offerCredits"
+                  type="number"
+                  value={formData.offerCreditsPerMonth}
+                  onChange={(e) => setFormData({ ...formData, offerCreditsPerMonth: parseInt(e.target.value) || 0 })}
+                  placeholder="e.g., 3"
                 />
               </div>
             </div>
