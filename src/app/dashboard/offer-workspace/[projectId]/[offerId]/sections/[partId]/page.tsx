@@ -20,7 +20,6 @@ import { getIdToken } from '@/lib/client-auth';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
 import { OfferWorkflowNavigation } from '@/components/offer-workflow-navigation';
 import { Badge } from '@/components/ui/badge';
-import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 
 export const maxDuration = 300;
 
@@ -920,7 +919,14 @@ export default function PartWritingPage() {
         return cleanedText.trim().split(/\s+/).filter(word => word.length > 0).length;
       };
 
-      const updatedSections = offerDraft.sections.map(section => {
+      const currentPartTitle = partSections[0]?.partTitle || `Part ${partNumber}`;
+
+      const existingSectionsForPart = offerDraft.sections.filter(s => s.partNumber === partNumber);
+      const hasIntro = existingSectionsForPart.some(s => getCanonicalType(s) === 'introduction');
+      const hasActionSteps = existingSectionsForPart.some(s => getCanonicalType(s) === 'actionSteps');
+      const hasComingUp = existingSectionsForPart.some(s => getCanonicalType(s) === 'comingUp');
+
+      let updatedSections = offerDraft.sections.map(section => {
         if (section.partNumber === partNumber) {
           let sectionContent = '';
           const canonicalType = getCanonicalType(section);
@@ -945,6 +951,48 @@ export default function PartWritingPage() {
         }
         return section;
       });
+
+      if (!hasIntro) {
+        const introContent = extractSectionContent(content, 'Introduction');
+        updatedSections.push({
+          id: `part-${partNumber}-intro`,
+          partNumber,
+          partTitle: currentPartTitle,
+          moduleTitle: 'Introduction',
+          sectionType: 'introduction',
+          content: introContent,
+          wordCount: countWords(introContent),
+          status: introContent ? 'completed' : 'pending',
+        } as OfferSection);
+      }
+
+      if (!hasActionSteps) {
+        const actionContent = extractSectionContent(content, 'Your Action Steps');
+        updatedSections.push({
+          id: `part-${partNumber}-action`,
+          partNumber,
+          partTitle: currentPartTitle,
+          moduleTitle: 'Your Action Steps',
+          sectionType: 'actionSteps',
+          content: actionContent,
+          wordCount: countWords(actionContent),
+          status: actionContent ? 'completed' : 'pending',
+        } as OfferSection);
+      }
+
+      if (!hasComingUp) {
+        const comingUpContent = extractSectionContent(content, 'Coming Up Next');
+        updatedSections.push({
+          id: `part-${partNumber}-comingup`,
+          partNumber,
+          partTitle: currentPartTitle,
+          moduleTitle: 'Coming Up Next',
+          sectionType: 'comingUp',
+          content: comingUpContent,
+          wordCount: countWords(comingUpContent),
+          status: comingUpContent ? 'completed' : 'pending',
+        } as OfferSection);
+      }
 
       const updateData: Record<string, any> = {
         sections: updatedSections,
@@ -999,7 +1047,7 @@ export default function PartWritingPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [user, firestore, projectId, offerId, offerDraft, content, partNumber, selectedResearchId, selectedStyleId, selectedFramework, toast]);
+  }, [user, firestore, projectId, offerId, offerDraft, content, partNumber, partSections, selectedResearchId, selectedStyleId, selectedFramework, toast]);
 
   const handleCopyContent = useCallback(async () => {
     let htmlContent = '';
@@ -1336,7 +1384,6 @@ export default function PartWritingPage() {
 
   return (
     <>
-      <FloatingCreditWidget />
       <div className="space-y-6">
         <div className="mb-6">
           <Button variant="ghost" size="sm" asChild className="mb-4">
