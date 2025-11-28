@@ -1,180 +1,63 @@
 # Co-Author Pro
 
 ## Overview
-
-Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and Firebase. Its purpose is to assist authors from concept to completion through AI-assisted topic research, blueprint generation, and interactive chapter writing. The platform features a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It leverages Google's Gemini AI via Genkit for all AI operations, Firebase Authentication for user management, and Firestore for data persistence. The UI is built with shadcn/ui and Tailwind CSS. The project aims to provide authoritative, well-researched, and credible writing support, avoiding fabricated information. An administrative panel offers centralized API key management with test-before-save functionality, user management, and global application settings for enhanced security and operational control.
-
-## Recent Changes
-
-### November 27, 2025 - Co-Writer Feature
-- **Content Idea Generator**: Generate content ideas for marketing your book
-  - Select book project and enter content category (text input for flexibility)
-  - Supports multiple languages (English, Spanish, French, German, Bangla, Hindi)
-  - Optional integration with Research Profile, Style Profile for context
-  - Optional storytelling framework customization
-  - Save selected ideas per project for later use
-- **Write Content**: Write full marketing content from ideas or from scratch
-  - Select from saved content ideas or write custom content
-  - Configurable word count (200-3000 words)
-  - Custom instructions support
-  - Advanced settings: Content Framework, Storytelling Framework, Research Profile, Style Profile, Author Profile
-  - **Rewrite**: AI-powered content rewriting with optional guided instructions
-  - **Expand**: AI-powered content expansion with target word count and optional focus instructions
-  - Save drafts to project, copy to clipboard
-- **AI Flows Added**:
-  - `src/ai/flows/generate-content-ideas.ts`
-  - `src/ai/flows/write-marketing-content.ts`
-  - `src/ai/flows/rewrite-marketing-content.ts`
-  - `src/ai/flows/expand-marketing-content.ts`
-- **Pages Added**:
-  - `src/app/dashboard/co-writer/page.tsx` (main hub)
-  - `src/app/dashboard/co-writer/content-ideas/generate/page.tsx`
-  - `src/app/dashboard/co-writer/content-ideas/saved/page.tsx`
-  - `src/app/dashboard/co-writer/write-content/page.tsx`
-- **Data Models Added**: ContentIdea, ProjectContentIdeas, ContentDraft
-- **Navigation Updated**: Added "Co-Writer" to main sidebar
-- **Firebase Rules Updated**: Added rules for projectContentIdeas and contentDrafts collections
-
-### November 27, 2025 - Co-Marketer Feature
-- **Offer Creator**: Generate bonus material ideas across 12 categories to create irresistible book offers
-  - Categories: Complementary Skill Guide, Workbook, 30 Day Challenge, Quick Start Guide, Cheat-Sheet, Small Ebook, Template, Frameworks, Resource List, Advanced Chapter, Self Assessment Quiz, Troubleshooting Guide
-  - Supports single category or "All Categories" (3 ideas each) generation
-  - Integrates with Research Profile, Style Profile, Author Profile, and book blueprint for context
-  - Ideas can be saved and managed per project
-  - Old ideas preserved on regeneration
-- **Funnel Creator**: Build a 7-step book funnel based on the Value Ladder principle
-  - Each step addresses challenges that emerge after completing previous steps
-  - Progressive context: each step uses main book + previous step ideas for generation
-  - Visual step-by-step UI with saved ideas tracking
-  - Steps: First Challenge, Intermediate Growth, Advanced Techniques, Optimization & Scale, Teaching & Systems, Monetization, Mastery & Legacy
-  - **Research from Funnel Idea**: Navigate to topic research page with idea pre-filled
-    - Pre-fills topic (title) and description (core idea + target problem) from funnel idea
-    - Tracks funnel source for provenance (sourceFunnelProjectId, sourceFunnelIdeaId)
-  - **Write Book from Funnel Idea**: Create a new book project directly from any saved funnel idea
-    - Credit check: Validates book credits before project creation
-    - Pre-fills project with idea title and description (core idea + target problem)
-    - Tracks source as funnel-originated (sourceType, sourceFunnelProjectId, sourceFunnelIdeaId)
-    - Navigates to Co-Author workspace after creation
-    - Refreshes credit display after book creation
-- **Files Added**:
-  - `src/app/dashboard/co-marketer/*` (main page, offer-creator, funnel-creator)
-  - `src/ai/flows/generate-offer-ideas.ts`
-  - `src/ai/flows/generate-funnel-ideas.ts`
-- **Data Models Added**: OfferCategory, OfferIdea, ProjectOffers, BookIdea, FunnelStep, ProjectFunnel
-- **Navigation Updated**: Added "Co-Marketer" to main sidebar
-
-### November 27, 2025 - Topic Research Enhancement
-- **Topic Description Field**: Optional textarea for providing additional context to AI research
-  - Helps AI generate more relevant and targeted research
-  - Pre-filled when navigating from funnel ideas
-- **Write Book from Research**: Create book project directly from research results
-  - Credit check: Validates book credits before project creation using hasCredits flag
-  - Saves research profile automatically before project creation
-  - Pre-fills project with research topic, description, audience insights, and pain points
-  - Attaches researchProfileId to project for reference
-  - Tracks funnel source if originated from funnel idea
-  - Navigates to Co-Author workspace with enriched core idea
-  - Refreshes credit display after book creation
-- **URL Parameter Support**: Research page accepts pre-fill params (topic, description, sourceFunnelProjectId, sourceFunnelIdeaId)
-- **Files Modified**: `src/app/dashboard/research/page.tsx`
-
-### November 26, 2025 - Publish Feature Removed
-- **Publish Module Removed**: The entire publish/PDF export feature has been removed for re-implementation later
-- **Files Removed**: 
-  - `src/app/dashboard/publish/*` (all pages)
-  - `src/components/publish/*` (all components)
-  - `src/lib/publish/*` (templates, fonts, content-transformer, types)
-- **Navigation Updated**: Removed "Publish" link from main sidebar navigation
-- **Data Model Cleaned**: Removed `PublishStyles` type and `publishStyles` field from Project type
-- **Author Profile Retained**: The author profile feature remains available for future use
-
-### November 26, 2025 - Author Profile Feature
-- **Author Profile Management**: Full CRUD operations for managing multiple author profiles with pen name, bio, credentials, photo, website, and email
-- **Author Profile Integration**: Optional author profile selection during project creation
-- **Files Added/Modified**: `src/app/dashboard/author-profile/page.tsx`
-- **Data Model**: Added `AuthorProfile` type with penName, fullName, bio, credentials, photoUrl, website, email fields
-
-### November 24, 2025 - Payment and Coupon System Fixes
-- **Payment Amount Mismatch Fix**: Resolved "Expected 10, got 1200" error caused by comparing amounts in different currency units (USD vs BDT). Payment validation now properly handles currency conversion with multi-layered fallback logic to determine expected BDT amount.
-- **Coupon Validation Fix**: Improved coupon validation with robust timestamp handling supporting all Firestore date formats (Timestamp objects, JSON serialized timestamps, Date objects, strings). Added Firestore indexes for efficient coupon queries and fixed false "expired" errors for coupons without expiration dates.
-- **Enhanced Logging**: Added comprehensive diagnostic logging for payment verification and coupon validation to aid debugging.
-- **Files Modified**: `src/lib/payment-processor.ts`, `src/app/api/coupon/validate/route.ts`, `firestore.indexes.json`
-- **Documentation**: See `PAYMENT_COUPON_FIXES.md` for detailed technical documentation.
+Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and Firebase, designed to assist authors from concept to completion. It offers AI-driven topic research, blueprint generation, interactive chapter writing, and tools for creating marketing content and bonus materials. The platform features a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It leverages Google's Gemini AI via Genkit for all AI operations and Firebase for authentication and data. The UI is built with shadcn/ui and Tailwind CSS. The project aims to provide authoritative, well-researched, and credible writing support, avoiding fabricated information, and includes an administrative panel for centralized management and enhanced security. Key features include an "Offer Workspace" for developing bonus materials, a "Co-Writer" for marketing content generation, and a "Co-Marketer" for creating book offers and sales funnels.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
 ### Frontend
-
-**Framework**: Next.js 15 with App Router and React Server Components (RSC) for performance and server-side rendering.
-**UI Components**: shadcn/ui with Radix UI primitives for accessible and customizable components.
-**Styling**: Tailwind CSS with a custom design system, including dark mode support.
-**State Management**: React Context API for global state (Firebase services, authentication) and custom hooks for access and error handling.
+- **Framework**: Next.js 15 with App Router and React Server Components (RSC).
+- **UI Components**: shadcn/ui with Radix UI primitives.
+- **Styling**: Tailwind CSS with custom design system and dark mode support.
+- **State Management**: React Context API for global state and custom hooks.
 
 ### Backend
-
-**AI Processing**: Google Genkit with Gemini 2.5 Flash for type-safe AI flows, using Zod for structured input/output schemas. AI functions include topic research, blueprint generation, chapter content, expansion, rewriting, style analysis, and title generation.
-**Authentication**: Firebase Authentication with Google OAuth for secure, scalable user management and role-based access control.
-**Error Handling**: Global error boundary, event emitter pattern, custom error types, and comprehensive AI flow error handling with user-friendly messages.
-**Retry System**: Exponential backoff retry logic for robust AI operation handling.
+- **AI Processing**: Google Genkit with Gemini 2.5 Flash for type-safe AI flows (topic research, blueprint generation, chapter content, expansion, rewriting, style analysis, title generation).
+- **Authentication**: Firebase Authentication with Google OAuth and role-based access control.
+- **Error Handling**: Global error boundary, event emitter, custom error types, and comprehensive AI flow error handling.
+- **Retry System**: Exponential backoff retry logic for robust AI operations.
 
 ### Data Storage
-
-**Database**: Cloud Firestore (NoSQL) for real-time syncing and offline support, secured by rules-based access control.
-**Data Models**: User, Coupon, Project (with `currentStep` for workflow), ResearchProfile, StyleProfile, AuthorProfile, and Chapter.
-**Workflow**: `currentStep` field in projects manages user progress through the book creation workflow.
+- **Database**: Cloud Firestore (NoSQL) for real-time syncing and offline support, secured by rules.
+- **Data Models**: User, Coupon, Project (with `currentStep` for workflow), ResearchProfile, StyleProfile, AuthorProfile, Chapter, OfferBlueprintModule, OfferDraft, ContentIdea, ProjectContentIdeas, ContentDraft, OfferCategory, OfferIdea, ProjectOffers, BookIdea, FunnelStep, ProjectFunnel.
+- **Workflow**: `currentStep` field in projects manages user progress.
 
 ### Admin Features
-
-**API Key Management**: Encrypted storage of API keys (AES-256-GCM) in Firestore, with a "test connection" feature for validation. Supports Gemini and OpenAI, with planned Claude integration.
-**Admin Authentication**: Secure password hashing (bcrypt), HMAC SHA-256 signed tokens, and dedicated environment variables for security.
-**Subscription Management**: Comprehensive credit and subscription tracking, with admin CRUD operations for plans and add-ons. Integrated with Uddoktapay for payments, featuring automatic credit granting and subscription enforcement. Includes configurable credit rollover and dynamic credit calculation based on active plans.
-**Currency Management**: Comprehensive multi-currency system supporting USD and BDT. Admin can enable/disable currencies, set default currency, and configure conversion rates (e.g., 1 USD = 125 BDT). All subscription and addon plans use the configured default currency. Payments automatically convert to BDT for Uddoktapay integration (Bangladesh MFS provider that only accepts BDT). FREE_ORDER handling for 100% discount coupons with explicit `isFreeOrder` flag and proper bookkeeping that skips gateway processing while maintaining payment record consistency. Legacy data handling: The system gracefully handles plans with unsupported currencies (e.g., EUR) by returning clear 400-level error messages with remediation guidance instead of 500 errors, ensuring backward compatibility during migration.
-**Payment Gateway Integration (Uddoktapay)**: Handles payment initiation, verification, and webhooks. Features auto-approval of successful payments, robust security validations (Firebase ID token, amount validation), and a shared payment processor for consistency. Admin panel for manual approval/rejection.
-**Coupon System**: Supports promotional and affiliate coupons with percentage/fixed discounts, validity periods, usage limits, and product scope. Server-side validation during payment creation prevents manipulation, and `CouponUsage` records track redemptions.
+- **API Key Management**: Encrypted storage (AES-256-GCM) with test connection feature for Gemini and OpenAI.
+- **Admin Authentication**: Secure password hashing (bcrypt), HMAC SHA-256 tokens, environment variables.
+- **Subscription Management**: Credit and subscription tracking with admin CRUD for plans and add-ons, Uddoktapay integration, credit rollover, and dynamic credit calculation.
+- **Currency Management**: Multi-currency support (USD, BDT) with configurable conversion rates and default currency. Handles FREE_ORDER and legacy data.
+- **Payment Gateway Integration**: Uddoktapay for payment initiation, verification, and webhooks, with auto-approval and security validations.
+- **Coupon System**: Promotional and affiliate coupons with discounts, validity periods, usage limits, and product scope, with server-side validation and usage tracking.
 
 ## External Dependencies
 
-**AI Services**:
+### AI Services
 - **Google Gemini AI**: Primary AI model via `@genkit-ai/google-genai` plugin.
 
-**Firebase Services**:
+### Firebase Services
 - **Firebase Client SDK**: For Authentication and Firestore.
 - **Firebase Admin SDK**: For server-side operations.
 
-**UI Component Libraries**:
+### UI Component Libraries
 - **Radix UI**: Headless components.
 - **Lucide React**: Icon library.
 - **Recharts**: Charting library.
 - **Embla Carousel**: Carousel functionality.
 
-**Utilities**:
+### Utilities
 - **date-fns**: Date manipulation.
 - **react-hook-form**: Form management.
 - **@hookform/resolvers**: Schema validation.
 - **Zod**: For AI flow schemas.
 
-**Development Tools**:
+### Development Tools
 - **TypeScript**: For type safety.
 - **patch-package**: For `node_modules` patches.
 - **dotenv**: Environment variable management.
 
-**Image Hosting**:
-- Whitelisted domains: `placehold.co`, `images.unsplash.com`, `picsum.photos`.
-
-## Future Features (Removed for Re-implementation)
-
-### Publish Module (Planned)
-The publish feature for exporting books as PDFs was removed on November 26, 2025 for re-implementation. Key features that were in development:
-- PDF export with customizable templates
-- Google Fonts support (15 fonts including multi-language)
-- Typography customization (fonts, sizes, colors)
-- Template-driven visual editor with live preview
-- Table of Contents with page numbers
-- Author profile integration for "About the Author" page
-- Book cover upload support
-
-This feature will be re-implemented with a simpler, more robust architecture.
+### Image Hosting
+- **Whitelisted domains**: `placehold.co`, `images.unsplash.com`, `picsum.photos`.

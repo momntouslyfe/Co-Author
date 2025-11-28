@@ -242,28 +242,51 @@ export type ContentDraft = {
   updatedAt: string;
 };
 
+export type OfferBlueprintModule = {
+  title: string;
+  description: string;
+  targetWordCount: number;
+};
+
 export type OfferBlueprintPart = {
   title: string;
-  modules: string[];
+  modules: OfferBlueprintModule[];
 };
 
 export type OfferBlueprint = {
   id: string;
   title: string;
-  summary: string;
+  subtitle?: string;
+  summary?: string;
   parts: OfferBlueprintPart[];
   estimatedWordCount: number;
 };
 
 export type OfferSection = {
   id: string;
-  partIndex: number;
-  moduleIndex: number;
+  partNumber: number;
+  moduleNumber: number;
   partTitle: string;
   moduleTitle: string;
+  description: string;
+  targetWordCount: number;
   content: string;
   wordCount: number;
   status: 'pending' | 'writing' | 'completed';
+};
+
+export type OfferDraft = {
+  id: string;
+  projectId: string;
+  sourceOfferId: string;
+  category: Exclude<OfferCategory, 'all'>;
+  title: string;
+  subtitle?: string;
+  blueprint: OfferBlueprint;
+  sections: OfferSection[];
+  status: 'draft' | 'completed';
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type OfferProject = {

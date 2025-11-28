@@ -32,6 +32,7 @@ import {
   ChevronDown,
   ChevronUp,
   FolderOpen,
+  PenLine,
 } from 'lucide-react';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, updateDoc, serverTimestamp, arrayRemove } from 'firebase/firestore';
@@ -242,21 +243,32 @@ export default function SavedOffersPage() {
                           Saved on {new Date(offer.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            disabled={deletingId === offer.id}
-                          >
-                            {deletingId === offer.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </AlertDialogTrigger>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <Link href={`/dashboard/offer-workspace/blueprints?projectId=${selectedProjectId}&offerId=${offer.id}`}>
+                            <PenLine className="mr-2 h-4 w-4" />
+                            Develop
+                          </Link>
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              disabled={deletingId === offer.id}
+                            >
+                              {deletingId === offer.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Offer Idea?</AlertDialogTitle>
@@ -272,9 +284,10 @@ export default function SavedOffersPage() {
                             >
                               Delete
                             </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   ))}
                 </CardContent>
