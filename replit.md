@@ -12,6 +12,9 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
   - Fixed API field name mismatches for rewrite-section and expand-section calls
   - Added client-side validation to prevent empty content submissions
   - Updated AI prompts with strict section-specific rules (Introduction, Action Steps, Coming Up Next)
+  - Fixed save logic to properly persist canonical sections (Introduction, Action Steps, Coming Up Next) to Firestore
+  - Enhanced sub-heading rendering with line-by-line parsing for ## and ### markdown within paragraphs
+  - Updated rewrite AI prompt to preserve section markers ($$SectionTitle$$) during full-part rewrites
 - **Rich Text Copy Function**: Matching chapter page pattern with:
   - HTML and plain text clipboard support using ClipboardItem API
   - `##` markdown headings converted to `<h3>` tags
