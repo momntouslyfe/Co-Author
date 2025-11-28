@@ -357,9 +357,15 @@ export default function OfferDraftPage() {
         updatedAt: new Date().toISOString(),
       };
 
-      if (!offerDraft) {
+      const isNewDraft = !offerDraft;
+      
+      if (isNewDraft) {
         (draftData as any).createdAt = new Date().toISOString();
-        
+      }
+
+      await setDoc(draftRef, draftData, { merge: true });
+
+      if (isNewDraft) {
         const trackResponse = await fetch('/api/user/track-offer-creation', {
           method: 'POST',
           headers: {
@@ -375,14 +381,13 @@ export default function OfferDraftPage() {
 
         if (!trackResponse.ok) {
           const error = await trackResponse.json();
-          throw new Error(error.error || 'Failed to track offer creation');
+          console.error('Failed to track offer creation:', error);
         }
+        
+        refreshCredits();
       }
 
-      await setDoc(draftRef, draftData, { merge: true });
-
       toast({ title: 'Success', description: 'Master Blueprint saved successfully.' });
-      refreshCredits();
       setIsEditing(false);
       setBlueprintResult(null);
       setIsRegenerating(false);

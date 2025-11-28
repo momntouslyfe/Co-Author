@@ -13,6 +13,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   ArrowLeft,
   Loader2,
   Sparkles,
@@ -22,16 +33,20 @@ import {
   FolderOpen,
   Plus,
   ArrowRight,
+  Trash2,
 } from 'lucide-react';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, query, orderBy, deleteDoc } from 'firebase/firestore';
 import type { Project, ProjectOffers, OfferDraft, OfferCategory, OfferSection } from '@/lib/definitions';
 import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
+import { useToast } from '@/hooks/use-toast';
 
 export default function OfferWorkspacePage() {
   const { user, isUserLoading } = useAuthUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null);
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -66,6 +81,30 @@ export default function OfferWorkspacePage() {
   const savedOffers = projectOffers?.offers || [];
   const inProgressDrafts = offerDrafts?.filter(d => d.status === 'draft') || [];
   const completedDrafts = offerDrafts?.filter(d => d.status === 'completed') || [];
+
+  const handleDeleteDraft = async (draftId: string, draftTitle: string) => {
+    if (!user || !selectedProjectId) return;
+    
+    setDeletingDraftId(draftId);
+    try {
+      const draftRef = doc(firestore, 'users', user.uid, 'projects', selectedProjectId, 'offerDrafts', draftId);
+      await deleteDoc(draftRef);
+      
+      toast({
+        title: 'Draft Deleted',
+        description: `"${draftTitle}" has been deleted successfully.`,
+      });
+    } catch (error) {
+      console.error('Error deleting draft:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete the draft. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingDraftId(null);
+    }
+  };
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-5xl overflow-hidden">
@@ -231,12 +270,47 @@ export default function OfferWorkspacePage() {
                               {draft.sections.filter((s: OfferSection) => s.content).length} of {draft.sections.length} sections written
                             </p>
                           </div>
-                          <Button asChild size="sm" variant="outline" className="shrink-0">
-                            <Link href={`/dashboard/offer-workspace/${selectedProjectId}/${draft.id}`}>
-                              Continue
-                              <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                          </Button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button asChild size="sm" variant="outline">
+                              <Link href={`/dashboard/offer-workspace/${selectedProjectId}/${draft.id}`}>
+                                Continue
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  disabled={deletingDraftId === draft.id}
+                                >
+                                  {deletingDraftId === draft.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Offer Draft</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{draft.title}"? This action cannot be undone and all progress will be lost.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteDraft(draft.id, draft.title)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -273,12 +347,47 @@ export default function OfferWorkspacePage() {
                               {draft.sections.length} sections, ~{draft.sections.reduce((acc: number, s: OfferSection) => acc + (s.wordCount || 0), 0).toLocaleString()} words
                             </p>
                           </div>
-                          <Button asChild size="sm" variant="outline" className="shrink-0">
-                            <Link href={`/dashboard/offer-workspace/${selectedProjectId}/${draft.id}`}>
-                              View/Edit
-                              <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                          </Button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button asChild size="sm" variant="outline">
+                              <Link href={`/dashboard/offer-workspace/${selectedProjectId}/${draft.id}`}>
+                                View/Edit
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  disabled={deletingDraftId === draft.id}
+                                >
+                                  {deletingDraftId === draft.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Completed Offer</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{draft.title}"? This action cannot be undone and all content will be permanently removed.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteDraft(draft.id, draft.title)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
                       ))}
                     </div>
