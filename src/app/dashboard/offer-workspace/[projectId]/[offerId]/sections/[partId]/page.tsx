@@ -82,17 +82,33 @@ const PartEditor = ({
 
   const wordCount = useMemo(() => countWords(content), [content]);
 
-  const modulesTitles = modules.map(m => m.moduleTitle);
+  const isCanonicalSection = (section: OfferSection): boolean => {
+    if (section.sectionType) {
+      return section.sectionType === 'introduction' ||
+             section.sectionType === 'actionSteps' ||
+             section.sectionType === 'comingUp';
+    }
+    const lower = section.moduleTitle.toLowerCase().trim();
+    return lower === 'introduction' ||
+           lower === 'your action steps' ||
+           lower === 'action steps' ||
+           lower === 'coming up next' ||
+           lower === 'coming up';
+  };
+
+  const coreModuleTitles = modules
+    .filter(m => !isCanonicalSection(m))
+    .map(m => m.moduleTitle);
 
   const buildPartSkeleton = useCallback(() => {
     let skeleton = `$$Introduction$$\n\n\n\n`;
-    modulesTitles.forEach(title => {
+    coreModuleTitles.forEach(title => {
       skeleton += `$$${title}$$\n\n\n\n`;
     });
     skeleton += `$$Your Action Steps$$\n\n\n\n`;
     skeleton += `$$Coming Up Next$$\n\n\n\n`;
     return skeleton;
-  }, [modulesTitles]);
+  }, [coreModuleTitles]);
 
   const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
   const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
@@ -273,7 +289,7 @@ const PartEditor = ({
     }
     setIsGenerating(true);
 
-    const allSectionTitles = ["Introduction", ...modulesTitles, "Your Action Steps", "Coming Up Next"];
+    const allSectionTitles = ["Introduction", ...coreModuleTitles, "Your Action Steps", "Coming Up Next"];
     onContentChange(buildPartSkeleton());
 
     const failedSections: Array<{ index: number; title: string; error: any }> = [];
@@ -436,7 +452,7 @@ const PartEditor = ({
     setIsWritingSection(null);
     setIsGenerating(false);
   }, [
-    project, offerDraft, partTitle, modulesTitles, buildPartSkeleton,
+    project, offerDraft, partTitle, coreModuleTitles, buildPartSkeleton,
     selectedStyle, researchPrompt, blueprintSummary,
     onContentChange, setIsGenerating, toast, user, refreshCredits
   ]);
@@ -703,13 +719,57 @@ export default function PartWritingPage() {
           }
 
           const partSections = draft.sections?.filter(s => s.partNumber === partNumber) || [];
-          const existingContent = partSections
-            .map(s => s.content)
-            .filter(c => c)
-            .join('\n\n');
-
-          if (existingContent) {
-            setContent(existingContent);
+          
+          const isCanonicalType = (s: OfferSection): 'introduction' | 'actionSteps' | 'comingUp' | null => {
+            if (s.sectionType === 'introduction') return 'introduction';
+            if (s.sectionType === 'actionSteps') return 'actionSteps';
+            if (s.sectionType === 'comingUp') return 'comingUp';
+            const lower = s.moduleTitle.toLowerCase().trim();
+            if (lower === 'introduction') return 'introduction';
+            if (lower === 'your action steps' || lower === 'action steps') return 'actionSteps';
+            if (lower === 'coming up next' || lower === 'coming up') return 'comingUp';
+            return null;
+          };
+          
+          const coreModules = partSections.filter(s => !isCanonicalType(s));
+          const introSection = partSections.find(s => isCanonicalType(s) === 'introduction');
+          const actionSection = partSections.find(s => isCanonicalType(s) === 'actionSteps');
+          const comingSection = partSections.find(s => isCanonicalType(s) === 'comingUp');
+          
+          const hasAnyContent = partSections.some(s => s.content);
+          
+          if (hasAnyContent) {
+            let reconstructedContent = `$$Introduction$$\n\n`;
+            if (introSection?.content) {
+              reconstructedContent += `${introSection.content}\n\n`;
+            } else {
+              reconstructedContent += '\n\n';
+            }
+            
+            coreModules.forEach(section => {
+              reconstructedContent += `$$${section.moduleTitle}$$\n\n`;
+              if (section.content) {
+                reconstructedContent += `${section.content}\n\n`;
+              } else {
+                reconstructedContent += '\n\n';
+              }
+            });
+            
+            reconstructedContent += `$$Your Action Steps$$\n\n`;
+            if (actionSection?.content) {
+              reconstructedContent += `${actionSection.content}\n\n`;
+            } else {
+              reconstructedContent += '\n\n';
+            }
+            
+            reconstructedContent += `$$Coming Up Next$$\n\n`;
+            if (comingSection?.content) {
+              reconstructedContent += `${comingSection.content}\n\n`;
+            } else {
+              reconstructedContent += '\n\n';
+            }
+            
+            setContent(reconstructedContent);
             setPageState('writing');
           }
         }
@@ -747,9 +807,32 @@ export default function PartWritingPage() {
     try {
       const draftRef = doc(firestore, 'users', user.uid, 'projects', projectId, 'offerDrafts', offerId);
 
+      const getCanonicalType = (s: OfferSection): 'introduction' | 'actionSteps' | 'comingUp' | null => {
+        if (s.sectionType === 'introduction') return 'introduction';
+        if (s.sectionType === 'actionSteps') return 'actionSteps';
+        if (s.sectionType === 'comingUp') return 'comingUp';
+        const lower = s.moduleTitle.toLowerCase().trim();
+        if (lower === 'introduction') return 'introduction';
+        if (lower === 'your action steps' || lower === 'action steps') return 'actionSteps';
+        if (lower === 'coming up next' || lower === 'coming up') return 'comingUp';
+        return null;
+      };
+
       const updatedSections = offerDraft.sections.map(section => {
         if (section.partNumber === partNumber) {
-          const sectionContent = extractSectionContent(content, section.moduleTitle);
+          let sectionContent = '';
+          const canonicalType = getCanonicalType(section);
+          
+          if (canonicalType === 'introduction') {
+            sectionContent = extractSectionContent(content, 'Introduction');
+          } else if (canonicalType === 'actionSteps') {
+            sectionContent = extractSectionContent(content, 'Your Action Steps');
+          } else if (canonicalType === 'comingUp') {
+            sectionContent = extractSectionContent(content, 'Coming Up Next');
+          } else {
+            sectionContent = extractSectionContent(content, section.moduleTitle);
+          }
+          
           const wordCount = countWords(sectionContent);
           return {
             ...section,
@@ -761,12 +844,26 @@ export default function PartWritingPage() {
         return section;
       });
 
-      await updateDoc(draftRef, {
+      const updateData: Record<string, any> = {
         sections: updatedSections,
         updatedAt: new Date().toISOString(),
-      });
+      };
+      
+      if (selectedResearchId && selectedResearchId !== 'none') {
+        updateData.researchProfileId = selectedResearchId;
+      }
+      if (selectedStyleId && selectedStyleId !== 'none') {
+        updateData.styleProfileId = selectedStyleId;
+      }
 
-      setOfferDraft(prev => prev ? { ...prev, sections: updatedSections as OfferSection[] } : null);
+      await updateDoc(draftRef, updateData);
+
+      setOfferDraft(prev => prev ? { 
+        ...prev, 
+        sections: updatedSections as OfferSection[],
+        researchProfileId: selectedResearchId !== 'none' ? selectedResearchId : prev.researchProfileId,
+        styleProfileId: selectedStyleId !== 'none' ? selectedStyleId : prev.styleProfileId,
+      } : null);
       toast({ title: 'Saved!', description: 'Your progress has been saved.' });
     } catch (error) {
       console.error('Error saving content:', error);

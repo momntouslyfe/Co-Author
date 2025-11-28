@@ -273,6 +273,7 @@ export type OfferSection = {
   content: string;
   wordCount: number;
   status: 'pending' | 'writing' | 'completed';
+  sectionType?: 'introduction' | 'module' | 'actionSteps' | 'comingUp';
 };
 
 export type OfferDraft = {
