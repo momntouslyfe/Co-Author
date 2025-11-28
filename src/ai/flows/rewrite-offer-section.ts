@@ -38,6 +38,8 @@ export async function rewriteOfferSection(
     async () => {
       const { ai, model: routedModel } = await getGenkitInstanceForFunction('rewrite', input.userId, input.idToken);
 
+      const hasMultipleSections = input.originalContent.includes('$$') && (input.originalContent.match(/\$\$[^$]+\$\$/g) || []).length > 1;
+      
       const prompt = ai.definePrompt({
         name: 'rewriteOfferSectionPrompt',
         input: { schema: RewriteOfferSectionInputSchema },
@@ -87,14 +89,23 @@ Structure your content using the "{{{storytellingFramework}}}" framework to crea
    - The overall structure
    - Any specific examples or data
    - The intended tone
+${hasMultipleSections ? `   - **CRITICAL: Preserve ALL section markers in the format $$SectionTitle$$** (e.g., $$Introduction$$, $$Your Action Steps$$, $$Coming Up Next$$)
+   - Keep the same sections in the same order with their markers intact` : ''}
 
 5. **DO NOT:**
    - Drastically change the meaning
    - Add completely new information
    - Remove important content
    - Change the language
+${hasMultipleSections ? '   - Do NOT remove or modify section markers ($$...$$)' : ''}
 
-Provide the rewritten content now.`,
+${hasMultipleSections ? `**SECTION FORMAT:**
+Each section must be formatted as:
+$$Section Title$$
+
+[Content for that section with ## Sub-headings if appropriate]
+
+` : ''}Provide the rewritten content now.`,
       });
 
       try {
