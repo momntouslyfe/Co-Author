@@ -27,9 +27,20 @@ import {
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { getIdToken } from '@/lib/client-auth';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import type { Project, ProjectOffers, OfferIdea, OfferBlueprint, OfferDraft, OfferCategory } from '@/lib/definitions';
+import type { Project, ProjectOffers, OfferIdea, OfferBlueprint, OfferDraft, OfferCategory, ResearchProfile, StyleProfile, AuthorProfile } from '@/lib/definitions';
 import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
+import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
+import { Label } from '@/components/ui/label';
+
+const languages = [
+  { value: 'English', label: 'English' },
+  { value: 'Spanish', label: 'Spanish' },
+  { value: 'French', label: 'French' },
+  { value: 'German', label: 'German' },
+  { value: 'Bangla', label: 'Bangla' },
+  { value: 'Hindi', label: 'Hindi' },
+];
 
 export default function BlueprintSelectionPage() {
   const searchParams = useSearchParams();
@@ -46,6 +57,10 @@ export default function BlueprintSelectionPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
   const [selectedBlueprintIndex, setSelectedBlueprintIndex] = useState<number | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
+  const [selectedResearchProfileId, setSelectedResearchProfileId] = useState<string>('none');
+  const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string>('none');
+  const [selectedAuthorProfileId, setSelectedAuthorProfileId] = useState<string>('none');
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -57,8 +72,26 @@ export default function BlueprintSelectionPage() {
     return doc(firestore, 'users', user.uid, 'projectOffers', selectedProjectId);
   }, [user, firestore, selectedProjectId]);
 
+  const researchProfilesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'users', user.uid, 'researchProfiles');
+  }, [user, firestore]);
+
+  const styleProfilesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'users', user.uid, 'styleProfiles');
+  }, [user, firestore]);
+
+  const authorProfilesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'users', user.uid, 'authorProfiles');
+  }, [user, firestore]);
+
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
   const { data: projectOffers, isLoading: offersLoading } = useDoc<ProjectOffers>(offersDocRef);
+  const { data: researchProfiles } = useCollection<ResearchProfile>(researchProfilesQuery);
+  const { data: styleProfiles } = useCollection<StyleProfile>(styleProfilesQuery);
+  const { data: authorProfiles } = useCollection<AuthorProfile>(authorProfilesQuery);
 
   const projectsWithOutline = useMemo(() => projects?.filter(p => p.outline) || [], [projects]);
   const selectedProject = useMemo(
@@ -78,6 +111,24 @@ export default function BlueprintSelectionPage() {
     setBlueprints([]);
     setSelectedBlueprintIndex(null);
   }, [selectedOfferId]);
+
+  const selectedResearchProfile = useMemo(() => {
+    return selectedResearchProfileId && selectedResearchProfileId !== 'none'
+      ? researchProfiles?.find(p => p.id === selectedResearchProfileId)
+      : undefined;
+  }, [selectedResearchProfileId, researchProfiles]);
+
+  const selectedStyleProfile = useMemo(() => {
+    return selectedStyleProfileId && selectedStyleProfileId !== 'none'
+      ? styleProfiles?.find(p => p.id === selectedStyleProfileId)
+      : undefined;
+  }, [selectedStyleProfileId, styleProfiles]);
+
+  const selectedAuthorProfile = useMemo(() => {
+    return selectedAuthorProfileId && selectedAuthorProfileId !== 'none'
+      ? authorProfiles?.find(p => p.id === selectedAuthorProfileId)
+      : undefined;
+  }, [selectedAuthorProfileId, authorProfiles]);
 
   const handleGenerateBlueprints = async () => {
     if (!user || !selectedProject || !selectedOffer) return;
@@ -101,9 +152,14 @@ export default function BlueprintSelectionPage() {
           offerCategory: selectedOffer.category,
           offerTitle: selectedOffer.title,
           offerDescription: selectedOffer.description,
-          researchProfileId: selectedProject.researchProfileId,
-          styleProfileId: selectedProject.styleProfileId,
-          authorProfileId: selectedProject.authorProfileId,
+          language: selectedLanguage,
+          researchProfile: selectedResearchProfile
+            ? `PAIN POINTS:\n${selectedResearchProfile.painPointAnalysis}\n\nDEEP RESEARCH:\n${selectedResearchProfile.deepTopicResearch}`
+            : undefined,
+          styleProfile: selectedStyleProfile?.styleAnalysis,
+          authorProfile: selectedAuthorProfile
+            ? `Author: ${selectedAuthorProfile.penName}\nBio: ${selectedAuthorProfile.bio}${selectedAuthorProfile.credentials ? `\nCredentials: ${selectedAuthorProfile.credentials}` : ''}`
+            : undefined,
         }),
       });
 
@@ -228,7 +284,9 @@ export default function BlueprintSelectionPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-5xl">
+    <div>
+      <FloatingCreditWidget />
+      <div className="container mx-auto py-8 px-4 max-w-5xl overflow-hidden">
       <div className="mb-6">
         <Button variant="ghost" size="sm" asChild className="mb-4">
           <Link href="/dashboard/offer-workspace">
@@ -297,6 +355,75 @@ export default function BlueprintSelectionPage() {
       </div>
 
       {selectedOffer && (
+        <>
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">AI Context Settings</CardTitle>
+            <CardDescription>
+              Optionally select profiles to help the AI generate better blueprints based on your research, style, and author identity.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Language</Label>
+                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map(lang => (
+                      <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Research Profile (Optional)</Label>
+                <Select value={selectedResearchProfileId} onValueChange={setSelectedResearchProfileId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {researchProfiles?.map(profile => (
+                      <SelectItem key={profile.id} value={profile.id}>{profile.topic}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Style Profile (Optional)</Label>
+                <Select value={selectedStyleProfileId} onValueChange={setSelectedStyleProfileId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {styleProfiles?.map(profile => (
+                      <SelectItem key={profile.id} value={profile.id}>{profile.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Author Profile (Optional)</Label>
+                <Select value={selectedAuthorProfileId} onValueChange={setSelectedAuthorProfileId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {authorProfiles?.map(profile => (
+                      <SelectItem key={profile.id} value={profile.id}>{profile.penName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="mb-6">
           <CardHeader>
             <div className="flex items-start justify-between">
@@ -333,6 +460,7 @@ export default function BlueprintSelectionPage() {
             </div>
           </CardHeader>
         </Card>
+        </>
       )}
 
       {isLoading ? (
@@ -444,6 +572,7 @@ export default function BlueprintSelectionPage() {
           </Tabs>
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -25,10 +25,10 @@ export async function POST(request: Request) {
       offerCategory,
       offerTitle,
       offerDescription,
-      researchProfileId,
-      styleProfileId,
-      authorProfileId,
       language = 'English',
+      researchProfile: researchProfileContent,
+      styleProfile: styleProfileContent,
+      authorProfile: authorProfileContent,
     } = body;
 
     if (!bookTitle || !offerCategory || !offerTitle || !offerDescription) {
@@ -38,49 +38,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const db = admin.firestore();
-    let researchProfile = '';
-    let styleProfile = '';
-    let authorProfile = '';
-
-    if (researchProfileId) {
-      const researchDoc = await db
-        .collection('users')
-        .doc(userId)
-        .collection('researchProfiles')
-        .doc(researchProfileId)
-        .get();
-      if (researchDoc.exists) {
-        const data = researchDoc.data();
-        researchProfile = `Target Audience: ${data?.targetAudience || ''}\nPain Points: ${data?.painPoints || ''}\nDesires: ${data?.desires || ''}`;
-      }
-    }
-
-    if (styleProfileId) {
-      const styleDoc = await db
-        .collection('users')
-        .doc(userId)
-        .collection('styleProfiles')
-        .doc(styleProfileId)
-        .get();
-      if (styleDoc.exists) {
-        const data = styleDoc.data();
-        styleProfile = data?.analysis || '';
-      }
-    }
-
-    if (authorProfileId) {
-      const authorDoc = await db
-        .collection('users')
-        .doc(userId)
-        .collection('authorProfiles')
-        .doc(authorProfileId)
-        .get();
-      if (authorDoc.exists) {
-        const data = authorDoc.data();
-        authorProfile = `Pen Name: ${data?.penName || ''}\nBio: ${data?.bio || ''}\nCredentials: ${data?.credentials || ''}`;
-      }
-    }
+    const researchProfile = researchProfileContent || '';
+    const styleProfile = styleProfileContent || '';
+    const authorProfile = authorProfileContent || '';
 
     const result = await generateOfferBlueprints({
       userId,

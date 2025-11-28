@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, FileText, Loader2, GripVertical } from 'lucide-react';
+import { BookOpen, FileText, Loader2, GripVertical, Gift } from 'lucide-react';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
 import { Card } from '@/components/ui/card';
 import { useState, useEffect, useRef } from 'react';
@@ -146,6 +146,21 @@ export function FloatingCreditWidget() {
                   </span>
                   <span className="text-[10px] text-muted-foreground">
                     of {creditSummary.wordCreditsTotal.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Gift className="h-4 w-4 text-primary" />
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">Offer Credits</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-sm font-bold text-primary">
+                    {creditSummary.offerCreditsAvailable.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    of {creditSummary.offerCreditsTotal.toLocaleString()}
                   </span>
                 </div>
               </div>

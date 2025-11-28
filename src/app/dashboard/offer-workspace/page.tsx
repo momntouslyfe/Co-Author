@@ -23,6 +23,7 @@ import {
   Plus,
   ArrowRight,
 } from 'lucide-react';
+import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, query, orderBy } from 'firebase/firestore';
 import type { Project, ProjectOffers, OfferDraft, OfferCategory, OfferSection } from '@/lib/definitions';
@@ -68,7 +69,9 @@ export default function OfferWorkspacePage() {
   const completedDrafts = offerDrafts?.filter(d => d.status === 'completed') || [];
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-5xl">
+    <>
+    <FloatingCreditWidget />
+    <div className="container mx-auto py-8 px-4 max-w-5xl overflow-hidden">
       <div className="mb-6">
         <Button variant="ghost" size="sm" asChild className="mb-4">
           <Link href="/dashboard/co-marketer">
@@ -168,24 +171,24 @@ export default function OfferWorkspacePage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-3">
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto">
                     {savedOffers.slice(0, 5).map(offer => (
                       <div
                         key={offer.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-4"
                       >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium truncate">{offer.title}</h4>
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h4 className="font-medium truncate max-w-[200px] sm:max-w-none">{offer.title}</h4>
                             <Badge variant="secondary" className="text-xs shrink-0">
                               {OFFER_CATEGORY_LABELS[offer.category as OfferCategory] || offer.category}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground truncate">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
                             {offer.description}
                           </p>
                         </div>
-                        <Button asChild size="sm" className="ml-4 shrink-0">
+                        <Button asChild size="sm" className="shrink-0">
                           <Link href={`/dashboard/offer-workspace/blueprints?projectId=${selectedProjectId}&offerId=${offer.id}`}>
                             <Plus className="mr-2 h-4 w-4" />
                             Develop
@@ -214,15 +217,15 @@ export default function OfferWorkspacePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-3">
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto">
                       {inProgressDrafts.map(draft => (
                         <div
                           key={draft.id}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-4"
                         >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-medium truncate">{draft.title}</h4>
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h4 className="font-medium truncate max-w-[200px] sm:max-w-none">{draft.title}</h4>
                               <Badge variant="outline" className="text-xs shrink-0">
                                 {OFFER_CATEGORY_LABELS[draft.category as OfferCategory] || draft.category}
                               </Badge>
@@ -231,7 +234,7 @@ export default function OfferWorkspacePage() {
                               {draft.sections.filter((s: OfferSection) => s.content).length} of {draft.sections.length} sections written
                             </p>
                           </div>
-                          <Button asChild size="sm" variant="outline" className="ml-4 shrink-0">
+                          <Button asChild size="sm" variant="outline" className="shrink-0">
                             <Link href={`/dashboard/offer-workspace/write/${draft.id}?projectId=${selectedProjectId}`}>
                               Continue
                               <ArrowRight className="ml-2 h-4 w-4" />
@@ -256,15 +259,15 @@ export default function OfferWorkspacePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-3">
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto">
                       {completedDrafts.map(draft => (
                         <div
                           key={draft.id}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-4"
                         >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-medium truncate">{draft.title}</h4>
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h4 className="font-medium truncate max-w-[200px] sm:max-w-none">{draft.title}</h4>
                               <Badge className="text-xs shrink-0 bg-green-500/10 text-green-600 hover:bg-green-500/20">
                                 Completed
                               </Badge>
@@ -273,7 +276,7 @@ export default function OfferWorkspacePage() {
                               {draft.sections.length} sections, ~{draft.sections.reduce((acc: number, s: OfferSection) => acc + (s.wordCount || 0), 0).toLocaleString()} words
                             </p>
                           </div>
-                          <Button asChild size="sm" variant="outline" className="ml-4 shrink-0">
+                          <Button asChild size="sm" variant="outline" className="shrink-0">
                             <Link href={`/dashboard/offer-workspace/write/${draft.id}?projectId=${selectedProjectId}`}>
                               View/Edit
                               <ArrowRight className="ml-2 h-4 w-4" />
@@ -290,5 +293,6 @@ export default function OfferWorkspacePage() {
         </div>
       )}
     </div>
+    </>
   );
 }

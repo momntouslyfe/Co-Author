@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, BookOpen, FileText, Plus } from 'lucide-react';
+import { Loader2, BookOpen, FileText, Plus, Gift } from 'lucide-react';
 import { useAuthUser } from '@/firebase';
 import type { CreditSummary } from '@/types/subscription';
 import Link from 'next/link';
@@ -68,6 +68,10 @@ export function CreditSummaryCard() {
 
   const wordUsagePercent = creditSummary.wordCreditsTotal > 0
     ? ((creditSummary.wordCreditsTotal - creditSummary.wordCreditsAvailable) / creditSummary.wordCreditsTotal) * 100
+    : 0;
+
+  const offerUsagePercent = creditSummary.offerCreditsTotal > 0
+    ? ((creditSummary.offerCreditsTotal - creditSummary.offerCreditsAvailable) / creditSummary.offerCreditsTotal) * 100
     : 0;
 
   const formatDate = (date: Date) => {
@@ -144,6 +148,33 @@ export function CreditSummaryCard() {
               </span>
             </div>
             <Progress value={wordUsagePercent} className="h-2" />
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Gift className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Offer Creation Credits</span>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/dashboard/credits/purchase?type=offers">
+                <Plus className="mr-1 h-3 w-3" />
+                Buy More
+              </Link>
+            </Button>
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {creditSummary.offerCreditsAvailable.toLocaleString()} remaining of{' '}
+                {creditSummary.offerCreditsTotal.toLocaleString()} total
+              </span>
+              <span className="font-medium">
+                {creditSummary.offerCreditsUsed.toLocaleString()} used
+              </span>
+            </div>
+            <Progress value={offerUsagePercent} className="h-2" />
           </div>
         </div>
 

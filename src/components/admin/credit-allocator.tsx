@@ -162,7 +162,7 @@ export function CreditAllocator() {
         </CardHeader>
         <CardContent>
           <div className="text-sm text-muted-foreground">
-            Use this feature to manually allocate additional word or book creation credits to users.
+            Use this feature to manually allocate additional word, book, or offer creation credits to users.
             This is useful for promotions, compensations, or special cases.
           </div>
         </CardContent>
@@ -207,6 +207,7 @@ export function CreditAllocator() {
                 <SelectContent>
                   <SelectItem value="words">Word Credits</SelectItem>
                   <SelectItem value="books">Book Creation Credits</SelectItem>
+                  <SelectItem value="offers">Offer Creation Credits</SelectItem>
                 </SelectContent>
               </Select>
             </div>

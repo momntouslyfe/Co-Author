@@ -23,23 +23,32 @@ const GenerateOfferBlueprintsInputSchema = z.object({
 
 export type GenerateOfferBlueprintsInput = z.infer<typeof GenerateOfferBlueprintsInputSchema>;
 
-const OfferBlueprintPartSchema = z.object({
-  title: z.string().describe('The title of this part/section.'),
-  modules: z.array(z.string()).describe('Array of module/sub-section titles within this part.'),
-});
-
-const OfferBlueprintSchema = z.object({
-  title: z.string().describe('A compelling title for this blueprint variation.'),
-  summary: z.string().describe('A 2-3 sentence summary of what this blueprint offers and its unique angle.'),
-  parts: z.array(OfferBlueprintPartSchema).describe('The structured parts of the offer.'),
-  estimatedWordCount: z.number().describe('Estimated total word count for this blueprint.'),
-});
-
 const GenerateOfferBlueprintsOutputSchema = z.object({
-  blueprints: z.array(OfferBlueprintSchema).describe('Three distinct blueprint variations.'),
+  blueprint1_title: z.string().describe('Title for blueprint 1'),
+  blueprint1_summary: z.string().describe('2-3 sentence summary for blueprint 1'),
+  blueprint1_parts: z.string().describe('JSON string of parts array: [{"title":"Part Title","modules":["Module 1","Module 2"]}]'),
+  blueprint1_wordCount: z.number().describe('Estimated word count for blueprint 1'),
+  blueprint2_title: z.string().describe('Title for blueprint 2'),
+  blueprint2_summary: z.string().describe('2-3 sentence summary for blueprint 2'),
+  blueprint2_parts: z.string().describe('JSON string of parts array: [{"title":"Part Title","modules":["Module 1","Module 2"]}]'),
+  blueprint2_wordCount: z.number().describe('Estimated word count for blueprint 2'),
+  blueprint3_title: z.string().describe('Title for blueprint 3'),
+  blueprint3_summary: z.string().describe('2-3 sentence summary for blueprint 3'),
+  blueprint3_parts: z.string().describe('JSON string of parts array: [{"title":"Part Title","modules":["Module 1","Module 2"]}]'),
+  blueprint3_wordCount: z.number().describe('Estimated word count for blueprint 3'),
 });
 
-export type GenerateOfferBlueprintsOutput = z.infer<typeof GenerateOfferBlueprintsOutputSchema>;
+export type GenerateOfferBlueprintsRawOutput = z.infer<typeof GenerateOfferBlueprintsOutputSchema>;
+
+export interface GenerateOfferBlueprintsOutput {
+  blueprints: Array<{
+    id?: string;
+    title: string;
+    summary: string;
+    parts: Array<{ title: string; modules: string[] }>;
+    estimatedWordCount: number;
+  }>;
+}
 
 const CATEGORY_BLUEPRINT_PROMPTS: Record<Exclude<OfferCategory, 'all'>, string> = {
   'complementary-skill-guide': `Generate blueprints for a COMPLEMENTARY SKILL GUIDE.
@@ -186,13 +195,13 @@ ${categoryPrompt}
 6. **WORD COUNT:** Each module is designed for ~${structure.wordsPerModule} words. Calculate estimatedWordCount as: ${structure.parts} parts × ${structure.modulesPerPart} modules × ${structure.wordsPerModule} words = ${structure.parts * structure.modulesPerPart * structure.wordsPerModule} words (approximately).
 
 **OUTPUT FORMAT:**
-Return exactly 3 blueprints, each with:
-- A unique, compelling title
-- A 2-3 sentence summary explaining the blueprint's angle
-- ${structure.parts} parts, each containing ${structure.modulesPerPart} module titles
-- Estimated word count
+For each of the 3 blueprints, provide:
+- blueprint{N}_title: A unique, compelling title
+- blueprint{N}_summary: A 2-3 sentence summary explaining the blueprint's angle  
+- blueprint{N}_parts: A JSON string array of parts, formatted as: [{"title":"Part 1 Title","modules":["Module 1","Module 2","Module 3"]},{"title":"Part 2 Title","modules":["Module 1","Module 2","Module 3"]}]
+- blueprint{N}_wordCount: Estimated total word count (approximately ${structure.parts * structure.modulesPerPart * structure.wordsPerModule})
 
-Generate the three blueprints now.`,
+Generate the three blueprints now. IMPORTANT: The parts field must be a valid JSON string.`,
     });
 
     const { output } = await prompt(
@@ -200,22 +209,107 @@ Generate the three blueprints now.`,
       { model: input.model || routedModel }
     );
 
-    if (!output || !output.blueprints || output.blueprints.length === 0) {
+    if (!output) {
       throw new Error('Failed to generate offer blueprints. Please try again.');
     }
 
-    type BlueprintPart = { title: string; modules: string[] };
-    type Blueprint = { title: string; summary: string; parts: BlueprintPart[]; estimatedWordCount: number };
-    
-    const blueprintsWithIds = output.blueprints.map((bp: Blueprint, index: number) => ({
-      ...bp,
-      id: `blueprint-${index + 1}`,
-    }));
+    const parsePartsJson = (partsStr: string): Array<{ title: string; modules: string[] }> => {
+      if (!partsStr) return [];
+      
+      try {
+        let cleanedStr = partsStr.trim();
+        
+        if (cleanedStr.startsWith('```json')) {
+          cleanedStr = cleanedStr.slice(7);
+        } else if (cleanedStr.startsWith('```')) {
+          cleanedStr = cleanedStr.slice(3);
+        }
+        if (cleanedStr.endsWith('```')) {
+          cleanedStr = cleanedStr.slice(0, -3);
+        }
+        cleanedStr = cleanedStr.trim();
+        
+        cleanedStr = cleanedStr.replace(/,\s*([\]}])/g, '$1');
+        cleanedStr = cleanedStr.replace(/'/g, '"');
+        
+        const parsed = JSON.parse(cleanedStr);
+        if (Array.isArray(parsed)) {
+          return parsed.map(p => ({
+            title: String(p.title || 'Untitled Part'),
+            modules: Array.isArray(p.modules) ? p.modules.map(String) : []
+          }));
+        }
+        return [];
+      } catch (e) {
+        console.error('Failed to parse parts JSON, attempting fallback:', partsStr, e);
+        
+        try {
+          const titleMatches = partsStr.match(/"title"\s*:\s*"([^"]+)"/g);
+          const modulesMatches = partsStr.match(/"modules"\s*:\s*\[([^\]]+)\]/g);
+          
+          if (titleMatches && titleMatches.length > 0) {
+            const parts: Array<{ title: string; modules: string[] }> = [];
+            for (let i = 0; i < titleMatches.length; i++) {
+              const titleMatch = titleMatches[i].match(/"title"\s*:\s*"([^"]+)"/);
+              const title = titleMatch ? titleMatch[1] : `Part ${i + 1}`;
+              
+              let modules: string[] = [];
+              if (modulesMatches && modulesMatches[i]) {
+                const moduleContent = modulesMatches[i].match(/\[([^\]]+)\]/);
+                if (moduleContent) {
+                  modules = moduleContent[1]
+                    .split(',')
+                    .map(m => m.trim().replace(/^["']|["']$/g, ''))
+                    .filter(m => m.length > 0);
+                }
+              }
+              
+              if (modules.length > 0) {
+                parts.push({ title, modules });
+              }
+            }
+            if (parts.length > 0) return parts;
+          }
+        } catch (fallbackError) {
+          console.error('Fallback parsing also failed:', fallbackError);
+        }
+        
+        return [{ title: 'Part 1', modules: ['Module 1', 'Module 2', 'Module 3'] }];
+      }
+    };
+
+    const blueprintsWithIds = [
+      {
+        id: 'blueprint-1',
+        title: output.blueprint1_title,
+        summary: output.blueprint1_summary,
+        parts: parsePartsJson(output.blueprint1_parts),
+        estimatedWordCount: output.blueprint1_wordCount,
+      },
+      {
+        id: 'blueprint-2',
+        title: output.blueprint2_title,
+        summary: output.blueprint2_summary,
+        parts: parsePartsJson(output.blueprint2_parts),
+        estimatedWordCount: output.blueprint2_wordCount,
+      },
+      {
+        id: 'blueprint-3',
+        title: output.blueprint3_title,
+        summary: output.blueprint3_summary,
+        parts: parsePartsJson(output.blueprint3_parts),
+        estimatedWordCount: output.blueprint3_wordCount,
+      },
+    ].filter(bp => bp.title && bp.parts.length > 0);
+
+    if (blueprintsWithIds.length === 0) {
+      throw new Error('Failed to generate valid offer blueprints. Please try again.');
+    }
 
     await trackAIUsage(
       input.userId,
-      blueprintsWithIds.map((bp: Blueprint & { id: string }) => 
-        `${bp.title}\n${bp.summary}\n${bp.parts.map((p: BlueprintPart) => 
+      blueprintsWithIds.map(bp => 
+        `${bp.title}\n${bp.summary}\n${bp.parts.map(p => 
           `${p.title}: ${p.modules.join(', ')}`
         ).join('\n')}`
       ).join('\n\n'),
