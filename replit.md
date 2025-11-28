@@ -4,6 +4,22 @@
 Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and Firebase, designed to assist authors from concept to completion. It offers AI-driven topic research, blueprint generation, interactive chapter writing, and tools for creating marketing content and bonus materials. The platform features a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It leverages Google's Gemini AI via Genkit for all AI operations and Firebase for authentication and data. The UI is built with shadcn/ui and Tailwind CSS. The project aims to provide authoritative, well-researched, and credible writing support, avoiding fabricated information, and includes an administrative panel for centralized management and enhanced security. Key features include an "Offer Workspace" for developing bonus materials, a "Co-Writer" for marketing content generation, and a "Co-Marketer" for creating book offers and sales funnels.
 
 ## Recent Changes
+- **Part Writing Page Enhancements**:
+  - Fixed 404 errors when selecting parts by properly parsing `part-X` format URLs
+  - Added `generating` state to PageState for proper state transitions during AI generation
+  - Added FloatingCreditWidget to the writing view for credit monitoring
+  - Fixed conflicting star exports warning in firebase/index.ts
+- **Rich Text Copy Function**: Matching chapter page pattern with:
+  - HTML and plain text clipboard support using ClipboardItem API
+  - `##` markdown headings converted to `<h3>` tags
+  - `###` markdown headings converted to `<h4>` tags
+  - Bullet and numbered lists converted to `<ul>/<ol>` HTML
+  - Fallback to plain text when rich text clipboard not supported
+- **Subheading Display**: `##` and `###` markdown headings in section content now render as styled subheadings (`<h4>` and `<h5>` elements)
+- **AI Context Improvements**: Added storytellingFramework support to:
+  - write-offer-section AI flow and API route
+  - rewrite-offer-section AI flow and API route
+  - All profile selections (style, research, storytelling framework) now properly passed to AI
 - **Offer Workspace Restructuring**: Complete restructuring of offer workspace to match co-author workflow:
   - Created dynamic routing structure `/offer-workspace/[projectId]/[offerId]/...`
   - Built OfferWorkflowNavigation component mirroring book workflow navigation
@@ -12,7 +28,7 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
   - Created sections list page with grouped sections by parts
   - Section writing page uses offer-specific API routes (`/api/offers/write-section`, `/api/offers/rewrite-section`, `/api/offers/expand-section`) with proper context (styleProfile, researchProfile, blueprintSummary, book context)
 - **Offer Credit API Routes**: Added `/api/user/check-offer-credit` and `/api/user/track-offer-creation` API routes for offer credit management
-- **Offer API Routes Updated**: Added styleProfile and researchProfile support to write-section, rewrite-section, and expand-section API routes
+- **Offer API Routes Updated**: Added styleProfile, researchProfile, and storytellingFramework support to write-section and rewrite-section API routes
 - **FloatingCreditWidget in Layout**: Moved FloatingCreditWidget to offer-workspace layout for consistent display across all pages
 - **Offer Blueprint Schema Fix**: Flattened the Genkit output schema to avoid Gemini's nesting depth limit (max 2 levels). Blueprint parts are now returned as JSON strings and parsed client-side with robust fallback handling.
 - **Offer Credits Display**: Added offer credits (with Gift icon) to FloatingCreditWidget and CreditSummaryCard, with progress bars showing usage.

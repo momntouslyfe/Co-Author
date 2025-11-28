@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       language = 'English',
       styleProfile,
       researchProfile,
+      storytellingFramework,
       customInstructions,
     } = body;
 
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
       language,
       styleProfile: styleProfile || undefined,
       researchProfile: researchProfile || undefined,
+      storytellingFramework: storytellingFramework || undefined,
       customInstructions: customInstructions || undefined,
     });
 

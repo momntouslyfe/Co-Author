@@ -13,6 +13,8 @@ const RewriteOfferSectionInputSchema = z.object({
   language: z.string().describe('The language for the content.'),
   rewriteInstructions: z.string().optional().describe('Optional specific instructions for how to rewrite.'),
   styleProfile: z.string().optional().describe('Style profile for writing guidance.'),
+  storytellingFramework: z.string().optional().describe('Storytelling framework to use (e.g., Hero\'s Journey, Three-Act Structure).'),
+  researchProfile: z.string().optional().describe('Research profile for audience context.'),
   model: z.string().optional().describe('The generative AI model to use.'),
 });
 
@@ -55,6 +57,16 @@ export async function rewriteOfferSection(
 {{#if styleProfile}}
 **STYLE PROFILE (Apply this writing style):**
 {{{styleProfile}}}
+{{/if}}
+
+{{#if storytellingFramework}}
+**STORYTELLING FRAMEWORK:**
+Structure your content using the "{{{storytellingFramework}}}" framework to create an engaging narrative arc.
+{{/if}}
+
+{{#if researchProfile}}
+**RESEARCH PROFILE (Target Audience & Pain Points):**
+{{{researchProfile}}}
 {{/if}}
 
 **CRITICAL REQUIREMENTS:**

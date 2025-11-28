@@ -136,6 +136,11 @@ const PartEditor = ({
     const uniqueIndex = sectionIndex * 1000 + paragraphIndex;
     setIsExtending(uniqueIndex);
     setOpenExtendPopoverIndex(null);
+
+    const sections = content.split(/(\$\$[^$]+\$\$)/g);
+    const titleToFind = findTitleForSection(sections, sectionIndex);
+    const moduleTitle = titleToFind ? titleToFind.replaceAll('$$', '').trim() : 'Section';
+
     try {
       const idToken = await getIdToken(user);
       const response = await fetch('/api/offers/expand-section', {
@@ -145,13 +150,11 @@ const PartEditor = ({
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          contentToExpand: paragraph,
-          instruction: instruction || 'Expand this content with more detail',
-          offerTitle: offerDraft.title,
-          offerCategory: offerDraft.category,
+          originalContent: paragraph,
+          moduleTitle: moduleTitle,
+          expansionFocus: instruction || 'Expand this content with more detail',
           styleProfile: selectedStyle?.styleAnalysis,
-          researchProfile: researchPrompt,
-          storytellingFramework: selectedFramework,
+          language: offerDraft.language || project.language || 'English',
         }),
       });
 
@@ -303,13 +306,13 @@ const PartEditor = ({
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          sectionContent: sectionContentToRewrite,
-          chapterContent: needsFullContext ? content : undefined,
+          originalContent: sectionContentToRewrite,
+          moduleTitle: title,
           styleProfile: selectedStyle?.styleAnalysis,
           researchProfile: researchPrompt,
-          storytellingFramework: selectedFramework,
+          storytellingFramework: selectedFramework !== 'none' ? selectedFramework : undefined,
           language: language,
-          instruction,
+          rewriteInstructions: instruction,
         }),
       });
 
@@ -318,7 +321,7 @@ const PartEditor = ({
       }
 
       const result = await response.json();
-      if (result && result.rewrittenSection) {
+      if (result && result.rewrittenContent) {
         onContentChange(prevContent => {
           const currentSections = prevContent.split(/(\$\$[^$]+\$\$)/g);
           const currentTitleToFind = findTitleForSection(currentSections, sectionIndex);
@@ -329,7 +332,7 @@ const PartEditor = ({
             if (titleIndex + 1 >= currentSections.length || currentSections[titleIndex + 1].startsWith('$$')) {
               currentSections.splice(titleIndex + 1, 0, '');
             }
-            currentSections[titleIndex + 1] = `\n\n${result.rewrittenSection.trim()}\n\n`;
+            currentSections[titleIndex + 1] = `\n\n${result.rewrittenContent.trim()}\n\n`;
             return currentSections.join('');
           }
           return prevContent;
@@ -615,37 +618,59 @@ const PartEditor = ({
               <Skeleton className="h-6 w-3/4" />
             </div>
           ) : hasContent ? (
-            sectionContent.trim().split('\n\n').filter(p => p.trim()).map((paragraph, pIndex) => (
-              <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4 group/paragraph">
-                <p className="text-base leading-relaxed whitespace-pre-wrap">{paragraph}</p>
-                <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
-                  <Popover open={openExtendPopoverIndex === (sectionIndex * 1000 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (sectionIndex * 1000 + pIndex) : null)}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
-                        {isExtending === (sectionIndex * 1000 + pIndex) ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
-                        Extend With AI
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <div className="grid gap-4">
-                        <div className="space-y-2"><h4 className="font-medium leading-none">Guided Extend</h4><p className="text-sm text-muted-foreground">Give the AI specific instructions.</p></div>
-                        <div className="grid gap-2">
-                          <Label htmlFor={`instruction-${sectionIndex}-${pIndex}`} className="sr-only">Instruction</Label>
-                          <Textarea id={`instruction-${sectionIndex}-${pIndex}`} placeholder="e.g., Add a practical example" value={extendInstruction} onChange={(e) => setExtendInstruction(e.target.value)} />
-                          <Button size="sm" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex, extendInstruction)} disabled={!extendInstruction || isExtending === (sectionIndex * 1000 + pIndex)}>
-                            <Pencil className="mr-2 h-4 w-4" /> Write With My Instruction
+            sectionContent.trim().split('\n\n').filter(p => p.trim()).map((paragraph, pIndex) => {
+              const trimmedParagraph = paragraph.trim();
+              const h2Match = trimmedParagraph.match(/^##\s+(.+)$/m);
+              const h3Match = trimmedParagraph.match(/^###\s+(.+)$/m);
+
+              if (h3Match) {
+                return (
+                  <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4">
+                    <h5 className="text-base font-semibold text-foreground">{h3Match[1]}</h5>
+                  </div>
+                );
+              }
+
+              if (h2Match) {
+                return (
+                  <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4">
+                    <h4 className="text-lg font-semibold text-foreground">{h2Match[1]}</h4>
+                  </div>
+                );
+              }
+
+              return (
+                <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4 group/paragraph">
+                  <p className="text-base leading-relaxed whitespace-pre-wrap">{paragraph}</p>
+                  <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
+                    <Popover open={openExtendPopoverIndex === (sectionIndex * 1000 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (sectionIndex * 1000 + pIndex) : null)}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
+                          {isExtending === (sectionIndex * 1000 + pIndex) ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
+                          Extend With AI
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="grid gap-4">
+                          <div className="space-y-2"><h4 className="font-medium leading-none">Guided Extend</h4><p className="text-sm text-muted-foreground">Give the AI specific instructions.</p></div>
+                          <div className="grid gap-2">
+                            <Label htmlFor={`instruction-${sectionIndex}-${pIndex}`} className="sr-only">Instruction</Label>
+                            <Textarea id={`instruction-${sectionIndex}-${pIndex}`} placeholder="e.g., Add a practical example" value={extendInstruction} onChange={(e) => setExtendInstruction(e.target.value)} />
+                            <Button size="sm" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex, extendInstruction)} disabled={!extendInstruction || isExtending === (sectionIndex * 1000 + pIndex)}>
+                              <Pencil className="mr-2 h-4 w-4" /> Write With My Instruction
+                            </Button>
+                          </div>
+                          <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
+                          <Button size="sm" variant="secondary" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex)} disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
+                            <Wand2 className="mr-2 h-4 w-4" /> Just Write More
                           </Button>
                         </div>
-                        <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
-                        <Button size="sm" variant="secondary" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex)} disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
-                          <Wand2 className="mr-2 h-4 w-4" /> Just Write More
-                        </Button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="flex flex-col items-center justify-center h-24 gap-3 border-2 border-dashed rounded-md bg-muted/20">
               <p className="text-sm text-muted-foreground">This section is empty or was skipped</p>
@@ -985,10 +1010,26 @@ export default function PartWritingPage() {
           continue;
         }
 
+        const h2Match = line.match(/^##\s+(.+)$/);
+        const h3Match = line.match(/^###\s+(.+)$/);
         const bulletMatch = line.match(/^[-•*]\s+(.+)$/);
         const numberedMatch = line.match(/^\d+[.)]\s+(.+)$/);
 
-        if (bulletMatch) {
+        if (h3Match) {
+          if (inList) {
+            result += listType === 'ul' ? '</ul>' : '</ol>';
+            inList = false;
+            listType = '';
+          }
+          result += `<h4>${h3Match[1]}</h4>`;
+        } else if (h2Match) {
+          if (inList) {
+            result += listType === 'ul' ? '</ul>' : '</ol>';
+            inList = false;
+            listType = '';
+          }
+          result += `<h3>${h2Match[1]}</h3>`;
+        } else if (bulletMatch) {
           if (!inList || listType !== 'ul') {
             if (inList) result += listType === 'ul' ? '</ul>' : '</ol>';
             result += '<ul>';
@@ -1092,12 +1133,13 @@ export default function PartWritingPage() {
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          sectionContent: content,
+          originalContent: content,
+          moduleTitle: partTitle,
           styleProfile: stylePrompt,
           researchProfile: researchPrompt,
           storytellingFramework: selectedFramework !== 'none' ? selectedFramework : undefined,
           language: offerDraft?.language || project.language || 'English',
-          instruction,
+          rewriteInstructions: instruction,
         }),
       });
 
@@ -1106,8 +1148,8 @@ export default function PartWritingPage() {
       }
 
       const result = await response.json();
-      if (result && result.rewrittenSection) {
-        setContent(result.rewrittenSection);
+      if (result && result.rewrittenContent) {
+        setContent(result.rewrittenContent);
         refreshCredits();
         toast({ title: "Part Rewritten", description: "The AI has rewritten the part." });
       } else {

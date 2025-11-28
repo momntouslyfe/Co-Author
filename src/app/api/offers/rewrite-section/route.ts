@@ -23,6 +23,8 @@ export async function POST(request: Request) {
       language = 'English',
       rewriteInstructions,
       styleProfile,
+      storytellingFramework,
+      researchProfile,
     } = body;
 
     if (!originalContent || !moduleTitle) {
@@ -40,6 +42,8 @@ export async function POST(request: Request) {
       language,
       rewriteInstructions: rewriteInstructions || undefined,
       styleProfile: styleProfile || undefined,
+      storytellingFramework: storytellingFramework || undefined,
+      researchProfile: researchProfile || undefined,
     });
 
     return NextResponse.json(result);

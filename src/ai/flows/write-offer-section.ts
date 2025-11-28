@@ -22,6 +22,7 @@ const WriteOfferSectionInputSchema = z.object({
   bookContext: z.string().optional().describe('Source book title and outline for reference.'),
   researchProfile: z.string().optional().describe('Research profile for audience context.'),
   styleProfile: z.string().optional().describe('Style profile for writing guidance.'),
+  storytellingFramework: z.string().optional().describe('Storytelling framework to use (e.g., Hero\'s Journey, Three-Act Structure).'),
   customInstructions: z.string().optional().describe('Additional instructions from user.'),
   model: z.string().optional().describe('The generative AI model to use.'),
 });
@@ -85,6 +86,11 @@ export async function writeOfferSection(
 **STYLE PROFILE (Writing Style Guidance):**
 Apply this writing style (tone, voice, sentence patterns) while writing the content:
 {{{styleProfile}}}
+{{/if}}
+
+{{#if storytellingFramework}}
+**STORYTELLING FRAMEWORK:**
+Structure your content using the "{{{storytellingFramework}}}" framework to create an engaging narrative arc.
 {{/if}}
 
 {{#if customInstructions}}
