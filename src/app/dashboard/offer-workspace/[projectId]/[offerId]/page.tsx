@@ -350,12 +350,21 @@ export default function OfferDraftPage() {
         sections,
         status: 'draft',
         currentStep: 'title',
-        language: currentFormValues.language,
-        storytellingFramework: currentFormValues.storytellingFramework,
-        researchProfileId: currentFormValues.researchProfileId,
-        styleProfileId: currentFormValues.styleProfileId,
         updatedAt: new Date().toISOString(),
       };
+
+      if (currentFormValues.language) {
+        draftData.language = currentFormValues.language;
+      }
+      if (currentFormValues.storytellingFramework) {
+        draftData.storytellingFramework = currentFormValues.storytellingFramework;
+      }
+      if (currentFormValues.researchProfileId && currentFormValues.researchProfileId !== 'none') {
+        draftData.researchProfileId = currentFormValues.researchProfileId;
+      }
+      if (currentFormValues.styleProfileId && currentFormValues.styleProfileId !== 'none') {
+        draftData.styleProfileId = currentFormValues.styleProfileId;
+      }
 
       const isNewDraft = !offerDraft;
       
