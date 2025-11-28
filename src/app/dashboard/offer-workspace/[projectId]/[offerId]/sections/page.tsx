@@ -15,6 +15,20 @@ import { OfferWorkflowNavigation } from '@/components/offer-workflow-navigation'
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
+const isCanonicalSection = (section: OfferSection): boolean => {
+  if (section.sectionType) {
+    return section.sectionType === 'introduction' ||
+           section.sectionType === 'actionSteps' ||
+           section.sectionType === 'comingUp';
+  }
+  const lower = section.moduleTitle.toLowerCase().trim();
+  return lower === 'introduction' ||
+         lower === 'your action steps' ||
+         lower === 'action steps' ||
+         lower === 'coming up next' ||
+         lower === 'coming up';
+};
+
 export default function OfferSectionsPage() {
   const { toast } = useToast();
   const params = useParams<{ projectId: string; offerId: string }>();
@@ -60,12 +74,17 @@ export default function OfferSectionsPage() {
     loadOfferDraft();
   }, [user, firestore, projectId, offerId, toast]);
 
+  const coreModules = useMemo(() => {
+    if (!offerDraft?.sections) return [];
+    return offerDraft.sections.filter(s => !isCanonicalSection(s));
+  }, [offerDraft?.sections]);
+
   const groupedSections = useMemo(() => {
     if (!offerDraft?.sections) return [];
 
     const groups: { partTitle: string; partNumber: number; sections: OfferSection[] }[] = [];
 
-    offerDraft.sections.forEach(section => {
+    coreModules.forEach(section => {
       const existingGroup = groups.find(g => g.partNumber === section.partNumber);
       if (existingGroup) {
         existingGroup.sections.push(section);
@@ -79,18 +98,21 @@ export default function OfferSectionsPage() {
     });
 
     return groups.sort((a, b) => a.partNumber - b.partNumber);
-  }, [offerDraft?.sections]);
+  }, [coreModules]);
 
   const progress = useMemo(() => {
-    if (!offerDraft?.sections || offerDraft.sections.length === 0) return 0;
-    const completed = offerDraft.sections.filter(s => s.status === 'completed').length;
-    return Math.round((completed / offerDraft.sections.length) * 100);
-  }, [offerDraft?.sections]);
+    if (coreModules.length === 0) return 0;
+    const completed = coreModules.filter(s => s.status === 'completed').length;
+    return Math.round((completed / coreModules.length) * 100);
+  }, [coreModules]);
 
   const completedSectionsCount = useMemo(() => {
-    if (!offerDraft?.sections) return 0;
-    return offerDraft.sections.filter(s => s.status === 'completed').length;
-  }, [offerDraft?.sections]);
+    return coreModules.filter(s => s.status === 'completed').length;
+  }, [coreModules]);
+
+  const totalModulesCount = useMemo(() => {
+    return coreModules.length;
+  }, [coreModules]);
 
   const totalWordCount = useMemo(() => {
     if (!offerDraft?.sections) return 0;
@@ -172,7 +194,7 @@ export default function OfferSectionsPage() {
               <Progress value={progress} className="h-2" />
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>
-                  {completedSectionsCount} of {offerDraft.sections?.length || 0} modules completed
+                  {completedSectionsCount} of {totalModulesCount} modules completed
                 </span>
                 <span>
                   {totalWordCount.toLocaleString()} words generated

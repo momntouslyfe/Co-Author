@@ -36,6 +36,20 @@ const frameworks = [
 
 type PageState = 'overview' | 'writing' | 'rewriting' | 'generating';
 
+const isCanonicalSection = (section: OfferSection): boolean => {
+  if (section.sectionType) {
+    return section.sectionType === 'introduction' ||
+           section.sectionType === 'actionSteps' ||
+           section.sectionType === 'comingUp';
+  }
+  const lower = section.moduleTitle.toLowerCase().trim();
+  return lower === 'introduction' ||
+         lower === 'your action steps' ||
+         lower === 'action steps' ||
+         lower === 'coming up next' ||
+         lower === 'coming up';
+};
+
 const PartEditor = ({
   project,
   offerDraft,
@@ -93,20 +107,6 @@ const PartEditor = ({
   };
 
   const wordCount = useMemo(() => countWords(content), [content]);
-
-  const isCanonicalSection = (section: OfferSection): boolean => {
-    if (section.sectionType) {
-      return section.sectionType === 'introduction' ||
-             section.sectionType === 'actionSteps' ||
-             section.sectionType === 'comingUp';
-    }
-    const lower = section.moduleTitle.toLowerCase().trim();
-    return lower === 'introduction' ||
-           lower === 'your action steps' ||
-           lower === 'action steps' ||
-           lower === 'coming up next' ||
-           lower === 'coming up';
-  };
 
   const coreModuleTitles = modules
     .filter(m => !isCanonicalSection(m))
@@ -889,6 +889,10 @@ export default function PartWritingPage() {
     return offerDraft.sections?.filter(s => s.partNumber === partNumber) || [];
   }, [offerDraft, partNumber]);
 
+  const corePartSections = useMemo(() => {
+    return partSections.filter(s => !isCanonicalSection(s));
+  }, [partSections]);
+
   const partTitle = partSections[0]?.partTitle || `Part ${partNumber}`;
 
   const extractSectionContent = (fullContent: string, sectionTitle: string): string => {
@@ -1135,32 +1139,10 @@ export default function PartWritingPage() {
       const endIndex = sectionMatches[i + 1]?.index ?? content.length;
       const sectionContent = content.substring(startIndex, endIndex).trim();
       
-      if (sectionTitle === 'Introduction') {
-        htmlContent += `<h2>Introduction</h2>`;
-        plainContent += `Introduction\n`;
+      if (sectionTitle === 'Introduction' || sectionTitle === 'Your Action Steps' || sectionTitle === 'Coming Up Next') {
         if (sectionContent) {
           htmlContent += formatContentToHtml(sectionContent);
           plainContent += `${sectionContent}\n\n`;
-        } else {
-          plainContent += `\n`;
-        }
-      } else if (sectionTitle === 'Your Action Steps') {
-        htmlContent += `<h2>Your Action Steps</h2>`;
-        plainContent += `Your Action Steps\n`;
-        if (sectionContent) {
-          htmlContent += formatContentToHtml(sectionContent);
-          plainContent += `${sectionContent}\n\n`;
-        } else {
-          plainContent += `\n`;
-        }
-      } else if (sectionTitle === 'Coming Up Next') {
-        htmlContent += `<h2>Coming Up Next</h2>`;
-        plainContent += `Coming Up Next\n`;
-        if (sectionContent) {
-          htmlContent += formatContentToHtml(sectionContent);
-          plainContent += `${sectionContent}\n\n`;
-        } else {
-          plainContent += `\n`;
         }
       } else {
         htmlContent += `<h2>${sectionTitle}</h2>`;
@@ -1294,7 +1276,7 @@ export default function PartWritingPage() {
                 {OFFER_CATEGORY_LABELS[offerDraft.category]}
               </Badge>
               <CardTitle className="font-headline text-xl">Part {partNumber}: {partTitle}</CardTitle>
-              <CardDescription>This part contains {partSections.length} modules to write.</CardDescription>
+              <CardDescription>This part contains {corePartSections.length} modules to write.</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -1312,9 +1294,9 @@ export default function PartWritingPage() {
                     <BookOpen className="w-5 h-5 mt-1 text-primary" />
                     <div>
                       <h4 className="font-semibold">Part Modules</h4>
-                      {partSections.length > 0 ? (
+                      {corePartSections.length > 0 ? (
                         <ul className="list-disc pl-5 space-y-1 text-sm mt-1">
-                          {partSections.map((section, index) => (
+                          {corePartSections.map((section, index) => (
                             <li key={index}>{section.moduleTitle}</li>
                           ))}
                         </ul>
@@ -1471,7 +1453,7 @@ export default function PartWritingPage() {
                 <div className="flex justify-end pt-4 border-t">
                   <Button onClick={handleSaveContent} disabled={isSaving || isGenerating}>
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Save
+                    Save Content
                   </Button>
                 </div>
               </div>
