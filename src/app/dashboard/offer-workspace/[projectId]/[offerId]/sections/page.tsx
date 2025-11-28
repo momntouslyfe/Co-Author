@@ -206,7 +206,9 @@ export default function OfferSectionsPage() {
               {groupedSections.map(group => {
                 const completedModules = group.sections.filter(s => s.status === 'completed').length;
                 const totalModules = group.sections.length;
-                const partWordCount = group.sections.reduce((acc, s) => acc + (s.wordCount || 0), 0);
+                // Calculate word count from ALL sections for this part (including canonical sections)
+                const allPartSections = offerDraft.sections?.filter(s => s.partNumber === group.partNumber) || [];
+                const partWordCount = allPartSections.reduce((acc, s) => acc + (s.wordCount || 0), 0);
                 const isPartComplete = completedModules === totalModules && totalModules > 0;
 
                 return (
