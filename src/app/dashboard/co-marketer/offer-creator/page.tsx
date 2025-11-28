@@ -96,7 +96,7 @@ export default function OfferCreatorPage() {
                 <PenLine className="h-6 w-6 text-orange-600" />
               </div>
               <div>
-                <CardTitle>Offer Workspace</CardTitle>
+                <CardTitle>Offers Creation Workspace</CardTitle>
                 <CardDescription>Develop your offer drafts</CardDescription>
               </div>
             </div>

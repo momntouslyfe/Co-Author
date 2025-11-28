@@ -129,7 +129,7 @@ export default function OfferWorkspacePage() {
             Back to Co-Marketer
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">Offer Workspace</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Offers Creation Workspace</h1>
         <p className="text-muted-foreground mt-2">
           Develop your saved offer ideas into full bonus materials - workbooks, guides, challenges, and more.
         </p>

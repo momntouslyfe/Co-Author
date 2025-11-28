@@ -438,7 +438,7 @@ export default function OfferDraftPage() {
         <Button variant="ghost" size="sm" asChild className="mb-4">
           <Link href="/dashboard/offer-workspace">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Offer Workspace
+            Back to Offers Creation Workspace
           </Link>
         </Button>
       </div>
