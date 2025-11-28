@@ -3,10 +3,10 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuthUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, updateDoc, setDoc, getDoc, collection } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, getDoc, collection, deleteField } from 'firebase/firestore';
 import type { OfferDraft, Project, OfferSection, ResearchProfile, StyleProfile } from '@/lib/definitions';
 import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
-import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, RefreshCw, BookOpen, BrainCircuit, Pencil, FileText, Palette } from 'lucide-react';
+import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, RefreshCw, BookOpen, BrainCircuit, Pencil, FileText, Palette, Drama } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +22,17 @@ import { OfferWorkflowNavigation } from '@/components/offer-workflow-navigation'
 import { Badge } from '@/components/ui/badge';
 
 export const maxDuration = 300;
+
+const frameworks = [
+  { value: "The Hero's Journey", label: "The Hero's Journey" },
+  { value: "The Mentor's Journey", label: "The Mentor's Journey" },
+  { value: 'Three-Act Structure', label: 'Three-Act Structure' },
+  { value: 'Fichtean Curve', label: 'Fichtean Curve' },
+  { value: 'Save the Cat', label: 'Save the Cat' },
+  { value: 'Story Circle', label: 'Story Circle' },
+  { value: 'Seven-Point Story Structure', label: 'Seven-Point Story Structure' },
+  { value: 'Freytag\'s Pyramid', label: 'Freytag\'s Pyramid' },
+];
 
 type PageState = 'overview' | 'writing' | 'generating';
 
@@ -673,8 +684,9 @@ export default function PartWritingPage() {
   const [content, setContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedStyleId, setSelectedStyleId] = useState<string>('');
-  const [selectedResearchId, setSelectedResearchId] = useState<string>('');
+  const [selectedStyleId, setSelectedStyleId] = useState<string>('none');
+  const [selectedResearchId, setSelectedResearchId] = useState<string>('none');
+  const [selectedFramework, setSelectedFramework] = useState<string>('none');
 
   const [offerDraft, setOfferDraft] = useState<OfferDraft | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -716,6 +728,9 @@ export default function PartWritingPage() {
           }
           if (draft.styleProfileId) {
             setSelectedStyleId(draft.styleProfileId);
+          }
+          if (draft.storytellingFramework) {
+            setSelectedFramework(draft.storytellingFramework);
           }
 
           const partSections = draft.sections?.filter(s => s.partNumber === partNumber) || [];
@@ -851,19 +866,45 @@ export default function PartWritingPage() {
       
       if (selectedResearchId && selectedResearchId !== 'none') {
         updateData.researchProfileId = selectedResearchId;
+      } else {
+        updateData.researchProfileId = deleteField();
       }
       if (selectedStyleId && selectedStyleId !== 'none') {
         updateData.styleProfileId = selectedStyleId;
+      } else {
+        updateData.styleProfileId = deleteField();
+      }
+      if (selectedFramework && selectedFramework !== 'none') {
+        updateData.storytellingFramework = selectedFramework;
+      } else {
+        updateData.storytellingFramework = deleteField();
       }
 
       await updateDoc(draftRef, updateData);
 
-      setOfferDraft(prev => prev ? { 
-        ...prev, 
-        sections: updatedSections as OfferSection[],
-        researchProfileId: selectedResearchId !== 'none' ? selectedResearchId : prev.researchProfileId,
-        styleProfileId: selectedStyleId !== 'none' ? selectedStyleId : prev.styleProfileId,
-      } : null);
+      setOfferDraft(prev => {
+        if (!prev) return null;
+        const updated: OfferDraft = {
+          ...prev, 
+          sections: updatedSections as OfferSection[],
+        };
+        if (selectedResearchId !== 'none') {
+          updated.researchProfileId = selectedResearchId;
+        } else {
+          delete updated.researchProfileId;
+        }
+        if (selectedStyleId !== 'none') {
+          updated.styleProfileId = selectedStyleId;
+        } else {
+          delete updated.styleProfileId;
+        }
+        if (selectedFramework !== 'none') {
+          updated.storytellingFramework = selectedFramework;
+        } else {
+          delete updated.storytellingFramework;
+        }
+        return updated;
+      });
       toast({ title: 'Saved!', description: 'Your progress has been saved.' });
     } catch (error) {
       console.error('Error saving content:', error);
@@ -941,7 +982,7 @@ export default function PartWritingPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Research Profile (Optional)</Label>
                   <Select value={selectedResearchId} onValueChange={setSelectedResearchId}>
@@ -968,8 +1009,25 @@ export default function PartWritingPage() {
                       <SelectItem value="none">None</SelectItem>
                       {styleProfiles?.map(profile => (
                         <SelectItem key={profile.id} value={profile.id}>
-                          {profile.sampleTitle || profile.id}
+                          {profile.name}
                         </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">
+                    <Drama className="inline-block w-4 h-4 mr-1" />
+                    Storytelling Framework
+                  </Label>
+                  <Select value={selectedFramework} onValueChange={setSelectedFramework}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a framework" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {frameworks.map(fw => (
+                        <SelectItem key={fw.value} value={fw.value}>{fw.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
