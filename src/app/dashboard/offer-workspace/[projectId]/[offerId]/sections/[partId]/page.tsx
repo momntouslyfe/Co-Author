@@ -1125,34 +1125,51 @@ export default function PartWritingPage() {
     htmlContent += `<h1>${partTitle}</h1>`;
     plainContent += `${partTitle}\n\n`;
 
-    const parts = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
-
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (part.startsWith('$$') && part.endsWith('$$')) {
-        const sectionTitle = part.replace(/\$\$/g, '').trim();
-        const nextPart = (i + 1 < parts.length && !parts[i + 1].startsWith('$$')) ? parts[i + 1].trim() : '';
-
-        if (sectionTitle === 'Introduction') {
-          if (nextPart) {
-            htmlContent += formatContentToHtml(nextPart);
-            plainContent += `${nextPart}\n\n`;
-          }
-          if (nextPart) i++;
-        } else if (sectionTitle === 'Your Action Steps' || sectionTitle === 'Coming Up Next') {
-          if (nextPart) {
-            htmlContent += formatContentToHtml(nextPart);
-            plainContent += `${nextPart}\n\n`;
-          }
-          if (nextPart) i++;
+    const sectionRegex = /\$\$([^$]+)\$\$/g;
+    const sectionMatches = [...content.matchAll(sectionRegex)];
+    
+    for (let i = 0; i < sectionMatches.length; i++) {
+      const match = sectionMatches[i];
+      const sectionTitle = match[1].trim();
+      const startIndex = match.index! + match[0].length;
+      const endIndex = sectionMatches[i + 1]?.index ?? content.length;
+      const sectionContent = content.substring(startIndex, endIndex).trim();
+      
+      if (sectionTitle === 'Introduction') {
+        htmlContent += `<h2>Introduction</h2>`;
+        plainContent += `Introduction\n`;
+        if (sectionContent) {
+          htmlContent += formatContentToHtml(sectionContent);
+          plainContent += `${sectionContent}\n\n`;
         } else {
-          htmlContent += `<h2>${sectionTitle}</h2>`;
-          plainContent += `${sectionTitle}\n`;
-          if (nextPart) {
-            htmlContent += formatContentToHtml(nextPart);
-            plainContent += `${nextPart}\n\n`;
-            i++;
-          }
+          plainContent += `\n`;
+        }
+      } else if (sectionTitle === 'Your Action Steps') {
+        htmlContent += `<h2>Your Action Steps</h2>`;
+        plainContent += `Your Action Steps\n`;
+        if (sectionContent) {
+          htmlContent += formatContentToHtml(sectionContent);
+          plainContent += `${sectionContent}\n\n`;
+        } else {
+          plainContent += `\n`;
+        }
+      } else if (sectionTitle === 'Coming Up Next') {
+        htmlContent += `<h2>Coming Up Next</h2>`;
+        plainContent += `Coming Up Next\n`;
+        if (sectionContent) {
+          htmlContent += formatContentToHtml(sectionContent);
+          plainContent += `${sectionContent}\n\n`;
+        } else {
+          plainContent += `\n`;
+        }
+      } else {
+        htmlContent += `<h2>${sectionTitle}</h2>`;
+        plainContent += `${sectionTitle}\n`;
+        if (sectionContent) {
+          htmlContent += formatContentToHtml(sectionContent);
+          plainContent += `${sectionContent}\n\n`;
+        } else {
+          plainContent += `\n`;
         }
       }
     }

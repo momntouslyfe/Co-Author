@@ -83,18 +83,18 @@ export default function OfferSectionsPage() {
 
   const progress = useMemo(() => {
     if (!offerDraft?.sections || offerDraft.sections.length === 0) return 0;
-    const completed = offerDraft.sections.filter(s => s.status === 'completed' || s.content).length;
+    const completed = offerDraft.sections.filter(s => s.status === 'completed').length;
     return Math.round((completed / offerDraft.sections.length) * 100);
+  }, [offerDraft?.sections]);
+
+  const completedSectionsCount = useMemo(() => {
+    if (!offerDraft?.sections) return 0;
+    return offerDraft.sections.filter(s => s.status === 'completed').length;
   }, [offerDraft?.sections]);
 
   const totalWordCount = useMemo(() => {
     if (!offerDraft?.sections) return 0;
     return offerDraft.sections.reduce((acc, s) => acc + (s.wordCount || 0), 0);
-  }, [offerDraft?.sections]);
-
-  const targetWordCount = useMemo(() => {
-    if (!offerDraft?.sections) return 0;
-    return offerDraft.sections.reduce((acc, s) => acc + (s.targetWordCount || 0), 0);
   }, [offerDraft?.sections]);
 
   if (isLoading || isProjectLoading) {
@@ -172,21 +172,19 @@ export default function OfferSectionsPage() {
               <Progress value={progress} className="h-2" />
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>
-                  {offerDraft.sections?.filter(s => s.status === 'completed' || s.content).length || 0} of{' '}
-                  {offerDraft.sections?.length || 0} sections written
+                  {completedSectionsCount} of {offerDraft.sections?.length || 0} modules completed
                 </span>
                 <span>
-                  {totalWordCount.toLocaleString()} / {targetWordCount.toLocaleString()} words
+                  {totalWordCount.toLocaleString()} words generated
                 </span>
               </div>
             </div>
 
             <div className="space-y-3">
               {groupedSections.map(group => {
-                const completedModules = group.sections.filter(s => s.status === 'completed' || s.content).length;
+                const completedModules = group.sections.filter(s => s.status === 'completed').length;
                 const totalModules = group.sections.length;
                 const partWordCount = group.sections.reduce((acc, s) => acc + (s.wordCount || 0), 0);
-                const partTargetWords = group.sections.reduce((acc, s) => acc + (s.targetWordCount || 0), 0);
                 const isPartComplete = completedModules === totalModules && totalModules > 0;
 
                 return (
@@ -214,7 +212,7 @@ export default function OfferSectionsPage() {
                               </h3>
                               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 <span>{totalModules} modules</span>
-                                <span>{partWordCount.toLocaleString()} / {partTargetWords.toLocaleString()} words</span>
+                                <span>{partWordCount.toLocaleString()} words</span>
                               </div>
                             </div>
                           </div>
