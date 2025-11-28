@@ -12,12 +12,6 @@ import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
 import { doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { OfferWorkflowNavigation } from '@/components/offer-workflow-navigation';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
@@ -187,57 +181,59 @@ export default function OfferSectionsPage() {
               </div>
             </div>
 
-            <Accordion type="single" collapsible className="w-full" defaultValue={`part-1`}>
-              {groupedSections.map(group => (
-                <AccordionItem key={group.partNumber} value={`part-${group.partNumber}`}>
-                  <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-                    <div className="flex items-center gap-3">
-                      <span>Part {group.partNumber}: {group.partTitle}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {group.sections.filter(s => s.status === 'completed' || s.content).length}/
-                        {group.sections.length}
-                      </Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-2 pt-2">
-                      {group.sections.map(section => {
-                        const isCompleted = section.status === 'completed' || !!section.content;
-                        return (
-                          <Link
-                            key={section.id}
-                            href={`/dashboard/offer-workspace/${projectId}/${offerId}/sections/${section.id}`}
-                            className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              {isCompleted ? (
-                                <Check className="h-5 w-5 text-green-500" />
-                              ) : (
+            <div className="space-y-3">
+              {groupedSections.map(group => {
+                const completedModules = group.sections.filter(s => s.status === 'completed' || s.content).length;
+                const totalModules = group.sections.length;
+                const partWordCount = group.sections.reduce((acc, s) => acc + (s.wordCount || 0), 0);
+                const partTargetWords = group.sections.reduce((acc, s) => acc + (s.targetWordCount || 0), 0);
+                const isPartComplete = completedModules === totalModules && totalModules > 0;
+
+                return (
+                  <Link
+                    key={group.partNumber}
+                    href={`/dashboard/offer-workspace/${projectId}/${offerId}/sections/part-${group.partNumber}`}
+                    className="block"
+                  >
+                    <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            {isPartComplete ? (
+                              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <Check className="h-5 w-5 text-green-600" />
+                              </div>
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                                 <FileText className="h-5 w-5 text-muted-foreground" />
-                              )}
-                              <div>
-                                <p className="font-medium">{section.moduleTitle}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {section.wordCount || 0} / {section.targetWordCount} words
-                                </p>
+                              </div>
+                            )}
+                            <div>
+                              <h3 className="font-semibold text-lg">
+                                Part {group.partNumber}: {group.partTitle}
+                              </h3>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span>{totalModules} modules</span>
+                                <span>{partWordCount.toLocaleString()} / {partTargetWords.toLocaleString()} words</span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              {isCompleted && (
-                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                  Completed
-                                </Badge>
-                              )}
-                              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge 
+                              variant={isPartComplete ? "default" : "secondary"}
+                              className={isPartComplete ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}
+                            >
+                              {completedModules}/{totalModules} written
+                            </Badge>
+                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       </div>
