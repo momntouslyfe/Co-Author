@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useParams, notFound, useRouter } from 'next/navigation';
-import { useAuthUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, updateDoc, setDoc, getDoc, collection, deleteField } from 'firebase/firestore';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useParams, notFound } from 'next/navigation';
+import { useAuthUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
+import { doc, updateDoc, getDoc, collection, deleteField } from 'firebase/firestore';
 import type { OfferDraft, Project, OfferSection, ResearchProfile, StyleProfile } from '@/lib/definitions';
 import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
 import { Loader2, Bot, Save, Wand2, ArrowLeft, Copy, Sparkles, RefreshCw, BookOpen, BrainCircuit, Pencil, FileText, Palette, Drama } from 'lucide-react';
@@ -20,6 +20,7 @@ import { getIdToken } from '@/lib/client-auth';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
 import { OfferWorkflowNavigation } from '@/components/offer-workflow-navigation';
 import { Badge } from '@/components/ui/badge';
+import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
 
 export const maxDuration = 300;
 
@@ -31,10 +32,10 @@ const frameworks = [
   { value: 'Save the Cat', label: 'Save the Cat' },
   { value: 'Story Circle', label: 'Story Circle' },
   { value: 'Seven-Point Story Structure', label: 'Seven-Point Story Structure' },
-  { value: 'Freytag\'s Pyramid', label: 'Freytag\'s Pyramid' },
+  { value: "Freytag's Pyramid", label: "Freytag's Pyramid" },
 ];
 
-type PageState = 'overview' | 'writing' | 'generating';
+type PageState = 'overview' | 'writing' | 'rewriting' | 'generating';
 
 const PartEditor = ({
   project,
@@ -49,12 +50,12 @@ const PartEditor = ({
   styleProfiles,
   selectedResearchId,
   researchProfiles,
+  selectedFramework,
   isGenerating,
   setIsGenerating,
+  onRewritePart,
   user,
   refreshCredits,
-  projectId,
-  offerId,
 }: {
   project: Project;
   offerDraft: OfferDraft;
@@ -68,12 +69,12 @@ const PartEditor = ({
   styleProfiles: StyleProfile[] | null;
   selectedResearchId: string;
   researchProfiles: ResearchProfile[] | null;
+  selectedFramework: string;
   isGenerating: boolean;
   setIsGenerating: (isGenerating: boolean) => void;
+  onRewritePart: (instruction?: string) => void;
   user: any;
   refreshCredits: () => void;
-  projectId: string;
-  offerId: string;
 }) => {
   const [isExtending, setIsExtending] = useState<number | null>(null);
   const [extendInstruction, setExtendInstruction] = useState('');
@@ -82,8 +83,9 @@ const PartEditor = ({
   const [isRewritingSection, setIsRewritingSection] = useState<number | null>(null);
   const [rewriteSectionInstruction, setRewriteSectionInstruction] = useState('');
   const [openRewritePopoverIndex, setOpenRewritePopoverIndex] = useState<number | null>(null);
+  const [rewritePartInstruction, setRewritePartInstruction] = useState('');
+  const [isRewritePartPopoverOpen, setRewritePartPopoverOpen] = useState(false);
   const { toast } = useToast();
-  const firestore = useFirestore();
 
   const countWords = (text: string): number => {
     const cleanedText = text.replace(/\$\$[^$]+\$\$/g, '');
@@ -145,6 +147,11 @@ const PartEditor = ({
         body: JSON.stringify({
           contentToExpand: paragraph,
           instruction: instruction || 'Expand this content with more detail',
+          offerTitle: offerDraft.title,
+          offerCategory: offerDraft.category,
+          styleProfile: selectedStyle?.styleAnalysis,
+          researchProfile: researchPrompt,
+          storytellingFramework: selectedFramework,
         }),
       });
 
@@ -155,14 +162,26 @@ const PartEditor = ({
       const result = await response.json();
       if (result && result.expandedContent) {
         onContentChange(prevContent => {
-          return prevContent.replace(paragraph, result.expandedContent.trim());
+          const sections = prevContent.split(/(\$\$[^$]+\$\$)/g);
+          const titleToFind = findTitleForSection(sections, sectionIndex);
+
+          const titleIndex = sections.findIndex(s => s === titleToFind);
+
+          if (titleIndex !== -1 && titleIndex + 1 < sections.length) {
+            const contentPartIndex = titleIndex + 1;
+            const sectionParagraphs = (sections[contentPartIndex] || '').trim().split('\n\n').filter(p => p.trim() !== '');
+            sectionParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
+            sections[contentPartIndex] = `\n\n${sectionParagraphs.join('\n\n')}\n\n`;
+            return sections.join('');
+          }
+          return prevContent;
         });
         refreshCredits();
-        toast({ title: "Content Expanded", description: "The AI has expanded the content." });
+        toast({ title: "Content Extended", description: "New content has been added." });
       }
     } catch (error) {
-      console.error("Error expanding content:", error);
-      toast({ title: "Expand Failed", variant: "destructive", description: "Could not expand the content." });
+      console.error("Failed to extend content", error);
+      toast({ title: "AI Extend Failed", description: "Could not generate additional content.", variant: "destructive" });
     } finally {
       setIsExtending(null);
       setExtendInstruction('');
@@ -170,25 +189,32 @@ const PartEditor = ({
   };
 
   const findTitleForSection = (sections: string[], sectionIndex: number): string | null => {
-    let titleCount = 0;
-    for (const section of sections) {
-      if (section.match(/^\$\$.+\$\$$/)) {
-        if (titleCount === sectionIndex) {
-          return section;
-        }
-        titleCount++;
-      }
+    const titleSections = sections.filter(s => s.startsWith('$$') && s.endsWith('$$'));
+    if (sectionIndex >= 0 && sectionIndex < titleSections.length) {
+      return titleSections[sectionIndex];
     }
     return null;
   };
 
   const handleWriteSection = async (sectionIndex: number, sectionTitle: string) => {
     if (!user) return;
-    setIsWritingSection(sectionIndex);
-    try {
-      const currentContentForContext = content;
-      const idToken = await getIdToken(user);
+    const language = offerDraft.language || project.language;
+    if (!language) {
+      toast({ title: "Language not set", description: "Project language is required to write.", variant: "destructive" });
+      return;
+    }
 
+    setIsWritingSection(sectionIndex);
+
+    try {
+      const currentContentForContext = await new Promise<string>(resolve => {
+        onContentChange(prev => {
+          resolve(prev);
+          return prev;
+        });
+      });
+
+      const idToken = await getIdToken(user);
       const response = await fetch('/api/offers/write-section', {
         method: 'POST',
         headers: {
@@ -196,22 +222,25 @@ const PartEditor = ({
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          bookTitle: project.title,
-          bookDescription: project.outline || project.description || '',
           offerTitle: offerDraft.title,
           offerCategory: offerDraft.category,
+          blueprintSummary: blueprintSummary,
           partTitle: partTitle,
-          sectionTitle: sectionTitle,
-          language: offerDraft.language || project.language || 'English',
+          moduleTitle: sectionTitle,
+          allParts: offerDraft.masterBlueprint || '',
+          targetWordCount: 500,
           previousContent: currentContentForContext,
+          bookContext: project.title ? `Book: ${project.title}. ${project.description || ''}` : undefined,
+          language: language,
           styleProfile: selectedStyle?.styleAnalysis,
           researchProfile: researchPrompt,
-          blueprintSummary: blueprintSummary,
+          storytellingFramework: selectedFramework,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to write section');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to write section');
       }
 
       const result = await response.json();
@@ -232,22 +261,41 @@ const PartEditor = ({
           return prevContent;
         });
         refreshCredits();
-        toast({ title: "Section Written", description: `"${sectionTitle}" has been generated.` });
+        toast({ title: "Section Written", description: `Successfully generated "${sectionTitle}"` });
+      } else {
+        throw new Error("AI returned no content");
       }
     } catch (error) {
       console.error("Error writing section:", error);
-      toast({ title: "Write Failed", variant: "destructive", description: "Could not write the section." });
+      toast({ title: "AI Write Failed", variant: "destructive", description: `Could not generate the section. ${error}` });
     } finally {
       setIsWritingSection(null);
     }
   };
 
-  const handleRewriteSection = async (sectionIndex: number, sectionContent: string, instruction?: string) => {
+  const handleRewriteSection = async (sectionIndex: number, sectionContentToRewrite: string, instruction?: string) => {
     if (!user) return;
+    const language = offerDraft.language || project.language;
+    if (!language) {
+      toast({ title: "Language not set", description: "Project language is required to rewrite.", variant: "destructive" });
+      return;
+    }
+
     setIsRewritingSection(sectionIndex);
     setOpenRewritePopoverIndex(null);
+
     try {
       const idToken = await getIdToken(user);
+      const allSections = content.split(/(\$\$[^$]+\$\$)/g);
+      const titleToFind = findTitleForSection(allSections, sectionIndex);
+
+      if (!titleToFind) {
+        throw new Error("Could not find the section title to determine context needs.");
+      }
+
+      const title = titleToFind.replaceAll('$$', '').trim();
+      const needsFullContext = title === 'Your Action Steps' || title === 'Coming Up Next';
+
       const response = await fetch('/api/offers/rewrite-section', {
         method: 'POST',
         headers: {
@@ -255,8 +303,13 @@ const PartEditor = ({
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          sectionContent: sectionContent,
-          instruction: instruction || 'Rewrite this section to be clearer and more engaging',
+          sectionContent: sectionContentToRewrite,
+          chapterContent: needsFullContext ? content : undefined,
+          styleProfile: selectedStyle?.styleAnalysis,
+          researchProfile: researchPrompt,
+          storytellingFramework: selectedFramework,
+          language: language,
+          instruction,
         }),
       });
 
@@ -283,10 +336,12 @@ const PartEditor = ({
         });
         refreshCredits();
         toast({ title: "Section Rewritten", description: "The AI has rewritten the section." });
+      } else {
+        throw new Error("AI returned empty content during section rewrite.");
       }
     } catch (error) {
       console.error("Error rewriting section:", error);
-      toast({ title: "Rewrite Failed", variant: "destructive", description: "Could not rewrite the section." });
+      toast({ title: "AI Rewrite Failed", variant: "destructive", description: `Could not rewrite the section. ${error}` });
     } finally {
       setIsRewritingSection(null);
       setRewriteSectionInstruction('');
@@ -294,8 +349,9 @@ const PartEditor = ({
   };
 
   const handleWriteFullPart = useCallback(async () => {
-    if (!offerDraft.language && !project.language) {
-      toast({ title: "Missing Information", description: "Language is required.", variant: "destructive" });
+    const language = offerDraft.language || project.language;
+    if (!language) {
+      toast({ title: "Missing Information", description: "Project language is required.", variant: "destructive" });
       return;
     }
     setIsGenerating(true);
@@ -324,17 +380,19 @@ const PartEditor = ({
             Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({
-            bookTitle: project.title,
-            bookDescription: project.outline || project.description || '',
             offerTitle: offerDraft.title,
             offerCategory: offerDraft.category,
+            blueprintSummary: blueprintSummary,
             partTitle: partTitle,
-            sectionTitle: sectionTitle,
-            language: offerDraft.language || project.language || 'English',
+            moduleTitle: sectionTitle,
+            allParts: offerDraft.masterBlueprint || '',
+            targetWordCount: 500,
             previousContent: currentContentForContext,
+            bookContext: project.title ? `Book: ${project.title}. ${project.description || ''}` : undefined,
+            language: language,
             styleProfile: selectedStyle?.styleAnalysis,
             researchProfile: researchPrompt,
-            blueprintSummary: blueprintSummary,
+            storytellingFramework: selectedFramework,
           }),
         });
 
@@ -363,100 +421,123 @@ const PartEditor = ({
           successfulSections.push(sectionTitle);
         } else {
           failedSections.push({ index, title: sectionTitle, error: new Error("AI returned no content") });
+          toast({ title: "Section Pending", description: `Section "${sectionTitle}" will be retried...`, variant: "default" });
         }
       } catch (sectionError) {
         console.error(`Error generating section "${sectionTitle}":`, sectionError);
         failedSections.push({ index, title: sectionTitle, error: sectionError });
+        toast({ title: "Section Pending", description: `Section "${sectionTitle}" will be retried...`, variant: "default" });
       }
     }
 
     if (failedSections.length > 0) {
       toast({
         title: "Retrying Failed Sections",
-        description: `Retrying ${failedSections.length} section(s)...`
+        description: `Retrying ${failedSections.length} section(s) that failed initially...`
       });
+
+      const stillFailedSections: string[] = [];
 
       for (const failedSection of failedSections) {
         setIsWritingSection(failedSection.index);
-        try {
-          await new Promise(resolve => setTimeout(resolve, 3000));
 
-          const currentContentForContext = await new Promise<string>(resolve => {
-            onContentChange(prev => {
-              resolve(prev);
-              return prev;
+        let retrySuccess = false;
+        for (let retryAttempt = 1; retryAttempt <= 2; retryAttempt++) {
+          try {
+            await new Promise(resolve => setTimeout(resolve, 3000 * retryAttempt));
+
+            const currentContentForContext = await new Promise<string>(resolve => {
+              onContentChange(prev => {
+                resolve(prev);
+                return prev;
+              });
             });
-          });
 
-          const idToken = await getIdToken(user!);
-          const response = await fetch('/api/offers/write-section', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${idToken}`,
-            },
-            body: JSON.stringify({
-              bookTitle: project.title,
-              bookDescription: project.outline || project.description || '',
-              offerTitle: offerDraft.title,
-              offerCategory: offerDraft.category,
-              partTitle: partTitle,
-              sectionTitle: failedSection.title,
-              language: offerDraft.language || project.language || 'English',
-              previousContent: currentContentForContext,
-              styleProfile: selectedStyle?.styleAnalysis,
-              researchProfile: researchPrompt,
-              blueprintSummary: blueprintSummary,
-            }),
-          });
+            const idToken = await getIdToken(user!);
+            const response = await fetch('/api/offers/write-section', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${idToken}`,
+              },
+              body: JSON.stringify({
+                offerTitle: offerDraft.title,
+                offerCategory: offerDraft.category,
+                blueprintSummary: blueprintSummary,
+                partTitle: partTitle,
+                moduleTitle: failedSection.title,
+                allParts: offerDraft.masterBlueprint || '',
+                targetWordCount: 500,
+                previousContent: currentContentForContext,
+                bookContext: project.title ? `Book: ${project.title}. ${project.description || ''}` : undefined,
+                language: language,
+                styleProfile: selectedStyle?.styleAnalysis,
+                researchProfile: researchPrompt,
+                storytellingFramework: selectedFramework,
+              }),
+            });
 
-          if (response.ok) {
-            const result = await response.json();
-            if (result && result.sectionContent) {
-              onContentChange(prevContent => {
-                const sections = prevContent.split(/(\$\$[^$]+\$\$)/g);
-                const titleToFind = `$$${failedSection.title}$$`;
-                const titleIndex = sections.findIndex(s => s.trim() === titleToFind.trim());
+            if (response.ok) {
+              const result = await response.json();
+              if (result && result.sectionContent) {
+                onContentChange(prevContent => {
+                  const sections = prevContent.split(/(\$\$[^$]+\$\$)/g);
+                  const titleToFind = `$$${failedSection.title}$$`;
+                  const titleIndex = sections.findIndex(s => s.trim() === titleToFind.trim());
 
-                if (titleIndex !== -1) {
-                  const contentIndex = titleIndex + 1;
-                  if (contentIndex >= sections.length || sections[contentIndex].startsWith('$$')) {
-                    sections.splice(contentIndex, 0, '');
+                  if (titleIndex !== -1) {
+                    const contentIndex = titleIndex + 1;
+                    if (contentIndex >= sections.length || sections[contentIndex].startsWith('$$')) {
+                      sections.splice(contentIndex, 0, '');
+                    }
+                    sections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
+                    return sections.join('');
                   }
-                  sections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
-                  return sections.join('');
-                }
-                return prevContent;
-              });
-              refreshCredits();
-              successfulSections.push(failedSection.title);
-              toast({
-                title: "Section Recovered",
-                description: `Successfully generated "${failedSection.title}"`
-              });
+                  return prevContent;
+                });
+                refreshCredits();
+                retrySuccess = true;
+                successfulSections.push(failedSection.title);
+                toast({
+                  title: "Section Recovered",
+                  description: `Successfully generated "${failedSection.title}"`
+                });
+                break;
+              }
+            }
+          } catch (retryError) {
+            console.error(`Retry ${retryAttempt} failed for "${failedSection.title}":`, retryError);
+            if (retryAttempt === 2) {
+              stillFailedSections.push(failedSection.title);
             }
           }
-        } catch (retryError) {
-          console.error(`Retry failed for "${failedSection.title}":`, retryError);
+        }
+
+        if (!retrySuccess) {
           toast({
             title: "Section Failed",
-            description: `Could not generate "${failedSection.title}"`,
+            description: `Could not generate "${failedSection.title}" after multiple attempts.`,
             variant: "destructive"
           });
         }
       }
-    }
 
-    if (successfulSections.length === allSectionTitles.length) {
+      if (stillFailedSections.length > 0) {
+        toast({
+          title: "Part Partially Complete",
+          description: `${successfulSections.length} of ${allSectionTitles.length} sections generated. Failed: ${stillFailedSections.join(', ')}. Please try regenerating the failed sections individually.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Part Complete",
+          description: `All ${allSectionTitles.length} sections generated successfully!`
+        });
+      }
+    } else {
       toast({
         title: "Part Complete",
         description: `All ${allSectionTitles.length} sections generated successfully!`
-      });
-    } else {
-      toast({
-        title: "Part Partially Complete",
-        description: `${successfulSections.length} of ${allSectionTitles.length} sections generated.`,
-        variant: successfulSections.length > 0 ? "default" : "destructive"
       });
     }
 
@@ -464,7 +545,7 @@ const PartEditor = ({
     setIsGenerating(false);
   }, [
     project, offerDraft, partTitle, coreModuleTitles, buildPartSkeleton,
-    selectedStyle, researchPrompt, blueprintSummary,
+    selectedStyle, researchPrompt, selectedFramework, blueprintSummary,
     onContentChange, setIsGenerating, toast, user, refreshCredits
   ]);
 
@@ -489,179 +570,165 @@ const PartEditor = ({
                 disabled={isProcessing}
               >
                 {isWriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                {isWriting ? 'Writing...' : isPartialContent ? 'Regenerate' : 'Write Section'}
+                {isWriting ? 'Writing...' : isPartialContent ? 'Regenerate Section' : 'Write Section'}
               </Button>
             )}
             {hasContent && !isPartialContent && (
-              <Popover open={openRewritePopoverIndex === sectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? sectionIndex : null)}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" disabled={isProcessing}>
-                    {isRewriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                    {isRewriting ? 'Rewriting...' : 'Rewrite'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <h4 className="font-medium leading-none">Guided Rewrite</h4>
-                      <p className="text-sm text-muted-foreground">Give the AI a specific instruction.</p>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor={`rewrite-instruction-${sectionIndex}`} className="sr-only">Instruction</Label>
-                      <Textarea
-                        id={`rewrite-instruction-${sectionIndex}`}
-                        placeholder="e.g., Make it more concise"
-                        value={rewriteSectionInstruction}
-                        onChange={(e) => setRewriteSectionInstruction(e.target.value)}
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() => handleRewriteSection(sectionIndex, sectionContent.trim(), rewriteSectionInstruction)}
-                        disabled={!rewriteSectionInstruction || isProcessing}
-                      >
-                        <Pencil className="mr-2 h-4 w-4" /> Rewrite
+              <>
+                <Popover open={openRewritePopoverIndex === sectionIndex} onOpenChange={(isOpen) => setOpenRewritePopoverIndex(isOpen ? sectionIndex : null)}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={isProcessing}>
+                      {isRewriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                      {isRewriting ? 'Rewriting...' : 'Rewrite'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="grid gap-4">
+                      <div className="space-y-2">
+                        <h4 className="font-medium leading-none">Guided Rewrite</h4>
+                        <p className="text-sm text-muted-foreground">Give the AI a specific instruction.</p>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor={`rewrite-instruction-${sectionIndex}`} className="sr-only">Instruction</Label>
+                        <Textarea id={`rewrite-instruction-${sectionIndex}`} placeholder="e.g., Make it more concise" value={rewriteSectionInstruction} onChange={(e) => setRewriteSectionInstruction(e.target.value)} />
+                        <Button size="sm" onClick={() => handleRewriteSection(sectionIndex, sectionContent.trim(), rewriteSectionInstruction)} disabled={!rewriteSectionInstruction || isProcessing}>
+                          <Pencil className="mr-2 h-4 w-4" /> Rewrite with My Instruction
+                        </Button>
+                      </div>
+                      <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
+                      <Button size="sm" variant="secondary" onClick={() => handleRewriteSection(sectionIndex, sectionContent.trim())} disabled={isProcessing}>
+                        <RefreshCw className="mr-2 h-4 w-4" /> Just Rewrite
                       </Button>
                     </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                  </PopoverContent>
+                </Popover>
+              </>
             )}
           </div>
         </div>
-        <div className="py-4 whitespace-pre-wrap">
-          {isWriting ? (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>AI is writing this section...</span>
+
+        <div className="mt-4">
+          {isWriting || isRewriting ? (
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-5/6" />
+              <Skeleton className="h-6 w-3/4" />
             </div>
           ) : hasContent ? (
-            sectionContent.split('\n\n').map((paragraph, pIndex) => {
-              if (!paragraph.trim()) return null;
-              const uniqueIndex = sectionIndex * 1000 + pIndex;
-              const isThisExtending = isExtending === uniqueIndex;
-              return (
-                <div key={pIndex} className="group/paragraph relative mb-4">
-                  <p className="leading-relaxed">{paragraph}</p>
-                  <div className="absolute -right-2 top-0 opacity-0 group-hover/paragraph:opacity-100 transition-opacity">
-                    <Popover
-                      open={openExtendPopoverIndex === uniqueIndex}
-                      onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? uniqueIndex : null)}
-                    >
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isThisExtending || isProcessing}>
-                          {isThisExtending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-72">
-                        <div className="grid gap-3">
-                          <div className="space-y-2">
-                            <h4 className="font-medium text-sm">Expand this paragraph</h4>
-                          </div>
-                          <div className="grid gap-2">
-                            <Textarea
-                              placeholder="Optional: Add specific instruction..."
-                              value={extendInstruction}
-                              onChange={(e) => setExtendInstruction(e.target.value)}
-                              className="min-h-[60px]"
-                            />
-                            <Button
-                              size="sm"
-                              onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex, extendInstruction)}
-                            >
-                              <Sparkles className="mr-2 h-4 w-4" /> Expand
-                            </Button>
-                          </div>
+            sectionContent.trim().split('\n\n').filter(p => p.trim()).map((paragraph, pIndex) => (
+              <div key={`p-container-${sectionIndex}-${pIndex}`} className="mb-4 group/paragraph">
+                <p className="text-base leading-relaxed whitespace-pre-wrap">{paragraph}</p>
+                <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
+                  <Popover open={openExtendPopoverIndex === (sectionIndex * 1000 + pIndex)} onOpenChange={(isOpen) => setOpenExtendPopoverIndex(isOpen ? (sectionIndex * 1000 + pIndex) : null)}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs" disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
+                        {isExtending === (sectionIndex * 1000 + pIndex) ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
+                        Extend With AI
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <div className="grid gap-4">
+                        <div className="space-y-2"><h4 className="font-medium leading-none">Guided Extend</h4><p className="text-sm text-muted-foreground">Give the AI specific instructions.</p></div>
+                        <div className="grid gap-2">
+                          <Label htmlFor={`instruction-${sectionIndex}-${pIndex}`} className="sr-only">Instruction</Label>
+                          <Textarea id={`instruction-${sectionIndex}-${pIndex}`} placeholder="e.g., Add a practical example" value={extendInstruction} onChange={(e) => setExtendInstruction(e.target.value)} />
+                          <Button size="sm" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex, extendInstruction)} disabled={!extendInstruction || isExtending === (sectionIndex * 1000 + pIndex)}>
+                            <Pencil className="mr-2 h-4 w-4" /> Write With My Instruction
+                          </Button>
                         </div>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                        <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
+                        <Button size="sm" variant="secondary" onClick={() => handleExtendClick(paragraph, sectionIndex, pIndex)} disabled={isExtending === (sectionIndex * 1000 + pIndex)}>
+                          <Wand2 className="mr-2 h-4 w-4" /> Just Write More
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
-              );
-            })
+              </div>
+            ))
           ) : (
-            <p className="text-muted-foreground italic">No content yet. Click "Write Section" to generate.</p>
+            <div className="flex flex-col items-center justify-center h-24 gap-3 border-2 border-dashed rounded-md bg-muted/20">
+              <p className="text-sm text-muted-foreground">This section is empty or was skipped</p>
+              <p className="text-xs text-muted-foreground">Use the button above to generate content</p>
+            </div>
           )}
         </div>
       </div>
     );
   };
 
-  const parsedSections = useMemo(() => {
-    const sections = content.split(/(\$\$[^$]+\$\$)/g);
-    const result: { title: string; content: string }[] = [];
-    let currentTitle = '';
+  const renderContent = () => {
+    const parts = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+    if (parts.length === 0) return null;
 
-    for (let i = 0; i < sections.length; i++) {
-      const section = sections[i];
-      if (section.match(/^\$\$.+\$\$$/)) {
-        currentTitle = section.replace(/^\$\$/, '').replace(/\$\$$/, '');
-      } else if (currentTitle) {
-        result.push({ title: currentTitle, content: section });
-        currentTitle = '';
+    const renderedSections: JSX.Element[] = [];
+    let sectionIndexCounter = 0;
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (part.startsWith('$$') && part.endsWith('$$')) {
+        const title = part.replaceAll('$$', '');
+        const contentPart = (i + 1 < parts.length && !parts[i + 1].startsWith('$$')) ? parts[i + 1] : '';
+        renderedSections.push(renderSection(sectionIndexCounter, title, contentPart));
+        sectionIndexCounter++;
+        if (contentPart) {
+          i++;
+        }
       }
     }
-    return result;
-  }, [content]);
+
+    return renderedSections;
+  };
+
+  const handleLocalRewritePart = (instruction?: string) => {
+    setRewritePartPopoverOpen(false);
+    onRewritePart(instruction);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold font-headline">Part {partNumber}: {partTitle}</h2>
-          <p className="text-muted-foreground">Write your offer content section by section</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">{wordCount.toLocaleString()} words</span>
+    <div className="prose max-w-none dark:prose-invert space-y-8">
+      <div className="flex justify-end gap-2 mb-4 sticky top-0 bg-background py-2 z-10">
+        <Button variant="outline" size="sm" onClick={handleWriteFullPart} disabled={isGenerating}>
+          {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+          {isGenerating ? 'Writing...' : 'Write Full Part'}
+        </Button>
+        <Popover open={isRewritePartPopoverOpen} onOpenChange={setRewritePartPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" disabled={isGenerating}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Rewrite Part
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Guided Part Rewrite</h4>
+                <p className="text-sm text-muted-foreground">Provide specific instructions for the rewrite.</p>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="rewrite-part-instruction" className="sr-only">Instruction</Label>
+                <Textarea id="rewrite-part-instruction" placeholder="e.g., Make it more formal and add more examples." value={rewritePartInstruction} onChange={(e) => setRewritePartInstruction(e.target.value)} />
+                <Button size="sm" onClick={() => handleLocalRewritePart(rewritePartInstruction)} disabled={!rewritePartInstruction || isGenerating}>
+                  <Pencil className="mr-2 h-4 w-4" /> Rewrite with My Instruction
+                </Button>
+              </div>
+              <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-popover px-2 text-muted-foreground">Or</span></div></div>
+              <Button size="sm" variant="secondary" onClick={() => handleLocalRewritePart()} disabled={isGenerating}>
+                <RefreshCw className="mr-2 h-4 w-4" /> Just Rewrite Part
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">
+            {wordCount} {wordCount === 1 ? 'word' : 'words'}
+          </span>
           <Button variant="outline" size="sm" onClick={onCopyContent}>
-            <Copy className="mr-2 h-4 w-4" /> Copy
+            <Copy className="mr-2 h-4 w-4" /> Copy Text
           </Button>
         </div>
       </div>
-
-      {parsedSections.length === 0 && (
-        <Card>
-          <CardContent className="py-8 text-center">
-            <Bot className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Ready to Write</h3>
-            <p className="text-muted-foreground mb-4">
-              Click the button below to generate all sections for this part with AI assistance.
-            </p>
-            <Button onClick={handleWriteFullPart} disabled={isGenerating} size="lg">
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-5 w-5" /> Write Full Part
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {parsedSections.length > 0 && (
-        <div className="space-y-2">
-          {parsedSections.map((section, index) => renderSection(index, section.title, section.content))}
-        </div>
-      )}
-
-      {parsedSections.length > 0 && (
-        <div className="flex justify-center pt-4">
-          <Button onClick={handleWriteFullPart} disabled={isGenerating} variant="outline">
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Regenerating...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" /> Regenerate All Sections
-              </>
-            )}
-          </Button>
-        </div>
-      )}
+      {renderContent()}
     </div>
   );
 };
@@ -669,16 +736,14 @@ const PartEditor = ({
 export default function PartWritingPage() {
   const { toast } = useToast();
   const params = useParams<{ projectId: string; offerId: string; partId: string }>();
-  const router = useRouter();
-  const { user } = useAuthUser();
-  const firestore = useFirestore();
-  const { refreshCredits } = useCreditSummary();
-
   const projectId = params.projectId;
   const offerId = params.offerId;
   const partId = params.partId;
+  const partNumber = parseInt(partId, 10);
 
-  const partNumber = parseInt(partId.replace('part-', ''), 10);
+  const { user } = useAuthUser();
+  const firestore = useFirestore();
+  const { refreshCredits } = useCreditSummary();
 
   const [pageState, setPageState] = useState<PageState>('overview');
   const [content, setContent] = useState('');
@@ -734,7 +799,7 @@ export default function PartWritingPage() {
           }
 
           const partSections = draft.sections?.filter(s => s.partNumber === partNumber) || [];
-          
+
           const isCanonicalType = (s: OfferSection): 'introduction' | 'actionSteps' | 'comingUp' | null => {
             if (s.sectionType === 'introduction') return 'introduction';
             if (s.sectionType === 'actionSteps') return 'actionSteps';
@@ -745,56 +810,36 @@ export default function PartWritingPage() {
             if (lower === 'coming up next' || lower === 'coming up') return 'comingUp';
             return null;
           };
-          
+
           const coreModules = partSections.filter(s => !isCanonicalType(s));
           const introSection = partSections.find(s => isCanonicalType(s) === 'introduction');
           const actionSection = partSections.find(s => isCanonicalType(s) === 'actionSteps');
           const comingSection = partSections.find(s => isCanonicalType(s) === 'comingUp');
-          
+
           const hasAnyContent = partSections.some(s => s.content);
-          
+
           if (hasAnyContent) {
-            let reconstructedContent = `$$Introduction$$\n\n`;
-            if (introSection?.content) {
-              reconstructedContent += `${introSection.content}\n\n`;
-            } else {
-              reconstructedContent += '\n\n';
-            }
-            
-            coreModules.forEach(section => {
-              reconstructedContent += `$$${section.moduleTitle}$$\n\n`;
-              if (section.content) {
-                reconstructedContent += `${section.content}\n\n`;
-              } else {
-                reconstructedContent += '\n\n';
-              }
+            let reconstructed = `$$Introduction$$\n\n${introSection?.content || ''}\n\n`;
+            coreModules.forEach(m => {
+              reconstructed += `$$${m.moduleTitle}$$\n\n${m.content || ''}\n\n`;
             });
-            
-            reconstructedContent += `$$Your Action Steps$$\n\n`;
-            if (actionSection?.content) {
-              reconstructedContent += `${actionSection.content}\n\n`;
-            } else {
-              reconstructedContent += '\n\n';
-            }
-            
-            reconstructedContent += `$$Coming Up Next$$\n\n`;
-            if (comingSection?.content) {
-              reconstructedContent += `${comingSection.content}\n\n`;
-            } else {
-              reconstructedContent += '\n\n';
-            }
-            
-            setContent(reconstructedContent);
+            reconstructed += `$$Your Action Steps$$\n\n${actionSection?.content || ''}\n\n`;
+            reconstructed += `$$Coming Up Next$$\n\n${comingSection?.content || ''}\n\n`;
+            setContent(reconstructed);
             setPageState('writing');
+          } else {
+            let skeleton = `$$Introduction$$\n\n\n\n`;
+            coreModules.forEach(m => {
+              skeleton += `$$${m.moduleTitle}$$\n\n\n\n`;
+            });
+            skeleton += `$$Your Action Steps$$\n\n\n\n`;
+            skeleton += `$$Coming Up Next$$\n\n\n\n`;
+            setContent(skeleton);
           }
         }
       } catch (error) {
         console.error('Error loading offer draft:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load offer data.',
-          variant: 'destructive',
-        });
+        toast({ title: 'Error', description: 'Failed to load offer draft.', variant: 'destructive' });
       } finally {
         setIsLoading(false);
       }
@@ -804,20 +849,20 @@ export default function PartWritingPage() {
   }, [user, firestore, projectId, offerId, partNumber, toast]);
 
   const partSections = useMemo(() => {
-    return offerDraft?.sections?.filter(s => s.partNumber === partNumber) || [];
-  }, [offerDraft?.sections, partNumber]);
+    if (!offerDraft) return [];
+    return offerDraft.sections?.filter(s => s.partNumber === partNumber) || [];
+  }, [offerDraft, partNumber]);
 
   const partTitle = partSections[0]?.partTitle || `Part ${partNumber}`;
 
-  const handleCopyContent = () => {
-    const cleanContent = content.replace(/\$\$[^$]+\$\$/g, '\n\n').trim();
-    navigator.clipboard.writeText(cleanContent);
-    toast({ title: 'Copied!', description: 'Content copied to clipboard.' });
+  const extractSectionContent = (fullContent: string, sectionTitle: string): string => {
+    const regex = new RegExp(`\\$\\$${sectionTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\$\\$([\\s\\S]*?)(?=\\$\\$|$)`, 'i');
+    const match = fullContent.match(regex);
+    return match ? match[1].trim() : '';
   };
 
-  const handleSaveContent = async () => {
+  const handleSaveContent = useCallback(async () => {
     if (!user || !offerDraft) return;
-
     setIsSaving(true);
     try {
       const draftRef = doc(firestore, 'users', user.uid, 'projects', projectId, 'offerDrafts', offerId);
@@ -833,11 +878,16 @@ export default function PartWritingPage() {
         return null;
       };
 
+      const countWords = (text: string): number => {
+        const cleanedText = text.replace(/\$\$[^$]+\$\$/g, '');
+        return cleanedText.trim().split(/\s+/).filter(word => word.length > 0).length;
+      };
+
       const updatedSections = offerDraft.sections.map(section => {
         if (section.partNumber === partNumber) {
           let sectionContent = '';
           const canonicalType = getCanonicalType(section);
-          
+
           if (canonicalType === 'introduction') {
             sectionContent = extractSectionContent(content, 'Introduction');
           } else if (canonicalType === 'actionSteps') {
@@ -847,7 +897,7 @@ export default function PartWritingPage() {
           } else {
             sectionContent = extractSectionContent(content, section.moduleTitle);
           }
-          
+
           const wordCount = countWords(sectionContent);
           return {
             ...section,
@@ -863,7 +913,7 @@ export default function PartWritingPage() {
         sections: updatedSections,
         updatedAt: new Date().toISOString(),
       };
-      
+
       if (selectedResearchId && selectedResearchId !== 'none') {
         updateData.researchProfileId = selectedResearchId;
       } else {
@@ -885,7 +935,7 @@ export default function PartWritingPage() {
       setOfferDraft(prev => {
         if (!prev) return null;
         const updated: OfferDraft = {
-          ...prev, 
+          ...prev,
           sections: updatedSections as OfferSection[],
         };
         if (selectedResearchId !== 'none') {
@@ -912,20 +962,167 @@ export default function PartWritingPage() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [user, firestore, projectId, offerId, offerDraft, content, partNumber, selectedResearchId, selectedStyleId, selectedFramework, toast]);
 
-  const extractSectionContent = (fullContent: string, sectionTitle: string): string => {
-    const regex = new RegExp(`\\$\\$${escapeRegex(sectionTitle)}\\$\\$([\\s\\S]*?)(?=\\$\\$|$)`, 'i');
-    const match = fullContent.match(regex);
-    return match ? match[1].trim() : '';
-  };
+  const handleCopyContent = useCallback(async () => {
+    let htmlContent = '';
+    let plainContent = '';
 
-  const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const formatContentToHtml = (text: string): string => {
+      const lines = text.split('\n');
+      let result = '';
+      let inList = false;
+      let listType = '';
 
-  const countWords = (text: string): number => {
-    const cleanedText = text.replace(/\$\$[^$]+\$\$/g, '');
-    const words = cleanedText.trim().split(/\s+/).filter(word => word.length > 0);
-    return words.length;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) {
+          if (inList) {
+            result += listType === 'ul' ? '</ul>' : '</ol>';
+            inList = false;
+            listType = '';
+          }
+          continue;
+        }
+
+        const bulletMatch = line.match(/^[-•*]\s+(.+)$/);
+        const numberedMatch = line.match(/^\d+[.)]\s+(.+)$/);
+
+        if (bulletMatch) {
+          if (!inList || listType !== 'ul') {
+            if (inList) result += listType === 'ul' ? '</ul>' : '</ol>';
+            result += '<ul>';
+            inList = true;
+            listType = 'ul';
+          }
+          result += `<li>${bulletMatch[1]}</li>`;
+        } else if (numberedMatch) {
+          if (!inList || listType !== 'ol') {
+            if (inList) result += listType === 'ul' ? '</ul>' : '</ol>';
+            result += '<ol>';
+            inList = true;
+            listType = 'ol';
+          }
+          result += `<li>${numberedMatch[1]}</li>`;
+        } else {
+          if (inList) {
+            result += listType === 'ul' ? '</ul>' : '</ol>';
+            inList = false;
+            listType = '';
+          }
+          result += `<p>${line}</p>`;
+        }
+      }
+
+      if (inList) {
+        result += listType === 'ul' ? '</ul>' : '</ol>';
+      }
+
+      return result;
+    };
+
+    htmlContent += `<h1>${partTitle}</h1>`;
+    plainContent += `${partTitle}\n\n`;
+
+    const parts = content.split(/(\$\$[^$]+\$\$)/g).filter(s => s.trim() !== '');
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (part.startsWith('$$') && part.endsWith('$$')) {
+        const sectionTitle = part.replace(/\$\$/g, '').trim();
+        const nextPart = (i + 1 < parts.length && !parts[i + 1].startsWith('$$')) ? parts[i + 1].trim() : '';
+
+        if (sectionTitle === 'Introduction') {
+          if (nextPart) {
+            htmlContent += formatContentToHtml(nextPart);
+            plainContent += `${nextPart}\n\n`;
+          }
+          if (nextPart) i++;
+        } else if (sectionTitle === 'Your Action Steps' || sectionTitle === 'Coming Up Next') {
+          if (nextPart) {
+            htmlContent += formatContentToHtml(nextPart);
+            plainContent += `${nextPart}\n\n`;
+          }
+          if (nextPart) i++;
+        } else {
+          htmlContent += `<h2>${sectionTitle}</h2>`;
+          plainContent += `${sectionTitle}\n`;
+          if (nextPart) {
+            htmlContent += formatContentToHtml(nextPart);
+            plainContent += `${nextPart}\n\n`;
+            i++;
+          }
+        }
+      }
+    }
+
+    try {
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const plainBlob = new Blob([plainContent.trim()], { type: 'text/plain' });
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': blob,
+          'text/plain': plainBlob,
+        }),
+      ]);
+      toast({ title: 'Content Copied', description: 'Part with formatted headings copied to clipboard.' });
+    } catch (err) {
+      navigator.clipboard.writeText(plainContent.trim());
+      toast({ title: 'Content Copied', description: 'Part content copied to clipboard.' });
+    }
+  }, [content, partTitle, toast]);
+
+  const handleRewritePart = useCallback(async (instruction?: string) => {
+    if (!user || !project) return;
+    setPageState('rewriting');
+
+    try {
+      const idToken = await getIdToken(user);
+      const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
+      const stylePrompt = selectedStyle ? selectedStyle.styleAnalysis : undefined;
+      const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
+      const researchPrompt = relevantResearchProfile
+        ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
+        : undefined;
+
+      const response = await fetch('/api/offers/rewrite-section', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          sectionContent: content,
+          styleProfile: stylePrompt,
+          researchProfile: researchPrompt,
+          storytellingFramework: selectedFramework !== 'none' ? selectedFramework : undefined,
+          language: offerDraft?.language || project.language || 'English',
+          instruction,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to rewrite part');
+      }
+
+      const result = await response.json();
+      if (result && result.rewrittenSection) {
+        setContent(result.rewrittenSection);
+        refreshCredits();
+        toast({ title: "Part Rewritten", description: "The AI has rewritten the part." });
+      } else {
+        throw new Error("AI returned empty content during rewrite.");
+      }
+    } catch (error) {
+      console.error("Error rewriting part:", error);
+      toast({ title: "AI Rewrite Failed", variant: "destructive", description: "Could not rewrite the part. Please try again." });
+    } finally {
+      setPageState('writing');
+    }
+  }, [content, styleProfiles, selectedStyleId, toast, project, selectedFramework, researchProfiles, selectedResearchId, offerDraft, user, refreshCredits]);
+
+  const handleProceedToEditor = () => {
+    setPageState('writing');
   };
 
   if (isLoading || isProjectLoading) {
@@ -944,18 +1141,18 @@ export default function PartWritingPage() {
     return notFound();
   }
 
-  return (
-    <div className="container mx-auto py-8 px-4 max-w-5xl">
-      <div className="mb-6">
-        <Button variant="ghost" size="sm" asChild className="mb-4">
-          <Link href={`/dashboard/offer-workspace/${projectId}/${offerId}/sections`}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Parts
-          </Link>
-        </Button>
-      </div>
+  if (pageState === 'overview') {
+    return (
+      <div className="space-y-6">
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" asChild className="mb-4">
+            <Link href={`/dashboard/offer-workspace/${projectId}/${offerId}/sections`}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Parts
+            </Link>
+          </Button>
+        </div>
 
-      <div className="space-y-8">
         <OfferWorkflowNavigation
           projectId={projectId}
           offerId={offerId}
@@ -964,153 +1161,199 @@ export default function PartWritingPage() {
           offerHasTitle={!!offerDraft?.title}
         />
 
-        {pageState === 'overview' && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <Badge variant="outline" className="mb-2">
-                    {OFFER_CATEGORY_LABELS[offerDraft.category]}
-                  </Badge>
-                  <CardTitle className="font-headline text-3xl">
-                    Part {partNumber}: {partTitle}
-                  </CardTitle>
-                  <CardDescription className="mt-2">
-                    This part contains {partSections.length} modules to be written.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Research Profile (Optional)</Label>
-                  <Select value={selectedResearchId} onValueChange={setSelectedResearchId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select research profile" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {researchProfiles?.map(profile => (
-                        <SelectItem key={profile.id} value={profile.id}>
-                          {profile.topic}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Writing Style (Optional)</Label>
-                  <Select value={selectedStyleId} onValueChange={setSelectedStyleId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select style profile" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {styleProfiles?.map(profile => (
-                        <SelectItem key={profile.id} value={profile.id}>
-                          {profile.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">
-                    <Drama className="inline-block w-4 h-4 mr-1" />
-                    Storytelling Framework
-                  </Label>
-                  <Select value={selectedFramework} onValueChange={setSelectedFramework}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a framework" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {frameworks.map(fw => (
-                        <SelectItem key={fw.value} value={fw.value}>{fw.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-3">Modules in this part:</h4>
-                <div className="space-y-2">
-                  {partSections.map((section, index) => (
-                    <div
-                      key={section.id}
-                      className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30"
-                    >
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{section.moduleTitle}</p>
-                        <p className="text-sm text-muted-foreground">{section.description}</p>
-                      </div>
+        <Card>
+          <CardHeader className="flex-row items-start justify-between">
+            <div>
+              <Badge variant="outline" className="mb-2">
+                {OFFER_CATEGORY_LABELS[offerDraft.category]}
+              </Badge>
+              <CardTitle className="font-headline text-xl">Part {partNumber}: {partTitle}</CardTitle>
+              <CardDescription>This part contains {partSections.length} modules to write.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Card className="bg-secondary/50">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Bot className="w-5 h-5" />
+                  AI Writing Context
+                </CardTitle>
+                <CardDescription>The AI will use the following context to write this part. You can change these settings before writing.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <BookOpen className="w-5 h-5 mt-1 text-primary" />
+                    <div>
+                      <h4 className="font-semibold">Part Modules</h4>
+                      {partSections.length > 0 ? (
+                        <ul className="list-disc pl-5 space-y-1 text-sm mt-1">
+                          {partSections.map((section, index) => (
+                            <li key={index}>{section.moduleTitle}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground mt-1">No modules found for this part.</p>
+                      )}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex justify-center pt-4">
-                <Button size="lg" onClick={() => setPageState('writing')}>
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Start Writing This Part
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {pageState === 'writing' && (
-          <>
-            <Card>
-              <CardContent className="pt-6">
-                <PartEditor
-                  project={project}
-                  offerDraft={offerDraft}
-                  partNumber={partNumber}
-                  partTitle={partTitle}
-                  modules={partSections}
-                  content={content}
-                  onContentChange={setContent}
-                  onCopyContent={handleCopyContent}
-                  selectedStyleId={selectedStyleId}
-                  styleProfiles={styleProfiles || null}
-                  selectedResearchId={selectedResearchId}
-                  researchProfiles={researchProfiles || null}
-                  isGenerating={isGenerating}
-                  setIsGenerating={setIsGenerating}
-                  user={user}
-                  refreshCredits={refreshCredits}
-                  projectId={projectId}
-                  offerId={offerId}
-                />
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Drama className="w-5 h-5 mt-1 text-primary" />
+                    <div className="w-full">
+                      <h4 className="font-semibold">Storytelling Framework</h4>
+                      <Select value={selectedFramework} onValueChange={setSelectedFramework}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select a framework" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          {frameworks.map(fw => (
+                            <SelectItem key={fw.value} value={fw.value}>{fw.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <BrainCircuit className="w-5 h-5 mt-1 text-primary" />
+                    <div className="w-full">
+                      <h4 className="font-semibold">AI Research Profile</h4>
+                      <Select value={selectedResearchId} onValueChange={setSelectedResearchId}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select a research profile" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          {researchProfiles?.map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.topic}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Palette className="w-5 h-5 mt-1 text-primary" />
+                    <div className="w-full">
+                      <label htmlFor="style-select" className="font-semibold">
+                        Writing Style
+                      </label>
+                      <Select value={selectedStyleId} onValueChange={setSelectedStyleId}>
+                        <SelectTrigger id="style-select" className="mt-2">
+                          <SelectValue placeholder="Select a style" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Default (AI's own style)</SelectItem>
+                          {styleProfiles?.map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-2">Select a style profile to guide the AI's voice and tone.</p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setPageState('overview')}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Overview
-              </Button>
-              <Button onClick={handleSaveContent} disabled={isSaving || !content}>
-                {isSaving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" /> Save Progress
-                  </>
-                )}
+            <div className="flex flex-wrap gap-4">
+              <Button onClick={handleProceedToEditor} size="lg">
+                <Pencil className="mr-2 h-4 w-4" />
+                Proceed to Interactive Editor
               </Button>
             </div>
-          </>
-        )}
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <>
+      <FloatingCreditWidget />
+      <div className="space-y-6">
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" asChild className="mb-4">
+            <Link href={`/dashboard/offer-workspace/${projectId}/${offerId}/sections`}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Parts
+            </Link>
+          </Button>
+        </div>
+
+        <OfferWorkflowNavigation
+          projectId={projectId}
+          offerId={offerId}
+          currentStep="sections"
+          offerHasBlueprint={!!offerDraft?.masterBlueprint}
+          offerHasTitle={!!offerDraft?.title}
+        />
+
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <Badge variant="outline" className="mb-2">
+                {OFFER_CATEGORY_LABELS[offerDraft.category]}
+              </Badge>
+              <CardTitle className="font-headline text-xl">Part {partNumber}: {partTitle}</CardTitle>
+              <CardDescription>Writing {partSections.length} modules</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => setPageState('overview')} variant="outline">Back to Overview</Button>
+              <Button asChild variant="outline">
+                <Link href={`/dashboard/offer-workspace/${projectId}/${offerId}/sections`}>Parts List</Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {pageState === 'rewriting' ? (
+              <div className="flex h-[65vh] flex-col items-center justify-center space-y-4 rounded-md border border-dashed">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <div className="text-center">
+                  <p className="text-lg font-semibold">AI is working...</p>
+                  <p className="text-muted-foreground">Rewriting part...</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="relative">
+                  <PartEditor
+                    project={project}
+                    offerDraft={offerDraft}
+                    partNumber={partNumber}
+                    partTitle={partTitle}
+                    modules={partSections}
+                    content={content}
+                    onContentChange={setContent}
+                    onCopyContent={handleCopyContent}
+                    selectedStyleId={selectedStyleId}
+                    styleProfiles={styleProfiles || null}
+                    selectedResearchId={selectedResearchId}
+                    researchProfiles={researchProfiles || null}
+                    selectedFramework={selectedFramework}
+                    isGenerating={isGenerating}
+                    setIsGenerating={setIsGenerating}
+                    onRewritePart={handleRewritePart}
+                    user={user}
+                    refreshCredits={refreshCredits}
+                  />
+                </div>
+                <div className="flex justify-end pt-4 border-t">
+                  <Button onClick={handleSaveContent} disabled={isSaving || isGenerating}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }
