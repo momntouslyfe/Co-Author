@@ -42,6 +42,17 @@ const languages = [
   { value: 'Hindi', label: 'Hindi' },
 ];
 
+const storytellingFrameworks = [
+  { value: 'The Hero\'s Journey', label: 'The Hero\'s Journey' },
+  { value: 'The Mentor\'s Journey', label: 'The Mentor\'s Journey' },
+  { value: 'Three-Act Structure', label: 'Three-Act Structure' },
+  { value: 'Fichtean Curve', label: 'Fichtean Curve' },
+  { value: 'Save the Cat', label: 'Save the Cat' },
+  { value: 'AIDA (Attention, Interest, Desire, Action)', label: 'AIDA' },
+  { value: 'PAS (Problem, Agitation, Solution)', label: 'PAS' },
+  { value: 'BAB (Before, After, Bridge)', label: 'BAB' },
+];
+
 export default function BlueprintSelectionPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -61,6 +72,7 @@ export default function BlueprintSelectionPage() {
   const [selectedResearchProfileId, setSelectedResearchProfileId] = useState<string>('none');
   const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string>('none');
   const [selectedAuthorProfileId, setSelectedAuthorProfileId] = useState<string>('none');
+  const [selectedStorytellingFramework, setSelectedStorytellingFramework] = useState<string>('none');
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -160,6 +172,7 @@ export default function BlueprintSelectionPage() {
           authorProfile: selectedAuthorProfile
             ? `Author: ${selectedAuthorProfile.penName}\nBio: ${selectedAuthorProfile.bio}${selectedAuthorProfile.credentials ? `\nCredentials: ${selectedAuthorProfile.credentials}` : ''}`
             : undefined,
+          storytellingFramework: selectedStorytellingFramework !== 'none' ? selectedStorytellingFramework : undefined,
         }),
       });
 
@@ -416,6 +429,20 @@ export default function BlueprintSelectionPage() {
                     <SelectItem value="none">None</SelectItem>
                     {authorProfiles?.map(profile => (
                       <SelectItem key={profile.id} value={profile.id}>{profile.penName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Storytelling Framework (Optional)</Label>
+                <Select value={selectedStorytellingFramework} onValueChange={setSelectedStorytellingFramework}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {storytellingFrameworks.map(framework => (
+                      <SelectItem key={framework.value} value={framework.value}>{framework.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

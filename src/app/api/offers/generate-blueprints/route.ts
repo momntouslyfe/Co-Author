@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       researchProfile: researchProfileContent,
       styleProfile: styleProfileContent,
       authorProfile: authorProfileContent,
+      storytellingFramework,
     } = body;
 
     if (!bookTitle || !offerCategory || !offerTitle || !offerDescription) {
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
       researchProfile: researchProfile || undefined,
       styleProfile: styleProfile || undefined,
       authorProfile: authorProfile || undefined,
+      storytellingFramework: storytellingFramework || undefined,
     });
 
     const category = offerCategory as Exclude<OfferCategory, 'all'>;

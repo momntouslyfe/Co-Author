@@ -18,6 +18,7 @@ const GenerateOfferBlueprintsInputSchema = z.object({
   researchProfile: z.string().optional().describe('Optional research profile for context.'),
   styleProfile: z.string().optional().describe('Optional style profile for writing style.'),
   authorProfile: z.string().optional().describe('Optional author profile for context.'),
+  storytellingFramework: z.string().optional().describe('Optional storytelling framework (e.g., Hero\'s Journey, AIDA).'),
   model: z.string().optional().describe('The generative AI model to use.'),
 });
 
@@ -169,6 +170,11 @@ export async function generateOfferBlueprints(
 {{#if authorProfile}}
 **AUTHOR PROFILE:**
 {{{authorProfile}}}
+{{/if}}
+
+{{#if storytellingFramework}}
+**STORYTELLING FRAMEWORK:**
+Structure the content using the {{{storytellingFramework}}} framework to create engaging, narrative-driven material.
 {{/if}}
 
 **CATEGORY-SPECIFIC STRUCTURE:**
