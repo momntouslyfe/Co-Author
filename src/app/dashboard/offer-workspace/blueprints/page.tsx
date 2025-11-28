@@ -232,7 +232,7 @@ export default function BlueprintSelectionPage() {
         sourceOfferId: selectedOfferId,
         category: selectedOffer.category as Exclude<OfferCategory, 'all'>,
         title: blueprint.title,
-        subtitle: blueprint.subtitle,
+        subtitle: blueprint.subtitle || '',
         blueprint: blueprint,
         sections,
         status: 'draft',
