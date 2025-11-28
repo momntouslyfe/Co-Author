@@ -41,6 +41,20 @@ import type { Project, ProjectOffers, OfferDraft, OfferCategory, OfferSection } 
 import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
 
+const isCanonicalSection = (section: OfferSection): boolean => {
+  if (section.sectionType) {
+    return section.sectionType === 'introduction' ||
+           section.sectionType === 'actionSteps' ||
+           section.sectionType === 'comingUp';
+  }
+  const lower = section.moduleTitle.toLowerCase().trim();
+  return lower === 'introduction' ||
+         lower === 'your action steps' ||
+         lower === 'action steps' ||
+         lower === 'coming up next' ||
+         lower === 'coming up';
+};
+
 export default function OfferWorkspacePage() {
   const { user, isUserLoading } = useAuthUser();
   const firestore = useFirestore();
@@ -267,7 +281,11 @@ export default function OfferWorkspacePage() {
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {draft.sections.filter((s: OfferSection) => s.content).length} of {draft.sections.length} sections written
+                              {(() => {
+                                const coreModules = draft.sections.filter((s: OfferSection) => !isCanonicalSection(s));
+                                const completedModules = coreModules.filter((s: OfferSection) => s.status === 'completed').length;
+                                return `${completedModules} of ${coreModules.length} modules written`;
+                              })()}
                             </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
@@ -344,7 +362,11 @@ export default function OfferWorkspacePage() {
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {draft.sections.length} sections, ~{draft.sections.reduce((acc: number, s: OfferSection) => acc + (s.wordCount || 0), 0).toLocaleString()} words
+                              {(() => {
+                                const coreModules = draft.sections.filter((s: OfferSection) => !isCanonicalSection(s));
+                                const totalWords = draft.sections.reduce((acc: number, s: OfferSection) => acc + (s.wordCount || 0), 0);
+                                return `${coreModules.length} modules, ~${totalWords.toLocaleString()} words`;
+                              })()}
                             </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
