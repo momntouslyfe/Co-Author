@@ -138,6 +138,23 @@ export default function BlueprintSelectionPage() {
     const blueprint = blueprints[index];
 
     try {
+      const idToken = await getIdToken(user);
+      if (!idToken) {
+        throw new Error('Please sign in to continue.');
+      }
+
+      const creditCheck = await fetch('/api/user/check-offer-credit', {
+        headers: { 'Authorization': `Bearer ${idToken}` },
+      });
+      if (!creditCheck.ok) {
+        const errorData = await creditCheck.json().catch(() => ({ error: 'Failed to check credits' }));
+        throw new Error(errorData.error || 'Failed to verify credit availability.');
+      }
+      const creditData = await creditCheck.json();
+      if (!creditData.hasCredits) {
+        throw new Error(creditData.error || 'Insufficient offer credits. Please purchase more credits or upgrade your plan.');
+      }
+
       const draftId = `${selectedOfferId}-${Date.now()}`;
       const sections = blueprint.parts.flatMap((part, partIndex) =>
         part.modules.map((module, moduleIndex) => ({
@@ -173,6 +190,24 @@ export default function BlueprintSelectionPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+
+      const trackResponse = await fetch('/api/user/track-offer-creation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          draftId,
+          draftTitle: blueprint.title,
+          projectId: selectedProjectId,
+        }),
+      });
+
+      if (!trackResponse.ok) {
+        const errorData = await trackResponse.json().catch(() => ({ error: 'Failed to track offer creation' }));
+        throw new Error(errorData.error || 'Failed to deduct offer credits. Please try again.');
+      }
 
       toast({
         title: 'Draft Created',
