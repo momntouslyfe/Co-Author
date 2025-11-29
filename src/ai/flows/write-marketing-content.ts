@@ -62,7 +62,16 @@ export async function writeMarketingContent(
 **Style Profile (Writing Style to Match - CRITICAL):**
 {{{styleProfile}}}
 
-**CODE-MIXING REQUIREMENT:** If the style profile demonstrates code-mixing (mixing words/phrases from multiple languages like English mixed with Bengali, Hindi, or other languages), you MUST replicate that exact code-mixing pattern in your writing. Match the frequency and style of language mixing shown in the profile.
+**CODE-MIXING INTEGRITY (MANDATORY):**
+If the style profile demonstrates code-mixing (mixing words/phrases from multiple languages):
+1. Use mixed-language words NATURALLY without any explanation
+2. NEVER add parenthetical translations like "প্রমোশন (promotion)" - just write "প্রমোশন"
+3. NEVER add brackets, glosses, or English explanations after non-English words
+4. Blend languages seamlessly as a native speaker would
+5. Match the exact frequency and pattern of language mixing from the profile
+
+WRONG: "আপনার বিজনেস (business) এর জন্য মার্কেটিং (marketing) স্ট্রাটেজি (strategy)"
+CORRECT: "আপনার বিজনেস এর জন্য মার্কেটিং স্ট্রাটেজি"
 {{/if}}
 
 {{#if authorProfile}}
@@ -96,6 +105,16 @@ export async function writeMarketingContent(
 
 **YOUR TASK:**
 Write the complete content piece based on the title and context provided above.
+
+**STRUCTURE COMPLIANCE (MANDATORY - Even for short content):**
+You MUST structure your output properly regardless of word count:
+1. MINIMUM 4 paragraphs for any content (even 500 words)
+2. Include at least one markdown heading (## or ###) to organize the content
+3. Each paragraph should be 2-5 sentences maximum
+4. Separate all paragraphs with blank lines
+5. Mix short punchy paragraphs (1-2 sentences) with medium ones (3-4 sentences)
+6. Use bullet points or lists where they improve readability
+7. NEVER write a single wall of text - always break into multiple paragraphs
 
 **REQUIREMENTS:**
 1. Write approximately {{{targetWordCount}}} words (within 10% margin).

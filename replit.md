@@ -6,10 +6,12 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 ## Recent Changes
 - **Co-Writer AI Code-Mixing and Style Profile Adherence**:
   - All AI writing operations (write, rewrite, expand, extend) now properly follow code-mixing patterns from style profiles
-  - Added explicit CODE-MIXING REQUIREMENT section to all prompts
-  - AI must replicate exact code-mixing patterns (e.g., English mixed with Bengali/Hindi words) as shown in style profile
+  - Added explicit CODE-MIXING INTEGRITY section to all prompts with examples
+  - AI must use code-mixed words NATURALLY without parenthetical translations (e.g., "প্রমোশন" not "প্রমোশন (promotion)")
+  - Added WRONG/CORRECT examples to guide proper code-mixing behavior
   - Style profiles marked as CRITICAL with emphasis on matching vocabulary, sentence structures, and tone
-  - Added requirement #8/9 in all flows specifically for code-mixing adherence
+  - Added STRUCTURE COMPLIANCE section requiring minimum 4 paragraphs even for short content (500-700 words)
+  - Short content no longer collapses into single paragraph - proper structure enforced at all word counts
 - **Co-Writer AI Output Structure Improvements**:
   - Updated rewrite and expand prompts with strict structure requirements to prevent single-paragraph output
   - AI now produces properly formatted content with multiple paragraphs, varied lengths, and markdown formatting

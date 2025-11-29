@@ -76,7 +76,16 @@ export async function POST(request: Request) {
 **Style Profile (Writing Style to Match - CRITICAL):**
 {{{styleProfile}}}
 
-**CODE-MIXING REQUIREMENT:** If the style profile demonstrates code-mixing (mixing words/phrases from multiple languages like English mixed with Bengali, Hindi, or other languages), you MUST replicate that exact code-mixing pattern in your extended content. Match the frequency and style of language mixing shown in the profile.
+**CODE-MIXING INTEGRITY (MANDATORY):**
+If the style profile demonstrates code-mixing (mixing words/phrases from multiple languages):
+1. Use mixed-language words NATURALLY without any explanation
+2. NEVER add parenthetical translations like "প্রমোশন (promotion)" - just write "প্রমোশন"
+3. NEVER add brackets, glosses, or English explanations after non-English words
+4. Blend languages seamlessly as a native speaker would
+5. Match the exact frequency and pattern of language mixing from the profile
+
+WRONG: "আপনার বিজনেস (business) এর জন্য মার্কেটিং (marketing) স্ট্রাটেজি (strategy)"
+CORRECT: "আপনার বিজনেস এর জন্য মার্কেটিং স্ট্রাটেজি"
 {{/if}}
 
 ---
