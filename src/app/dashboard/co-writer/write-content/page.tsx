@@ -44,7 +44,6 @@ import type { Project, ResearchProfile, StyleProfile, AuthorProfile, ProjectCont
 import { useToast } from '@/hooks/use-toast';
 import { writeMarketingContent } from '@/ai/flows/write-marketing-content';
 import { rewriteMarketingContent } from '@/ai/flows/rewrite-marketing-content';
-import { expandMarketingContent } from '@/ai/flows/expand-marketing-content';
 import { getIdToken } from '@/lib/client-auth';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
@@ -317,17 +316,29 @@ function WriteContentPageContent() {
       const idToken = await getIdToken(user);
       const selectedStyle = styleProfiles?.find(s => s.id === selectedStyleProfileId);
 
-      const result = await expandMarketingContent({
-        userId: user.uid,
-        idToken,
-        content: generatedContent,
-        language: selectedLanguage,
-        targetWordCount: expandTargetWords,
-        bookTitle: selectedProject?.title,
-        bookOutline: selectedProject?.outline,
-        styleProfile: selectedStyle?.styleAnalysis,
-        customInstructions: instruction || undefined,
+      const response = await fetch('/api/co-writer/expand-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          content: generatedContent,
+          language: selectedLanguage,
+          targetWordCount: expandTargetWords,
+          bookTitle: selectedProject?.title,
+          bookOutline: selectedProject?.outline,
+          styleProfile: selectedStyle?.styleAnalysis,
+          customInstructions: instruction || undefined,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to expand content');
+      }
+
+      const result = await response.json();
 
       setGeneratedContent(result.content);
       refreshCredits();
@@ -365,17 +376,29 @@ function WriteContentPageContent() {
       const idToken = await getIdToken(user);
       const selectedStyle = styleProfiles?.find(s => s.id === selectedStyleProfileId);
 
-      const result = await expandMarketingContent({
-        userId: user.uid,
-        idToken,
-        content: paragraph,
-        language: selectedLanguage,
-        targetWordCount: paragraph.split(/\s+/).length + 150,
-        bookTitle: selectedProject?.title,
-        bookOutline: selectedProject?.outline,
-        styleProfile: selectedStyle?.styleAnalysis,
-        customInstructions: instruction || undefined,
+      const response = await fetch('/api/co-writer/expand-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          content: paragraph,
+          language: selectedLanguage,
+          targetWordCount: paragraph.split(/\s+/).length + 150,
+          bookTitle: selectedProject?.title,
+          bookOutline: selectedProject?.outline,
+          styleProfile: selectedStyle?.styleAnalysis,
+          customInstructions: instruction || undefined,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to expand paragraph');
+      }
+
+      const result = await response.json();
 
       setGeneratedContent(prevContent => {
         const parts = prevContent.split(/(\n\n)/);
