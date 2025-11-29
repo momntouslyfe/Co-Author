@@ -7,7 +7,6 @@ import { APIKeysManager } from '@/components/admin/api-keys-manager';
 import { AIRoutingManager } from '@/components/admin/ai-routing-manager';
 import { UserManagement } from '@/components/admin/user-management';
 import { GlobalSettings } from '@/components/admin/global-settings';
-import { TrialSettings } from '@/components/admin/trial-settings';
 import { SubscriptionPlanManager } from '@/components/admin/subscription-plan-manager';
 import { AddonCreditPlanManager } from '@/components/admin/addon-credit-plan-manager';
 import { CreditAllocator } from '@/components/admin/credit-allocator';
@@ -70,10 +69,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="subscriptions">
-            <div className="space-y-6">
-              <SubscriptionPlanManager />
-              <TrialSettings />
-            </div>
+            <SubscriptionPlanManager />
           </TabsContent>
 
           <TabsContent value="addon-credits">

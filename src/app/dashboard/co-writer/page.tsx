@@ -4,11 +4,9 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lightbulb, PenTool, ArrowRight, Sparkles, FileText } from 'lucide-react';
-import { FeatureGate } from '@/components/feature-gate';
 
 export default function CoWriterPage() {
   return (
-    <FeatureGate featureName="co-writer">
     <div className="container mx-auto py-8 px-4 max-w-5xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Co-Writer</h1>
@@ -130,6 +128,5 @@ export default function CoWriterPage() {
         </CardContent>
       </Card>
     </div>
-    </FeatureGate>
   );
 }

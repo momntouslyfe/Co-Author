@@ -1,71 +1,29 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Check, Lock } from 'lucide-react';
+import { Loader2, Check } from 'lucide-react';
 import { useAuthUser } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 import type { AddonCreditPlan, AddonCreditType } from '@/types/subscription';
 import { getCurrencySymbol } from '@/lib/currency-utils';
 
-function getCreditTypeLabel(creditType: AddonCreditType): string {
-  switch (creditType) {
-    case 'words': return 'AI Words Credit';
-    case 'books': return 'Book Creation Credits';
-    case 'offers': return 'Offer Creation Credits';
-    default: return 'Credits';
-  }
-}
-
-function getCreditTypeUnit(creditType: AddonCreditType): string {
-  switch (creditType) {
-    case 'words': return 'AI Words';
-    case 'books': return 'book projects';
-    case 'offers': return 'offer credits';
-    default: return 'credits';
-  }
-}
-
 function PurchaseCreditsContent() {
   const [plans, setPlans] = useState<AddonCreditPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [accessError, setAccessError] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  const router = useRouter();
   const creditType = (searchParams.get('type') || 'words') as AddonCreditType;
   const { user, isUserLoading } = useAuthUser();
   const { toast } = useToast();
 
   const loadPlans = async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-    
     try {
-      setAccessError(null);
-      setIsLoading(true);
-      
-      const token = await user.getIdToken();
-      const response = await fetch(`/api/user/addon-credit-plans?type=${creditType}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(`/api/user/addon-credit-plans?type=${creditType}`);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 403) {
-          setAccessError(errorData.error || 'You do not have access to purchase these credits.');
-          return;
-        }
-        if (response.status === 401) {
-          setAccessError('Please log in to view credit plans.');
-          return;
-        }
-        throw new Error(errorData.error || 'Failed to load credit plans');
-      }
+      if (!response.ok) throw new Error('Failed to load credit plans');
 
       const data = await response.json();
       setPlans(data);
@@ -81,10 +39,8 @@ function PurchaseCreditsContent() {
   };
 
   useEffect(() => {
-    if (!isUserLoading) {
-      loadPlans();
-    }
-  }, [creditType, user, isUserLoading]);
+    loadPlans();
+  }, [creditType]);
 
   const handlePurchase = async (planId: string) => {
     if (!user) {
@@ -126,35 +82,11 @@ function PurchaseCreditsContent() {
     );
   }
 
-  if (accessError) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold font-headline mb-2">
-            Purchase {getCreditTypeLabel(creditType)}
-          </h1>
-        </div>
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Access Restricted</h2>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              {accessError}
-            </p>
-            <Button onClick={() => router.push('/dashboard/subscription')}>
-              View Subscription Plans
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold font-headline mb-2">
-          Purchase {getCreditTypeLabel(creditType)}
+          Purchase {creditType === 'words' ? 'AI Words Credit' : 'Book Creation Credits'}
         </h1>
         <p className="text-muted-foreground">
           Select a credit package to continue your writing journey
@@ -165,7 +97,7 @@ function PurchaseCreditsContent() {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">
-              No {getCreditTypeLabel(creditType).toLowerCase()} plans are currently available.
+              No {creditType === 'words' ? 'AI Words Credit' : 'book creation credit'} plans are currently available.
             </p>
           </CardContent>
         </Card>
@@ -182,7 +114,7 @@ function PurchaseCreditsContent() {
                     )}
                   </div>
                   <Badge variant="secondary">
-                    {plan.creditAmount.toLocaleString()} {getCreditTypeUnit(creditType)}
+                    {plan.creditAmount.toLocaleString()} {creditType === 'words' ? 'AI Words' : 'credits'}
                   </Badge>
                 </div>
               </CardHeader>
@@ -195,7 +127,7 @@ function PurchaseCreditsContent() {
                   <div className="mt-4 space-y-2">
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary" />
-                      <span>{plan.creditAmount.toLocaleString()} {getCreditTypeUnit(creditType)}</span>
+                      <span>{plan.creditAmount.toLocaleString()} {creditType === 'words' ? 'AI Words' : 'book projects'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary" />

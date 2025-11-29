@@ -102,20 +102,11 @@ export type AIRouting = {
   model?: string;
 };
 
-export type TrialSettings = {
-  enabled: boolean;
-  durationDays: number;
-  offerCreditsAmount: number;
-  enableCoMarketer: boolean;
-  enableCoWriter: boolean;
-};
-
 export type AdminSettings = {
   id: string;
   useAdminKeys: boolean;
   allowUserKeys: boolean;
   aiRouting: AIRouting[];
-  trialSettings?: TrialSettings;
   updatedAt: string;
 };
 

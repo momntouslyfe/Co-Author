@@ -4,11 +4,9 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Gift, TrendingUp, ArrowRight } from 'lucide-react';
-import { FeatureGate } from '@/components/feature-gate';
 
 export default function CoMarketerPage() {
   return (
-    <FeatureGate featureName="co-marketer">
     <div className="container mx-auto py-8 px-4 max-w-5xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Co-Marketer</h1>
@@ -76,6 +74,5 @@ export default function CoMarketerPage() {
         </Card>
       </div>
     </div>
-    </FeatureGate>
   );
 }
