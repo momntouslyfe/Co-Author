@@ -40,14 +40,28 @@ function PurchaseCreditsContent() {
   const { toast } = useToast();
 
   const loadPlans = async () => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       setAccessError(null);
-      const response = await fetch(`/api/user/addon-credit-plans?type=${creditType}`);
+      setIsLoading(true);
+      
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/user/addon-credit-plans?type=${creditType}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 403) {
           setAccessError(errorData.error || 'You do not have access to purchase these credits.');
+          return;
+        }
+        if (response.status === 401) {
+          setAccessError('Please log in to view credit plans.');
           return;
         }
         throw new Error(errorData.error || 'Failed to load credit plans');
@@ -67,8 +81,10 @@ function PurchaseCreditsContent() {
   };
 
   useEffect(() => {
-    loadPlans();
-  }, [creditType]);
+    if (!isUserLoading) {
+      loadPlans();
+    }
+  }, [creditType, user, isUserLoading]);
 
   const handlePurchase = async (planId: string) => {
     if (!user) {
