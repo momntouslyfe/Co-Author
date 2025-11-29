@@ -28,8 +28,8 @@ export type GenerateBookTitlesInput = z.infer<
 >;
 
 const BookTitleSchema = z.object({
-  mainTitle: z.string().describe('The main title (3-5 words, emotional, memorable, attention-grabbing).'),
-  subtitle: z.string().describe('The subtitle (clear promise, specific benefit, target audience).'),
+  mainTitle: z.string().describe('The main title (2-5 words, catchy, hooks attention, creates curiosity).'),
+  subtitle: z.string().describe('The subtitle (5-8 words ONLY, punchy, creates intrigue).'),
   formula: z.string().describe('Which formula was used (e.g., Warrior/Hero, Number+Promise, Question Hook, etc.).'),
 });
 
@@ -88,17 +88,18 @@ Every title MUST pass through these three gateways:
 - Create a unique identity/character (Warrior, Maverick, Insider, etc.)
 - Position the reader as someone special who deserves this knowledge
 
-### 2. PROMISE (Clear, Specific Benefit)
-- What EXACTLY will the reader achieve?
-- Be specific with numbers, timeframes, or outcomes
-- Promise should feel achievable yet exciting
-- Address the #1 pain point from the research profile
+### 2. CURIOSITY (Create Intrigue - MOST IMPORTANT)
+- Leave something UNSAID - don't explain everything
+- Create an open loop that MUST be closed by reading the book
+- Use mystery, secrets, hidden knowledge, unexpected twists
+- Make them NEED to know more
+- Questions > Answers in titles
 
-### 3. PERCEPTION SHIFT (Provoke Emotion)
+### 3. HOOK (Emotional Pull - Stop the Scroll)
 - Challenge conventional wisdom
+- Use provocative or counterintuitive statements
 - Create urgency or stakes
-- Make them feel something (curiosity, fear of missing out, hope, determination)
-- Use provocative or counterintuitive elements
+- Make them feel something IMMEDIATELY (curiosity, shock, hope, determination)
 
 ---
 
@@ -151,19 +152,29 @@ Every title MUST pass through these three gateways:
 
 ---
 
-## TITLE STRUCTURE (MANDATORY)
+## TITLE STRUCTURE (MANDATORY - FOLLOW EXACTLY)
 
-**MAIN TITLE (3-5 words):**
-- Emotional and memorable
-- Uses power words
-- Creates instant curiosity
-- Easy to say and remember
+**MAIN TITLE (2-5 words ONLY):**
+- CATCHY and memorable - should stick in the mind
+- Creates INSTANT curiosity - makes them NEED to know more
+- Uses power words that hook emotions
+- Easy to say, share, and remember
+- Can be provocative, mysterious, or bold
 
-**SUBTITLE (8-15 words):**
-- Clarifies the promise
-- Includes specific benefit
-- Addresses target audience
-- Can include numbers or timeframes
+**SUBTITLE (5-8 words ONLY - STRICT LIMIT):**
+- SHORT and PUNCHY - no long explanations
+- Creates MORE intrigue, doesn't explain everything
+- Hints at the transformation or secret
+- NEVER a full sentence - fragments work better
+- Examples of GOOD short subtitles:
+  - "The Secret Millionaires Won't Share"
+  - "What They Never Taught You"
+  - "Your Hidden Path to Mastery"
+  - "Before They Figured It Out"
+  - "The Untold Truth About Success"
+
+❌ BAD (Too Long): "A Complete Step-by-Step Guide to Achieving Financial Freedom in Just 90 Days"
+✅ GOOD (Short, Punchy): "The 90-Day Wealth Secret"
 
 ---
 
@@ -192,14 +203,18 @@ Every title MUST pass through these three gateways:
 ## YOUR TASK
 
 Generate 10-12 HIGH-CONVERTING titles that:
-1. Pass all THREE GATEWAYS (Positioning, Promise, Perception Shift)
+1. Pass all THREE GATEWAYS (Positioning, Curiosity, Hook)
 2. Use different formulas for variety
-3. Include emotional power words
-4. Have compelling main title + clarifying subtitle
-5. Address the target audience's deepest pain points
-6. Are in {{{language}}}
-7. Follow code-mixing patterns from style profile (if provided)
-8. Are NOT generic or boring - every title should make someone stop scrolling
+3. Main title: 2-5 words, CATCHY, creates CURIOSITY
+4. Subtitle: 5-8 words ONLY (STRICT LIMIT), punchy, intriguing
+5. Every title should make someone STOP SCROLLING and NEED to know more
+6. Create OPEN LOOPS - don't explain everything, leave mystery
+7. Use power words that trigger emotions
+8. Are in {{{language}}}
+9. Follow code-mixing patterns from style profile (if provided)
+10. Are NOT generic, boring, or explanatory
+
+**REMEMBER: Shorter = More Powerful. Leave them wanting MORE.**
 
 For each title, identify which formula you used.`,
     });

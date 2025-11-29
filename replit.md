@@ -5,11 +5,12 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
 
 ## Recent Changes
 - **High-Converting Book Title Generation**:
-  - Implemented Three Gateways Framework (Positioning, Promise, Perception Shift)
+  - Implemented Three Gateways Framework (Positioning, Curiosity, Hook)
   - Added 8 proven title formulas: Warrior/Hero, Number+Promise, Question Hook, Counterintuitive, Secret/Hidden, Ultimatum, Made-Up Word, Transformation Story
   - Integrated psychological power words (Curiosity, Urgency, Transformation, Exclusivity, Desire, Identity)
-  - Added anti-generic rules with WRONG vs CORRECT examples
-  - Titles now include mainTitle + subtitle + formula used
+  - Subtitles now strictly limited to 5-8 words (short, punchy, intriguing)
+  - Main titles focused on being catchy and curiosity-driven (2-5 words)
+  - Open loops emphasized - don't explain everything, leave mystery
   - Research Profile and Style Profile context now passed to title generator
   - Code-mixing integrity for non-English titles
   - Beautiful new UI with title cards showing formula badges
