@@ -57,6 +57,29 @@ const languages = [
   { value: 'Hindi', label: 'Hindi' },
 ];
 
+const storytellingFrameworks = [
+  { value: "The Hero's Journey", label: "The Hero's Journey" },
+  { value: "The Mentor's Journey", label: "The Mentor's Journey" },
+  { value: 'Three-Act Structure', label: 'Three-Act Structure' },
+  { value: 'Fichtean Curve', label: 'Fichtean Curve' },
+  { value: 'Save the Cat', label: 'Save the Cat' },
+];
+
+const contentFrameworks = [
+  { value: 'AIDA (Attention, Interest, Desire, Action)', label: 'AIDA - Attention, Interest, Desire, Action' },
+  { value: 'PAS (Problem, Agitation, Solution)', label: 'PAS - Problem, Agitation, Solution' },
+  { value: 'BAB (Before, After, Bridge)', label: 'BAB - Before, After, Bridge' },
+  { value: 'FAB (Features, Advantages, Benefits)', label: 'FAB - Features, Advantages, Benefits' },
+  { value: '4Ps (Promise, Picture, Proof, Push)', label: '4Ps - Promise, Picture, Proof, Push' },
+  { value: 'PASTOR (Problem, Amplify, Story, Transformation, Offer, Response)', label: 'PASTOR - Problem to Response' },
+  { value: 'QUEST (Qualify, Understand, Educate, Stimulate, Transition)', label: 'QUEST - Qualify to Transition' },
+  { value: 'SLAP (Stop, Look, Act, Purchase)', label: 'SLAP - Stop, Look, Act, Purchase' },
+  { value: 'ACCA (Awareness, Comprehension, Conviction, Action)', label: 'ACCA - Awareness to Action' },
+  { value: 'PPPP (Picture, Promise, Prove, Push)', label: '4P - Picture, Promise, Prove, Push' },
+  { value: 'SSS (Star, Story, Solution)', label: 'SSS - Star, Story, Solution' },
+  { value: 'APP (Agree, Promise, Preview)', label: 'APP - Agree, Promise, Preview' },
+];
+
 function WriteContentPageContent() {
   const searchParams = useSearchParams();
   const projectIdParam = searchParams.get('projectId');
@@ -660,20 +683,42 @@ function WriteContentPageContent() {
                     <div className="space-y-4 pt-2 border-t">
                       <div className="space-y-2">
                         <Label>Content Framework (Optional)</Label>
-                        <Input
-                          placeholder="e.g., AIDA, PAS, BAB..."
-                          value={contentFramework}
-                          onChange={(e) => setContentFramework(e.target.value)}
-                        />
+                        <Select value={contentFramework} onValueChange={setContentFramework}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select content framework" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {contentFrameworks.map(fw => (
+                              <SelectItem key={fw.value} value={fw.value}>
+                                {fw.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Marketing/persuasion structure for your content.
+                        </p>
                       </div>
 
                       <div className="space-y-2">
                         <Label>Storytelling Framework (Optional)</Label>
-                        <Input
-                          placeholder="e.g., Hero's Journey..."
-                          value={storytellingFramework}
-                          onChange={(e) => setStorytellingFramework(e.target.value)}
-                        />
+                        <Select value={storytellingFramework} onValueChange={setStorytellingFramework}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select storytelling framework" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {storytellingFrameworks.map(fw => (
+                              <SelectItem key={fw.value} value={fw.value}>
+                                {fw.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Narrative structure for your content.
+                        </p>
                       </div>
 
                       <div className="space-y-2">

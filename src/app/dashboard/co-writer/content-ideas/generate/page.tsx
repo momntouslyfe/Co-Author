@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -72,6 +71,24 @@ const contentFrameworks = [
   { value: 'PPPP (Picture, Promise, Prove, Push)', label: '4P - Picture, Promise, Prove, Push' },
   { value: 'SSS (Star, Story, Solution)', label: 'SSS - Star, Story, Solution' },
   { value: 'APP (Agree, Promise, Preview)', label: 'APP - Agree, Promise, Preview' },
+];
+
+const contentCategories = [
+  { value: 'Blog Post', label: 'Blog Post' },
+  { value: 'Email Newsletter', label: 'Email Newsletter' },
+  { value: 'Social Media Post', label: 'Social Media Post' },
+  { value: 'Video Script', label: 'Video Script' },
+  { value: 'Podcast Show Notes', label: 'Podcast Show Notes' },
+  { value: 'Press Release', label: 'Press Release' },
+  { value: 'Book Description', label: 'Book Description/Blurb' },
+  { value: 'Author Bio', label: 'Author Bio' },
+  { value: 'Landing Page Copy', label: 'Landing Page Copy' },
+  { value: 'Lead Magnet', label: 'Lead Magnet' },
+  { value: 'Case Study', label: 'Case Study' },
+  { value: 'Sales Page', label: 'Sales Page' },
+  { value: 'Testimonial Request', label: 'Testimonial Request' },
+  { value: 'Book Review Request', label: 'Book Review Request' },
+  { value: 'Media Kit', label: 'Media Kit' },
 ];
 
 function GenerateContentIdeasContent() {
@@ -316,13 +333,20 @@ function GenerateContentIdeasContent() {
 
                   <div className="space-y-2">
                     <Label>Content Category *</Label>
-                    <Input
-                      placeholder="e.g., Blog Post, Social Media, Email..."
-                      value={contentCategory}
-                      onChange={(e) => setContentCategory(e.target.value)}
-                    />
+                    <Select value={contentCategory} onValueChange={setContentCategory}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select content category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contentCategories.map(cat => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <p className="text-xs text-muted-foreground">
-                      Enter the type of content you want to create.
+                      Select the type of content you want to create.
                     </p>
                   </div>
 
