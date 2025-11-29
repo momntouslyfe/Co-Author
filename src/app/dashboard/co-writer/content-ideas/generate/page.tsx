@@ -78,17 +78,10 @@ const contentCategories = [
   { value: 'Email Newsletter', label: 'Email Newsletter' },
   { value: 'Social Media Post', label: 'Social Media Post' },
   { value: 'Video Script', label: 'Video Script' },
-  { value: 'Podcast Show Notes', label: 'Podcast Show Notes' },
-  { value: 'Press Release', label: 'Press Release' },
-  { value: 'Book Description', label: 'Book Description/Blurb' },
-  { value: 'Author Bio', label: 'Author Bio' },
-  { value: 'Landing Page Copy', label: 'Landing Page Copy' },
+  { value: 'Podcast Script', label: 'Podcast Script' },
   { value: 'Lead Magnet', label: 'Lead Magnet' },
   { value: 'Case Study', label: 'Case Study' },
-  { value: 'Sales Page', label: 'Sales Page' },
-  { value: 'Testimonial Request', label: 'Testimonial Request' },
-  { value: 'Book Review Request', label: 'Book Review Request' },
-  { value: 'Media Kit', label: 'Media Kit' },
+  { value: 'Book Review', label: 'Book Review' },
 ];
 
 function GenerateContentIdeasContent() {

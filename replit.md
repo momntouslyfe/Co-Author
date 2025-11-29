@@ -11,7 +11,7 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
     - Storytelling Frameworks: Hero's Journey, Mentor's Journey, Three-Act Structure, Fichtean Curve, Save the Cat
     - Content Frameworks: AIDA, PAS, BAB, FAB, 4Ps, PASTOR, QUEST, SLAP, ACCA, PPPP, SSS, APP (12 total)
   - Co-Writer content writing page also has the same two dropdown selectors (in Advanced Settings)
-  - Content Category field now uses dropdown with 15 categories: Blog Post, Email Newsletter, Social Media Post, Video Script, Podcast Show Notes, Press Release, Book Description, Author Bio, Landing Page Copy, Lead Magnet, Case Study, Sales Page, Testimonial Request, Book Review Request, Media Kit
+  - Content Category field now uses dropdown with 8 categories: Blog Post, Email Newsletter, Social Media Post, Video Script, Podcast Script, Lead Magnet, Case Study, Book Review
   - Clear distinction: storytelling frameworks for narrative structure, content frameworks for marketing/persuasion structure
 - **Introduction and Conclusion Chapters in Book Blueprint**:
   - AI blueprint generation now includes standalone Introduction and Conclusion chapters outside the Part structure
