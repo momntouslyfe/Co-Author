@@ -273,6 +273,10 @@ function WriteContentPageContent() {
         authorProfile: authorContext,
       });
 
+      if (!result || !result.content) {
+        throw new Error('Failed to generate content. Please refresh the page and try again.');
+      }
+
       setGeneratedContent(result.content);
       setShowSettings(false);
       refreshCredits();
@@ -318,6 +322,10 @@ function WriteContentPageContent() {
         styleProfile: selectedStyle?.styleAnalysis,
         customInstructions: instruction || undefined,
       });
+
+      if (!result || !result.content) {
+        throw new Error('Failed to rewrite content. Please refresh the page and try again.');
+      }
 
       setGeneratedContent(result.content);
       refreshCredits();
@@ -378,6 +386,10 @@ function WriteContentPageContent() {
       }
 
       const result = await response.json();
+
+      if (!result || !result.content) {
+        throw new Error('Failed to expand content. Please refresh the page and try again.');
+      }
 
       setGeneratedContent(result.content);
       refreshCredits();
