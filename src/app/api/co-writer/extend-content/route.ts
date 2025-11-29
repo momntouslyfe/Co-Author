@@ -115,6 +115,15 @@ Generate one to three NEW paragraphs that naturally continue from the starting p
 - Every addition should provide genuine value
 - Keep the same quality and marketing effectiveness
 
+**OUTPUT FORMAT:**
+Return 1-3 well-structured paragraphs:
+- Each paragraph should be 2-5 sentences (vary lengths for rhythm)
+- Separate paragraphs with blank lines (double newlines)
+- Mix short impactful paragraphs with slightly longer ones
+- Use markdown headings (### Subheading) if introducing a new topic
+- Use bullet points where appropriate for clarity
+- Never return a single wall of text
+
 Provide only the new paragraphs.`,
     });
 

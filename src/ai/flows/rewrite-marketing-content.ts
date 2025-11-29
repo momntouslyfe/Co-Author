@@ -82,6 +82,20 @@ Rewrite the above content to improve its quality, clarity, and marketing effecti
 - More compelling value propositions
 - Better rhythm and pacing
 
+**CRITICAL STRUCTURE REQUIREMENTS:**
+You MUST format the output with proper structure:
+1. Use multiple paragraphs - NEVER return a single long paragraph.
+2. Each paragraph should be 2-5 sentences maximum (varied lengths for rhythm).
+3. Separate paragraphs with blank lines (double newlines).
+4. Use markdown headings (## or ###) to organize sections if the content is substantial.
+5. Use bullet points or numbered lists where appropriate for clarity.
+6. Vary paragraph lengths - mix short punchy paragraphs with medium ones for better flow.
+7. Start with a compelling hook paragraph (1-2 sentences max).
+8. End with a strong closing paragraph.
+
+**OUTPUT FORMAT:**
+Return the final content using markdown formatting with blank lines between paragraphs. Do NOT collapse everything into a single block of text.
+
 Provide the complete rewritten content.`,
     });
 

@@ -122,6 +122,25 @@ Expand the above content to approximately {{{targetWordCount}}} words by adding 
 - Maintain the same quality level throughout
 - Keep the marketing effectiveness intact or improve it
 
+**CRITICAL STRUCTURE REQUIREMENTS:**
+You MUST format the output with proper structure:
+1. Use multiple paragraphs - NEVER return a single long paragraph or wall of text.
+2. Each paragraph should be 2-5 sentences maximum (varied lengths create rhythm).
+3. Separate all paragraphs with blank lines (double newlines).
+4. Use markdown headings (## or ###) to organize major sections.
+5. Use bullet points or numbered lists where appropriate for clarity and scannability.
+6. Vary paragraph lengths intentionally - mix short impactful paragraphs (1-2 sentences) with medium ones (3-4 sentences).
+7. Break up long explanations into digestible chunks.
+8. Use subheadings (###) to introduce new topics or shifts in focus.
+
+**OUTPUT FORMAT:**
+Return the final content using markdown formatting:
+- Blank lines between every paragraph
+- Headings for sections (## for main sections, ### for subsections)
+- Lists where they improve readability
+- Short, punchy paragraphs for impact
+- Never collapse into a single dense block of text
+
 Provide the complete expanded content.`,
     });
 
