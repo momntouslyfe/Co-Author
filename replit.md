@@ -4,6 +4,19 @@
 Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and Firebase, designed to assist authors from concept to completion. It offers AI-driven topic research, blueprint generation, interactive chapter writing, and tools for creating marketing content and bonus materials. The platform features a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It leverages Google's Gemini AI via Genkit for all AI operations and Firebase for authentication and data. The UI is built with shadcn/ui and Tailwind CSS. The project aims to provide authoritative, well-researched, and credible writing support, avoiding fabricated information, and includes an administrative panel for centralized management and enhanced security. Key features include an "Offer Workspace" for developing bonus materials, a "Co-Writer" for marketing content generation, and a "Co-Marketer" for creating book offers and sales funnels.
 
 ## Recent Changes
+- **Co-Writer Writing Page Improvements**:
+  - Added per-paragraph "Extend With AI" buttons that generate NEW content below the paragraph (matching chapter page behavior)
+  - Created `/api/co-writer/extend-content` API route for extending paragraphs with new content
+  - Created `/api/co-writer/expand-content` API route for expanding entire content
+  - Main "Expand" button expands the whole content, while per-paragraph buttons extend with new content below
+  - Beautiful content layout with proper markdown rendering:
+    - `##` headings render as `<h4>` styled headings
+    - `###` headings render as `<h5>` styled headings
+    - Bullet lists (`-` or `*`) render as styled `<ul>` lists
+    - Numbered lists render as styled `<ol>` lists
+    - Regular paragraphs render with proper spacing and typography
+  - Word count displayed beside Copy button
+  - "View Content" button on saved content ideas page for ideas with existing drafts
 - **Part Writing Page Enhancements**:
   - Fixed 404 errors when selecting parts by properly parsing `part-X` format URLs
   - Added `generating` state to PageState for proper state transitions during AI generation

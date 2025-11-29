@@ -360,11 +360,11 @@ function WriteContentPageContent() {
     }
   };
 
-  const handleExpandParagraph = async (paragraph: string, paragraphIndex: number, instruction?: string) => {
+  const handleExtendParagraph = async (paragraph: string, paragraphIndex: number, instruction?: string) => {
     if (!user || !paragraph.trim()) {
       toast({
         title: 'No Content',
-        description: 'There is no paragraph to expand.',
+        description: 'There is no paragraph to extend.',
         variant: 'destructive',
       });
       return;
@@ -376,50 +376,35 @@ function WriteContentPageContent() {
       const idToken = await getIdToken(user);
       const selectedStyle = styleProfiles?.find(s => s.id === selectedStyleProfileId);
 
-      const response = await fetch('/api/co-writer/expand-content', {
+      const response = await fetch('/api/co-writer/extend-content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          content: paragraph,
+          paragraph,
           language: selectedLanguage,
-          targetWordCount: paragraph.split(/\s+/).length + 150,
           bookTitle: selectedProject?.title,
           bookOutline: selectedProject?.outline,
           styleProfile: selectedStyle?.styleAnalysis,
-          customInstructions: instruction || undefined,
+          instruction: instruction || undefined,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to expand paragraph');
+        throw new Error(errorData.error || 'Failed to extend paragraph');
       }
 
       const result = await response.json();
 
       setGeneratedContent(prevContent => {
-        const parts = prevContent.split(/(\n\n)/);
-        let paragraphCount = 0;
-        let insertIndex = -1;
-        
-        for (let i = 0; i < parts.length; i++) {
-          if (parts[i].trim() && parts[i] !== '\n\n') {
-            if (paragraphCount === paragraphIndex) {
-              insertIndex = i;
-              break;
-            }
-            paragraphCount++;
-          }
+        const paragraphs = prevContent.split('\n\n').filter(p => p.trim());
+        if (paragraphIndex >= 0 && paragraphIndex < paragraphs.length) {
+          paragraphs.splice(paragraphIndex + 1, 0, result.extendedContent);
         }
-        
-        if (insertIndex !== -1) {
-          parts.splice(insertIndex + 1, 0, '\n\n', result.content);
-        }
-        
-        return parts.join('');
+        return paragraphs.join('\n\n');
       });
       refreshCredits();
 
@@ -428,10 +413,10 @@ function WriteContentPageContent() {
         description: 'New content has been added after the paragraph.',
       });
     } catch (error: any) {
-      console.error('Error expanding paragraph:', error);
+      console.error('Error extending paragraph:', error);
       toast({
-        title: 'Expand Failed',
-        description: error.message || 'Failed to expand content. Please try again.',
+        title: 'Extend Failed',
+        description: error.message || 'Failed to extend content. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -934,10 +919,54 @@ function WriteContentPageContent() {
                   </div>
                 ) : generatedContent ? (
                   <div className="prose prose-sm max-w-none dark:prose-invert">
-                    {generatedContent.split('\n\n').filter(p => p.trim()).map((paragraph, pIndex) => (
-                      <div key={`paragraph-${pIndex}`} className="mb-4 group/paragraph">
-                        <p className="text-base leading-relaxed whitespace-pre-wrap font-serif">{paragraph}</p>
-                        <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
+                    {generatedContent.split('\n\n').filter(p => p.trim()).map((paragraph, pIndex) => {
+                      const trimmed = paragraph.trim();
+                      
+                      if (trimmed.startsWith('### ')) {
+                        return (
+                          <h5 key={`heading-${pIndex}`} className="text-base font-semibold mt-6 mb-3">
+                            {trimmed.substring(4)}
+                          </h5>
+                        );
+                      }
+                      if (trimmed.startsWith('## ')) {
+                        return (
+                          <h4 key={`heading-${pIndex}`} className="text-lg font-semibold mt-8 mb-4">
+                            {trimmed.substring(3)}
+                          </h4>
+                        );
+                      }
+                      
+                      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                        const items = trimmed.split('\n').filter(line => line.trim());
+                        return (
+                          <ul key={`list-${pIndex}`} className="list-disc list-inside space-y-1 mb-4 ml-4">
+                            {items.map((item, idx) => (
+                              <li key={idx} className="text-base leading-relaxed">
+                                {item.replace(/^[-*]\s*/, '')}
+                              </li>
+                            ))}
+                          </ul>
+                        );
+                      }
+                      
+                      if (/^\d+\.\s/.test(trimmed)) {
+                        const items = trimmed.split('\n').filter(line => line.trim());
+                        return (
+                          <ol key={`list-${pIndex}`} className="list-decimal list-inside space-y-1 mb-4 ml-4">
+                            {items.map((item, idx) => (
+                              <li key={idx} className="text-base leading-relaxed">
+                                {item.replace(/^\d+\.\s*/, '')}
+                              </li>
+                            ))}
+                          </ol>
+                        );
+                      }
+                      
+                      return (
+                        <div key={`paragraph-${pIndex}`} className="mb-4 group/paragraph">
+                          <p className="text-base leading-relaxed whitespace-pre-wrap">{paragraph}</p>
+                          <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
                           <Popover 
                             open={openExpandParagraphPopover === pIndex} 
                             onOpenChange={(isOpen) => setOpenExpandParagraphPopover(isOpen ? pIndex : null)}
@@ -973,7 +1002,7 @@ function WriteContentPageContent() {
                                   />
                                   <Button 
                                     size="sm" 
-                                    onClick={() => handleExpandParagraph(paragraph, pIndex, paragraphExpandInstruction)} 
+                                    onClick={() => handleExtendParagraph(paragraph, pIndex, paragraphExpandInstruction)} 
                                     disabled={!paragraphExpandInstruction || expandingParagraphIndex === pIndex}
                                   >
                                     <Pencil className="mr-2 h-4 w-4" /> Write With My Instruction
@@ -990,7 +1019,7 @@ function WriteContentPageContent() {
                                 <Button 
                                   size="sm" 
                                   variant="secondary" 
-                                  onClick={() => handleExpandParagraph(paragraph, pIndex)} 
+                                  onClick={() => handleExtendParagraph(paragraph, pIndex)} 
                                   disabled={expandingParagraphIndex === pIndex}
                                 >
                                   <Wand2 className="mr-2 h-4 w-4" /> Just Write More
@@ -1000,7 +1029,8 @@ function WriteContentPageContent() {
                           </Popover>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
