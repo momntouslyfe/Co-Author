@@ -61,7 +61,7 @@ export default function LoginPage() {
             <Logo />
           </div>
           <CardTitle className="text-2xl font-headline">Welcome Back</CardTitle>
-          <CardDescription>Sign in to continue to Co-Author Pro</CardDescription>
+          <CardDescription>Sign in to continue to Co-Author</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">

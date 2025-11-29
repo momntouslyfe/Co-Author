@@ -188,7 +188,7 @@ export function AIIntegrationSettings() {
       <CardHeader>
         <CardTitle>Google AI Integration</CardTitle>
         <CardDescription>
-          Configure your Google AI API key to use all AI features in Co-Author Pro.
+          Configure your Google AI API key to use all AI features in Co-Author.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

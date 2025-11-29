@@ -26,7 +26,7 @@ export default function LandingPage() {
               Unlock Your Inner Author with AI
             </h1>
             <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground mb-8">
-              Co-Author Pro is your dedicated AI partner, simplifying everything from research to writing, so you can focus on bringing your story to life.
+              Co-Author is your dedicated AI partner, simplifying everything from research to writing, so you can focus on bringing your story to life.
             </p>
             <Button size="lg" asChild>
               <Link href="/login">Start Writing for Free</Link>
@@ -71,7 +71,7 @@ export default function LandingPage() {
       <footer className="bg-background border-t">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex justify-between items-center">
           <Logo />
-          <p className="text-muted-foreground text-sm">&copy; {new Date().getFullYear()} Co-Author Pro. All rights reserved.</p>
+          <p className="text-muted-foreground text-sm">&copy; {new Date().getFullYear()} Co-Author. All rights reserved.</p>
         </div>
       </footer>
     </div>
