@@ -54,10 +54,7 @@ export default function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="settings">
-            <div className="space-y-6">
-              <GlobalSettings />
-              <TrialSettings />
-            </div>
+            <GlobalSettings />
           </TabsContent>
 
           <TabsContent value="api-keys">
@@ -73,7 +70,10 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="subscriptions">
-            <SubscriptionPlanManager />
+            <div className="space-y-6">
+              <SubscriptionPlanManager />
+              <TrialSettings />
+            </div>
           </TabsContent>
 
           <TabsContent value="addon-credits">
