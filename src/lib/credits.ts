@@ -82,7 +82,7 @@ export async function deleteSubscriptionPlan(planId: string): Promise<void> {
 }
 
 export async function getAllAddonCreditPlans(
-  type?: 'words' | 'books',
+  type?: 'words' | 'books' | 'offers',
   activeOnly = false
 ): Promise<AddonCreditPlan[]> {
   const plansRef = getDb().collection(COLLECTIONS.ADDON_CREDIT_PLANS);

@@ -4,6 +4,14 @@
 Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and Firebase, designed to assist authors from concept to completion. It offers AI-driven topic research, blueprint generation, interactive chapter writing, and tools for creating marketing content and bonus materials. The platform features a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It leverages Google's Gemini AI via Genkit for all AI operations and Firebase for authentication and data. The UI is built with shadcn/ui and Tailwind CSS. The project aims to provide authoritative, well-researched, and credible writing support, avoiding fabricated information, and includes an administrative panel for centralized management and enhanced security. Key features include an "Offer Workspace" for developing bonus materials, a "Co-Writer" for marketing content generation, and a "Co-Marketer" for creating book offers and sales funnels.
 
 ## Recent Changes
+- **Premium Feature Gating System**:
+  - Added `enableCoMarketer` and `enableCoWriter` flags to subscription plans
+  - Admin can configure per-plan access to Co-Marketer and Co-Writer features
+  - FeatureGate component for client-side access control with upgrade prompts
+  - Server-side protection on `/api/user/addon-credit-plans` to block offer credit purchases without Co-Marketer access
+  - Credit purchase page shows access restriction message for unauthorized users
+  - Co-Marketer access logic: `enableCoMarketer === true OR offerCredits > 0`
+  - Co-Writer access logic: `enableCoWriter === true`
 - **Part Writing Page Enhancements**:
   - Fixed 404 errors when selecting parts by properly parsing `part-X` format URLs
   - Added `generating` state to PageState for proper state transitions during AI generation

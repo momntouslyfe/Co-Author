@@ -69,6 +69,10 @@ export async function GET(request: NextRequest) {
         isExpired,
       },
       plan,
+      featureAccess: {
+        enableCoMarketer: plan?.enableCoMarketer ?? false,
+        enableCoWriter: plan?.enableCoWriter ?? false,
+      },
     });
   } catch (error: any) {
     console.error('Get subscription status error:', error);

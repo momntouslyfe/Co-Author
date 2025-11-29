@@ -52,6 +52,8 @@ export interface SubscriptionPlan {
   currency: string;
   isActive: boolean;
   allowCreditRollover: boolean;
+  enableCoMarketer: boolean;
+  enableCoWriter: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

@@ -39,6 +39,8 @@ interface PlanFormData {
   currency: string;
   isActive: boolean;
   allowCreditRollover: boolean;
+  enableCoMarketer: boolean;
+  enableCoWriter: boolean;
 }
 
 export function SubscriptionPlanManager() {
@@ -61,6 +63,8 @@ export function SubscriptionPlanManager() {
     currency: 'USD',
     isActive: true,
     allowCreditRollover: true,
+    enableCoMarketer: false,
+    enableCoWriter: false,
   });
 
   const loadPlans = async () => {
@@ -116,6 +120,8 @@ export function SubscriptionPlanManager() {
         currency: plan.currency,
         isActive: plan.isActive,
         allowCreditRollover: plan.allowCreditRollover ?? true,
+        enableCoMarketer: plan.enableCoMarketer ?? false,
+        enableCoWriter: plan.enableCoWriter ?? false,
       });
     } else {
       setEditingPlan(null);
@@ -129,6 +135,8 @@ export function SubscriptionPlanManager() {
         currency: defaultCurrency,
         isActive: true,
         allowCreditRollover: true,
+        enableCoMarketer: false,
+        enableCoWriter: false,
       });
     }
     setIsDialogOpen(true);
@@ -139,6 +147,15 @@ export function SubscriptionPlanManager() {
       toast({
         title: 'Validation Error',
         description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (formData.enableCoMarketer && formData.offerCreditsPerMonth <= 0) {
+      toast({
+        title: 'Validation Error',
+        description: 'Co-Marketer access requires offer credits. Please set offer credits per month greater than 0.',
         variant: 'destructive',
       });
       return;
@@ -294,11 +311,17 @@ export function SubscriptionPlanManager() {
                       {plan.description && (
                         <div className="text-xs text-muted-foreground">{plan.description}</div>
                       )}
-                      <div className="text-xs mt-1">
+                      <div className="text-xs mt-1 space-y-0.5">
                         {(plan.allowCreditRollover ?? true) ? (
-                          <span className="text-blue-600">✓ Credit rollover enabled</span>
+                          <span className="text-blue-600 block">✓ Credit rollover</span>
                         ) : (
-                          <span className="text-orange-600">✗ No credit rollover</span>
+                          <span className="text-orange-600 block">✗ No credit rollover</span>
+                        )}
+                        {plan.enableCoMarketer && (
+                          <span className="text-purple-600 block">✓ Co-Marketer</span>
+                        )}
+                        {plan.enableCoWriter && (
+                          <span className="text-indigo-600 block">✓ Co-Writer</span>
                         )}
                       </div>
                     </div>
@@ -444,6 +467,44 @@ export function SubscriptionPlanManager() {
                   When enabled, addon and admin credits will carry over when users renew this plan
                 </span>
               </Label>
+            </div>
+
+            <div className="border-t pt-4 mt-2">
+              <h4 className="text-sm font-medium mb-3">Advanced Features Access</h4>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="enableCoMarketer"
+                    checked={formData.enableCoMarketer}
+                    onCheckedChange={(checked) => {
+                      setFormData({ 
+                        ...formData, 
+                        enableCoMarketer: checked,
+                        offerCreditsPerMonth: checked && formData.offerCreditsPerMonth === 0 ? 1 : formData.offerCreditsPerMonth
+                      });
+                    }}
+                  />
+                  <Label htmlFor="enableCoMarketer">
+                    Enable Co-Marketer Access
+                    <span className="block text-xs text-muted-foreground font-normal">
+                      Allow users to access Co-Marketer features (offer creator, funnel builder). Requires offer credits.
+                    </span>
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="enableCoWriter"
+                    checked={formData.enableCoWriter}
+                    onCheckedChange={(checked) => setFormData({ ...formData, enableCoWriter: checked })}
+                  />
+                  <Label htmlFor="enableCoWriter">
+                    Enable Co-Writer Access
+                    <span className="block text-xs text-muted-foreground font-normal">
+                      Allow users to access Co-Writer features (marketing content generation)
+                    </span>
+                  </Label>
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>
