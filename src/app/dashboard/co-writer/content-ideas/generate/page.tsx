@@ -51,6 +51,29 @@ const languages = [
   { value: 'Hindi', label: 'Hindi' },
 ];
 
+const storytellingFrameworks = [
+  { value: "The Hero's Journey", label: "The Hero's Journey" },
+  { value: "The Mentor's Journey", label: "The Mentor's Journey" },
+  { value: 'Three-Act Structure', label: 'Three-Act Structure' },
+  { value: 'Fichtean Curve', label: 'Fichtean Curve' },
+  { value: 'Save the Cat', label: 'Save the Cat' },
+];
+
+const contentFrameworks = [
+  { value: 'AIDA (Attention, Interest, Desire, Action)', label: 'AIDA - Attention, Interest, Desire, Action' },
+  { value: 'PAS (Problem, Agitation, Solution)', label: 'PAS - Problem, Agitation, Solution' },
+  { value: 'BAB (Before, After, Bridge)', label: 'BAB - Before, After, Bridge' },
+  { value: 'FAB (Features, Advantages, Benefits)', label: 'FAB - Features, Advantages, Benefits' },
+  { value: '4Ps (Promise, Picture, Proof, Push)', label: '4Ps - Promise, Picture, Proof, Push' },
+  { value: 'PASTOR (Problem, Amplify, Story, Transformation, Offer, Response)', label: 'PASTOR - Problem to Response' },
+  { value: 'QUEST (Qualify, Understand, Educate, Stimulate, Transition)', label: 'QUEST - Qualify to Transition' },
+  { value: 'SLAP (Stop, Look, Act, Purchase)', label: 'SLAP - Stop, Look, Act, Purchase' },
+  { value: 'ACCA (Awareness, Comprehension, Conviction, Action)', label: 'ACCA - Awareness to Action' },
+  { value: 'PPPP (Picture, Promise, Prove, Push)', label: '4P - Picture, Promise, Prove, Push' },
+  { value: 'SSS (Star, Story, Solution)', label: 'SSS - Star, Story, Solution' },
+  { value: 'APP (Agree, Promise, Preview)', label: 'APP - Agree, Promise, Preview' },
+];
+
 function GenerateContentIdeasContent() {
   const searchParams = useSearchParams();
   const projectIdParam = searchParams.get('projectId');
@@ -64,7 +87,8 @@ function GenerateContentIdeasContent() {
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const [selectedResearchProfileId, setSelectedResearchProfileId] = useState<string>('');
   const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string>('');
-  const [storytellingFramework, setStorytellingFramework] = useState<string>('');
+  const [selectedStorytellingFramework, setSelectedStorytellingFramework] = useState<string>('');
+  const [selectedContentFramework, setSelectedContentFramework] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [generatedIdeas, setGeneratedIdeas] = useState<GeneratedIdea[]>([]);
@@ -118,6 +142,11 @@ function GenerateContentIdeasContent() {
         ? `Topic: ${selectedResearch.topic}\nAudience: ${selectedResearch.targetAudienceSuggestion}\nPain Points: ${selectedResearch.painPointAnalysis}`
         : undefined;
 
+      const frameworkContext = [
+        selectedStorytellingFramework && selectedStorytellingFramework !== 'none' ? `Storytelling Framework: ${selectedStorytellingFramework}` : '',
+        selectedContentFramework && selectedContentFramework !== 'none' ? `Content Framework: ${selectedContentFramework}` : '',
+      ].filter(Boolean).join('\n');
+
       const result = await generateContentIdeas({
         userId: user.uid,
         idToken,
@@ -127,7 +156,7 @@ function GenerateContentIdeasContent() {
         category: contentCategory,
         researchProfile: researchContext,
         styleProfile: selectedStyle?.styleAnalysis,
-        storytellingFramework: storytellingFramework || selectedProject.storytellingFramework,
+        storytellingFramework: frameworkContext || selectedProject.storytellingFramework,
       });
 
       const ideas: GeneratedIdea[] = result.ideas.map((idea, idx) => ({
@@ -349,11 +378,42 @@ function GenerateContentIdeasContent() {
 
                   <div className="space-y-2">
                     <Label>Storytelling Framework (Optional)</Label>
-                    <Input
-                      placeholder="e.g., Hero's Journey, AIDA..."
-                      value={storytellingFramework}
-                      onChange={(e) => setStorytellingFramework(e.target.value)}
-                    />
+                    <Select value={selectedStorytellingFramework} onValueChange={setSelectedStorytellingFramework}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select storytelling framework" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {storytellingFrameworks.map(fw => (
+                          <SelectItem key={fw.value} value={fw.value}>
+                            {fw.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Narrative structure for your content.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Content Framework (Optional)</Label>
+                    <Select value={selectedContentFramework} onValueChange={setSelectedContentFramework}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select content framework" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {contentFrameworks.map(fw => (
+                          <SelectItem key={fw.value} value={fw.value}>
+                            {fw.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Marketing/persuasion structure for your content.
+                    </p>
                   </div>
 
                   <Button

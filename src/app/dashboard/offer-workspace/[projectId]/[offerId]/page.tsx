@@ -56,9 +56,6 @@ const frameworks = [
   { value: 'Three-Act Structure', label: 'Three-Act Structure' },
   { value: 'Fichtean Curve', label: 'Fichtean Curve' },
   { value: 'Save the Cat', label: 'Save the Cat' },
-  { value: 'AIDA (Attention, Interest, Desire, Action)', label: 'AIDA Framework' },
-  { value: 'PAS (Problem, Agitation, Solution)', label: 'PAS Framework' },
-  { value: 'BAB (Before, After, Bridge)', label: 'BAB Framework' },
 ];
 
 export default function OfferDraftPage() {
