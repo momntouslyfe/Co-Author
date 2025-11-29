@@ -106,20 +106,6 @@ CORRECT: "আপনার বিজনেস এর জন্য মার্ক
 **YOUR TASK:**
 Write the complete content piece based on the title and context provided above.
 
-**WORD COUNT COMPLIANCE (HIGHEST PRIORITY - MANDATORY):**
-Target: {{{targetWordCount}}} words
-Allowed Range: {{{targetWordCount}}} words ±5% (minimum {{{targetWordCount}}} × 0.95, maximum {{{targetWordCount}}} × 1.05)
-
-You MUST:
-1. Plan your content sections to reach the target word count BEFORE writing
-2. Write content that falls WITHIN the allowed range - no exceptions
-3. If targeting 500 words, write 475-525 words
-4. If targeting 700 words, write 665-735 words
-5. If targeting 1000 words, write 950-1050 words
-6. Count your words mentally as you write each paragraph
-7. Add more detail, examples, or explanations if running short
-8. Trim or condense if running long
-
 **STRUCTURE COMPLIANCE (MANDATORY - Even for short content):**
 You MUST structure your output properly regardless of word count:
 1. MINIMUM 4 paragraphs for any content (even 500 words)
@@ -131,7 +117,7 @@ You MUST structure your output properly regardless of word count:
 7. NEVER write a single wall of text - always break into multiple paragraphs
 
 **REQUIREMENTS:**
-1. Write EXACTLY {{{targetWordCount}}} words (±5% margin is allowed, but aim for the exact target).
+1. Write approximately {{{targetWordCount}}} words (within 10% margin).
 2. The content should be compelling, engaging, and designed to attract potential book buyers.
 3. Showcase the author's expertise and the book's value proposition naturally.
 4. Write in {{{language}}}.
