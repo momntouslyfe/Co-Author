@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,10 +33,11 @@ import {
   FolderOpen,
   PenTool,
   Sparkles,
+  Eye,
 } from 'lucide-react';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, updateDoc, serverTimestamp, arrayRemove } from 'firebase/firestore';
-import type { Project, ProjectContentIdeas, ContentIdea } from '@/lib/definitions';
+import { collection, doc, updateDoc, serverTimestamp, arrayRemove, query, where, getDocs } from 'firebase/firestore';
+import type { Project, ProjectContentIdeas, ContentIdea, ContentDraft } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
 
 function SavedContentIdeasContent() {
@@ -50,6 +51,7 @@ function SavedContentIdeasContent() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projectIdParam || '');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [ideaDrafts, setIdeaDrafts] = useState<Map<string, ContentDraft>>(new Map());
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -85,6 +87,44 @@ function SavedContentIdeasContent() {
   }, [projectContentIdeas]);
 
   const isLoading = isUserLoading || projectsLoading;
+
+  useEffect(() => {
+    let isCancelled = false;
+    
+    const loadDraftsForIdeas = async () => {
+      if (!user || !selectedProjectId || !projectContentIdeas?.ideas?.length) {
+        if (!isCancelled) setIdeaDrafts(new Map());
+        return;
+      }
+
+      try {
+        const draftsCollection = collection(firestore, 'users', user.uid, 'projects', selectedProjectId, 'contentDrafts');
+        const draftsSnapshot = await getDocs(draftsCollection);
+        
+        if (isCancelled) return;
+        
+        const draftsMap = new Map<string, ContentDraft>();
+        draftsSnapshot.docs.forEach(docSnap => {
+          const draft = { id: docSnap.id, ...docSnap.data() } as ContentDraft;
+          if (draft.contentIdeaId) {
+            draftsMap.set(draft.contentIdeaId, draft);
+          }
+        });
+        
+        setIdeaDrafts(draftsMap);
+      } catch (error) {
+        if (!isCancelled) {
+          console.error('Error loading drafts:', error);
+        }
+      }
+    };
+
+    loadDraftsForIdeas();
+    
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, firestore, selectedProjectId, projectContentIdeas?.ideas]);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => {
@@ -237,6 +277,16 @@ function SavedContentIdeasContent() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
+                            {ideaDrafts.has(idea.id) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => router.push(`/dashboard/co-writer/write-content?projectId=${selectedProjectId}&draftId=${ideaDrafts.get(idea.id)!.id}`)}
+                              >
+                                <Eye className="mr-2 h-3 w-3" />
+                                View Content
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               onClick={() => handleWriteContent(idea)}

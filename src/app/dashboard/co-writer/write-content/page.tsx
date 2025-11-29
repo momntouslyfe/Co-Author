@@ -35,6 +35,8 @@ import {
   Copy,
   Check,
   FileText,
+  Wand2,
+  Pencil,
 } from 'lucide-react';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -94,9 +96,12 @@ function WriteContentPageContent() {
 
   const [rewriteInstruction, setRewriteInstruction] = useState<string>('');
   const [expandInstruction, setExpandInstruction] = useState<string>('');
+  const [paragraphExpandInstruction, setParagraphExpandInstruction] = useState<string>('');
   const [expandTargetWords, setExpandTargetWords] = useState<number>(1000);
   const [openRewritePopover, setOpenRewritePopover] = useState(false);
   const [openExpandPopover, setOpenExpandPopover] = useState(false);
+  const [expandingParagraphIndex, setExpandingParagraphIndex] = useState<number | null>(null);
+  const [openExpandParagraphPopover, setOpenExpandParagraphPopover] = useState<number | null>(null);
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -341,6 +346,74 @@ function WriteContentPageContent() {
     } finally {
       setIsExpanding(false);
       setExpandInstruction('');
+    }
+  };
+
+  const handleExpandParagraph = async (paragraph: string, paragraphIndex: number, instruction?: string) => {
+    if (!user || !paragraph.trim()) {
+      toast({
+        title: 'No Content',
+        description: 'There is no paragraph to expand.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setExpandingParagraphIndex(paragraphIndex);
+    setOpenExpandParagraphPopover(null);
+    try {
+      const idToken = await getIdToken(user);
+      const selectedStyle = styleProfiles?.find(s => s.id === selectedStyleProfileId);
+
+      const result = await expandMarketingContent({
+        userId: user.uid,
+        idToken,
+        content: paragraph,
+        language: selectedLanguage,
+        targetWordCount: paragraph.split(/\s+/).length + 150,
+        bookTitle: selectedProject?.title,
+        bookOutline: selectedProject?.outline,
+        styleProfile: selectedStyle?.styleAnalysis,
+        customInstructions: instruction || undefined,
+      });
+
+      setGeneratedContent(prevContent => {
+        const parts = prevContent.split(/(\n\n)/);
+        let paragraphCount = 0;
+        let insertIndex = -1;
+        
+        for (let i = 0; i < parts.length; i++) {
+          if (parts[i].trim() && parts[i] !== '\n\n') {
+            if (paragraphCount === paragraphIndex) {
+              insertIndex = i;
+              break;
+            }
+            paragraphCount++;
+          }
+        }
+        
+        if (insertIndex !== -1) {
+          parts.splice(insertIndex + 1, 0, '\n\n', result.content);
+        }
+        
+        return parts.join('');
+      });
+      refreshCredits();
+
+      toast({
+        title: 'Content Extended',
+        description: 'New content has been added after the paragraph.',
+      });
+    } catch (error: any) {
+      console.error('Error expanding paragraph:', error);
+      toast({
+        title: 'Expand Failed',
+        description: error.message || 'Failed to expand content. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setExpandingParagraphIndex(null);
+      setParagraphExpandInstruction('');
     }
   };
 
@@ -677,7 +750,7 @@ function WriteContentPageContent() {
                   <div>
                     <CardTitle>{contentTitle || 'Generated Content'}</CardTitle>
                     <CardDescription>
-                      {generatedContent ? `${currentWordCount} words` : 'Configure settings and generate content'}
+                      {generatedContent ? 'Your generated marketing content' : 'Configure settings and generate content'}
                     </CardDescription>
                   </div>
                   {generatedContent && (
@@ -795,6 +868,10 @@ function WriteContentPageContent() {
                         </PopoverContent>
                       </Popover>
 
+                      <span className="text-sm text-muted-foreground px-2">
+                        {currentWordCount.toLocaleString()} words
+                      </span>
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -834,9 +911,73 @@ function WriteContentPageContent() {
                   </div>
                 ) : generatedContent ? (
                   <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <div className="whitespace-pre-wrap font-serif leading-relaxed">
-                      {generatedContent}
-                    </div>
+                    {generatedContent.split('\n\n').filter(p => p.trim()).map((paragraph, pIndex) => (
+                      <div key={`paragraph-${pIndex}`} className="mb-4 group/paragraph">
+                        <p className="text-base leading-relaxed whitespace-pre-wrap font-serif">{paragraph}</p>
+                        <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
+                          <Popover 
+                            open={openExpandParagraphPopover === pIndex} 
+                            onOpenChange={(isOpen) => setOpenExpandParagraphPopover(isOpen ? pIndex : null)}
+                          >
+                            <PopoverTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-xs" 
+                                disabled={expandingParagraphIndex === pIndex || isProcessing}
+                              >
+                                {expandingParagraphIndex === pIndex ? (
+                                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Sparkles className="mr-2 h-3 w-3" />
+                                )}
+                                Extend With AI
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                              <div className="grid gap-4">
+                                <div className="space-y-2">
+                                  <h4 className="font-medium leading-none">Guided Extend</h4>
+                                  <p className="text-sm text-muted-foreground">Give the AI specific instructions.</p>
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label htmlFor={`extend-instruction-${pIndex}`} className="sr-only">Instruction</Label>
+                                  <Textarea 
+                                    id={`extend-instruction-${pIndex}`} 
+                                    placeholder="e.g., Add a practical example" 
+                                    value={paragraphExpandInstruction} 
+                                    onChange={(e) => setParagraphExpandInstruction(e.target.value)} 
+                                  />
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => handleExpandParagraph(paragraph, pIndex, paragraphExpandInstruction)} 
+                                    disabled={!paragraphExpandInstruction || expandingParagraphIndex === pIndex}
+                                  >
+                                    <Pencil className="mr-2 h-4 w-4" /> Write With My Instruction
+                                  </Button>
+                                </div>
+                                <div className="relative">
+                                  <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t" />
+                                  </div>
+                                  <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-popover px-2 text-muted-foreground">Or</span>
+                                  </div>
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="secondary" 
+                                  onClick={() => handleExpandParagraph(paragraph, pIndex)} 
+                                  disabled={expandingParagraphIndex === pIndex}
+                                >
+                                  <Wand2 className="mr-2 h-4 w-4" /> Just Write More
+                                </Button>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
