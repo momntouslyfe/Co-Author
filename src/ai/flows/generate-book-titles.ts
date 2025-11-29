@@ -28,8 +28,8 @@ export type GenerateBookTitlesInput = z.infer<
 >;
 
 const BookTitleSchema = z.object({
-  mainTitle: z.string().describe('The main title (2-5 words, catchy, hooks attention, creates curiosity).'),
-  subtitle: z.string().describe('The subtitle (5-8 words ONLY, punchy, creates intrigue).'),
+  mainTitle: z.string().describe('The main title (3-7 words, catchy, reflects core concept, hooks attention).'),
+  subtitle: z.string().describe('The subtitle (5-8 words, punchy, adds intrigue or promise).'),
   formula: z.string().describe('Which formula was used (e.g., Warrior/Hero, Number+Promise, Question Hook, etc.).'),
 });
 
@@ -154,27 +154,32 @@ Every title MUST pass through these three gateways:
 
 ## TITLE STRUCTURE (MANDATORY - FOLLOW EXACTLY)
 
-**MAIN TITLE (2-5 words ONLY):**
-- CATCHY and memorable - should stick in the mind
-- Creates INSTANT curiosity - makes them NEED to know more
+**MAIN TITLE (3-7 words):**
+- MUST reflect the book's CORE IDEA or CONCEPT
+- Catchy and memorable - should stick in the mind
+- Creates curiosity while communicating the book's essence
 - Uses power words that hook emotions
 - Easy to say, share, and remember
-- Can be provocative, mysterious, or bold
+- Examples of GOOD main titles that reflect core concept:
+  - "The 7 Habits of Highly Effective People" (core: habits for effectiveness)
+  - "Think and Grow Rich" (core: mindset for wealth)
+  - "The Subtle Art of Not Giving a F*ck" (core: selective caring)
+  - "Atomic Habits" (core: small habits, big change)
+  - "The Psychology of Money" (core: money mindset)
 
-**SUBTITLE (5-8 words ONLY - STRICT LIMIT):**
+**SUBTITLE (5-8 words - STRICT LIMIT):**
 - SHORT and PUNCHY - no long explanations
-- Creates MORE intrigue, doesn't explain everything
+- Adds promise, intrigue, or clarifies the benefit
 - Hints at the transformation or secret
-- NEVER a full sentence - fragments work better
 - Examples of GOOD short subtitles:
+  - "Timeless Lessons on Wealth and Happiness"
+  - "Small Changes, Remarkable Results"
   - "The Secret Millionaires Won't Share"
   - "What They Never Taught You"
   - "Your Hidden Path to Mastery"
-  - "Before They Figured It Out"
-  - "The Untold Truth About Success"
 
-❌ BAD (Too Long): "A Complete Step-by-Step Guide to Achieving Financial Freedom in Just 90 Days"
-✅ GOOD (Short, Punchy): "The 90-Day Wealth Secret"
+❌ BAD: Main title that doesn't reflect content (too vague like "Success Secrets")
+✅ GOOD: Main title that captures core concept ("The Compound Effect of Daily Habits")
 
 ---
 
@@ -205,16 +210,16 @@ Every title MUST pass through these three gateways:
 Generate 10-12 HIGH-CONVERTING titles that:
 1. Pass all THREE GATEWAYS (Positioning, Curiosity, Hook)
 2. Use different formulas for variety
-3. Main title: 2-5 words, CATCHY, creates CURIOSITY
-4. Subtitle: 5-8 words ONLY (STRICT LIMIT), punchy, intriguing
-5. Every title should make someone STOP SCROLLING and NEED to know more
-6. Create OPEN LOOPS - don't explain everything, leave mystery
+3. Main title: 3-7 words, CATCHY, REFLECTS THE BOOK'S CORE CONCEPT
+4. Subtitle: 5-8 words (STRICT LIMIT), punchy, adds promise or intrigue
+5. Main title should communicate WHAT THE BOOK IS ABOUT at a glance
+6. Every title should make someone STOP SCROLLING and NEED to know more
 7. Use power words that trigger emotions
 8. Are in {{{language}}}
 9. Follow code-mixing patterns from style profile (if provided)
-10. Are NOT generic, boring, or explanatory
+10. Are NOT generic, boring, or too vague
 
-**REMEMBER: Shorter = More Powerful. Leave them wanting MORE.**
+**BALANCE: Catchy + Core Concept. The reader should understand what the book offers AND feel curious.**
 
 For each title, identify which formula you used.`,
     });
