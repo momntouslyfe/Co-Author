@@ -22,7 +22,7 @@ import { generateBookBlueprint } from '@/ai/flows/generate-book-blueprint';
 import type { GenerateBookBlueprintOutput } from '@/ai/flows/generate-book-blueprint';
 import { Bot, Loader2, Save, Info } from 'lucide-react';
 import { useAuthUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import type { ResearchProfile, StyleProfile, Project } from '@/lib/definitions';
+import type { ResearchProfile, StyleProfile, AuthorProfile, Project } from '@/lib/definitions';
 import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -41,6 +41,7 @@ const formSchema = z.object({
   storytellingFramework: z.string({ required_error: 'Please select a framework.' }),
   researchProfileId: z.string().optional(),
   styleProfileId: z.string().optional(),
+  authorProfileId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -95,8 +96,14 @@ export default function CoAuthorWorkspacePage() {
     return collection(firestore, 'users', user.uid, 'styleProfiles');
   }, [user, firestore]);
 
+  const authorProfilesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'users', user.uid, 'authorProfiles');
+  }, [user, firestore]);
+
   const { data: researchProfiles } = useCollection<ResearchProfile>(researchProfilesQuery);
   const { data: styleProfiles } = useCollection<StyleProfile>(styleProfilesQuery);
+  const { data: authorProfiles } = useCollection<AuthorProfile>(authorProfilesQuery);
 
   const router = useRouter();
 
@@ -109,6 +116,7 @@ export default function CoAuthorWorkspacePage() {
   
   const selectedResearchProfileId = form.watch('researchProfileId');
   const selectedStyleProfileId = form.watch('styleProfileId');
+  const selectedAuthorProfileId = form.watch('authorProfileId');
   
   const selectedResearchProfile = useMemo(() => {
     return selectedResearchProfileId && selectedResearchProfileId !== 'none'
@@ -121,6 +129,12 @@ export default function CoAuthorWorkspacePage() {
       ? styleProfiles?.find(p => p.id === selectedStyleProfileId)
       : undefined;
   }, [selectedStyleProfileId, styleProfiles]);
+
+  const selectedAuthorProfile = useMemo(() => {
+    return selectedAuthorProfileId && selectedAuthorProfileId !== 'none'
+      ? authorProfiles?.find(p => p.id === selectedAuthorProfileId)
+      : undefined;
+  }, [selectedAuthorProfileId, authorProfiles]);
   
   useEffect(() => {
     if (project) {
@@ -130,6 +144,7 @@ export default function CoAuthorWorkspacePage() {
             storytellingFramework: project.storytellingFramework || undefined,
             researchProfileId: project.researchProfileId || undefined,
             styleProfileId: project.styleProfileId || undefined,
+            authorProfileId: project.authorProfileId || undefined,
         });
     }
   }, [project, form]);
@@ -164,6 +179,14 @@ export default function CoAuthorWorkspacePage() {
     
     const styleProfileContent = selectedStyleProfile?.styleAnalysis;
 
+    const selectedAuthorProfile = values.authorProfileId && values.authorProfileId !== 'none'
+      ? authorProfiles?.find(p => p.id === values.authorProfileId)
+      : undefined;
+    
+    const authorProfileContent = selectedAuthorProfile
+      ? `Author: ${selectedAuthorProfile.penName || selectedAuthorProfile.fullName}\nBio: ${selectedAuthorProfile.bio}\nCredentials: ${selectedAuthorProfile.credentials}\nExpertise: ${selectedAuthorProfile.areasOfExpertise?.join(', ') || 'N/A'}`
+      : undefined;
+
     // Log what context is being sent to the AI for debugging
     console.log('Blueprint Generation Context (Client):', {
       topic: values.topic,
@@ -176,6 +199,9 @@ export default function CoAuthorWorkspacePage() {
       hasStyleProfile: !!styleProfileContent,
       styleProfileId: selectedStyleProfile?.id,
       styleProfileLength: styleProfileContent?.length || 0,
+      hasAuthorProfile: !!authorProfileContent,
+      authorProfileId: selectedAuthorProfile?.id,
+      authorProfileLength: authorProfileContent?.length || 0,
     });
     
     console.log('Full Context Being Sent:', {
@@ -184,6 +210,7 @@ export default function CoAuthorWorkspacePage() {
       framework: values.storytellingFramework,
       researchPreview: researchProfileContent ? researchProfileContent.substring(0, 300) + '...' : 'None',
       stylePreview: styleProfileContent ? styleProfileContent.substring(0, 300) + '...' : 'None',
+      authorPreview: authorProfileContent ? authorProfileContent.substring(0, 300) + '...' : 'None',
     });
 
     try {
@@ -196,6 +223,7 @@ export default function CoAuthorWorkspacePage() {
         storytellingFramework: values.storytellingFramework,
         researchProfile: researchProfileContent,
         styleProfile: styleProfileContent,
+        authorProfile: authorProfileContent,
       });
       setResult(blueprint);
       refreshCredits();
@@ -233,6 +261,7 @@ export default function CoAuthorWorkspacePage() {
         storytellingFramework: currentFormValues.storytellingFramework,
         researchProfileId: currentFormValues.researchProfileId,
         styleProfileId: currentFormValues.styleProfileId,
+        authorProfileId: currentFormValues.authorProfileId,
         currentStep: 'title',
         lastUpdated: serverTimestamp(),
       });
@@ -404,17 +433,48 @@ export default function CoAuthorWorkspacePage() {
                     )}
                     />
                 </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                    <FormField
+                    control={form.control}
+                    name="authorProfileId"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Author Profile (Optional)</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {authorProfiles?.map(profile => (
+                                <SelectItem key={profile.id} value={profile.id}>{profile.penName || profile.fullName}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormDescription>
+                            Select an author profile to provide context about your credentials and expertise.
+                        </FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
                 
-                {(selectedResearchProfile || selectedStyleProfile) && (
+                {(selectedResearchProfile || selectedStyleProfile || selectedAuthorProfile) && (
                   <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
                     <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <AlertDescription className="text-blue-600 dark:text-blue-400">
                       <strong>AI Context Active:</strong> {' '}
                       {selectedResearchProfile && 
-                        `Research profile "${selectedResearchProfile.topic}" will provide audience insights and topic research.`}
-                      {selectedResearchProfile && selectedStyleProfile && ' '}
+                        `Research profile "${selectedResearchProfile.topic}" will provide audience insights.`}
+                      {selectedResearchProfile && (selectedStyleProfile || selectedAuthorProfile) && ' '}
                       {selectedStyleProfile && 
                         `Style profile "${selectedStyleProfile.name}" will guide the writing tone.`}
+                      {selectedStyleProfile && selectedAuthorProfile && ' '}
+                      {selectedAuthorProfile && 
+                        `Author profile "${selectedAuthorProfile.penName || selectedAuthorProfile.fullName}" will provide credentials context.`}
                     </AlertDescription>
                   </Alert>
                 )}

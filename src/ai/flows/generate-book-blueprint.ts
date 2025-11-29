@@ -22,6 +22,7 @@ const GenerateBookBlueprintInputSchema = z.object({
   storytellingFramework: z.string().describe('The storytelling framework to structure the book (e.g., The Hero\'s Journey).'),
   researchProfile: z.string().optional().describe('An optional, pre-existing AI research profile providing context.'),
   styleProfile: z.string().optional().describe('An optional, pre-existing writing style profile providing context on the desired writing style.'),
+  authorProfile: z.string().optional().describe('An optional author profile providing context about the author\'s background, credentials, and expertise.'),
   model: z.string().optional().describe('The generative AI model to use.'),
 });
 export type GenerateBookBlueprintInput = z.infer<
@@ -54,6 +55,9 @@ export async function generateBookBlueprint(
     hasStyleProfile: !!input.styleProfile,
     styleProfileLength: input.styleProfile?.length || 0,
     styleProfilePreview: input.styleProfile?.substring(0, 200),
+    hasAuthorProfile: !!input.authorProfile,
+    authorProfileLength: input.authorProfile?.length || 0,
+    authorProfilePreview: input.authorProfile?.substring(0, 200),
   });
   
   const { ai, model: routedModel } = await getGenkitInstanceForFunction('blueprint', input.userId, input.idToken);
@@ -82,6 +86,12 @@ The following research provides deep insights into the target audience, their pa
 **Writing Style Guidance (STYLE ONLY - NOT CONTENT):**
 The following style profile describes HOW to write, NOT WHAT to write about. Apply this writing style (tone, voice, sentence patterns, vocabulary level, etc.) to your chapter titles and descriptions. DO NOT use any topics or content mentioned in the style profile - focus solely on mimicking the stylistic characteristics:
 {{{styleProfile}}}
+{{/if}}
+
+{{#if authorProfile}}
+**Author Profile Context:**
+The following provides context about the author's background, credentials, and expertise. Use this to tailor the book's perspective, establish credibility, and align the content with the author's unique voice and authority:
+{{{authorProfile}}}
 {{/if}}
 
 **CRITICAL INSTRUCTIONS FOR EACH OUTLINE:**
