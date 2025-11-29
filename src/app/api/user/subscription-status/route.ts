@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
-import { getUserSubscription, getSubscriptionPlan } from '@/lib/credits';
+import { getUserSubscription, getSubscriptionPlan, getUserCreditSummary } from '@/lib/credits';
+import { 
+  getTrialSettings, 
+  getUserTrialStatus, 
+  getActiveFeatureGrant,
+  checkFeatureAccess 
+} from '@/lib/trial-grants';
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,20 +34,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const userSubscription = await getUserSubscription(uid);
+    const [userSubscription, trialSettings, trialStatus, creditSummary] = await Promise.all([
+      getUserSubscription(uid),
+      getTrialSettings(),
+      getUserTrialStatus(uid),
+      getUserCreditSummary(uid),
+    ]);
     
-    if (!userSubscription || !userSubscription.subscriptionPlanId) {
-      return NextResponse.json({
-        hasActiveSubscription: false,
-        subscription: null,
-        plan: null,
-      });
-    }
-
-    const plan = await getSubscriptionPlan(userSubscription.subscriptionPlanId);
     const now = new Date();
     
-    // Helper function to convert various timestamp formats to Date
     const toDate = (timestamp: any): Date => {
       if (!timestamp) return new Date();
       if (timestamp instanceof Date) return timestamp;
@@ -56,22 +57,51 @@ export async function GET(request: NextRequest) {
       return new Date(timestamp);
     };
     
-    const planEffectiveEnd = toDate(userSubscription.planEffectiveEnd);
-    const isExpired = now > planEffectiveEnd;
+    const plan = userSubscription?.subscriptionPlanId 
+      ? await getSubscriptionPlan(userSubscription.subscriptionPlanId)
+      : null;
+    
+    const planEnablesCoMarketer = plan?.enableCoMarketer ?? false;
+    const planEnablesCoWriter = plan?.enableCoWriter ?? false;
+    
+    const [coMarketerAccess, coWriterAccess] = await Promise.all([
+      checkFeatureAccess(uid, 'coMarketer', planEnablesCoMarketer, creditSummary.offerCreditsAvailable),
+      checkFeatureAccess(uid, 'coWriter', planEnablesCoWriter, 0),
+    ]);
+
+    const hasActiveSubscription = userSubscription?.subscriptionPlanId && plan 
+      ? now <= toDate(userSubscription.planEffectiveEnd)
+      : false;
 
     return NextResponse.json({
-      hasActiveSubscription: !isExpired,
-      subscription: {
+      hasActiveSubscription,
+      subscription: userSubscription ? {
         planEffectiveStart: toDate(userSubscription.planEffectiveStart),
         planEffectiveEnd: toDate(userSubscription.planEffectiveEnd),
         billingCycleStart: toDate(userSubscription.billingCycleStart),
         billingCycleEnd: toDate(userSubscription.billingCycleEnd),
-        isExpired,
-      },
+        isExpired: !hasActiveSubscription,
+      } : null,
       plan,
       featureAccess: {
-        enableCoMarketer: plan?.enableCoMarketer ?? false,
-        enableCoWriter: plan?.enableCoWriter ?? false,
+        enableCoMarketer: coMarketerAccess.hasAccess,
+        enableCoWriter: coWriterAccess.hasAccess,
+        coMarketerSource: coMarketerAccess.source,
+        coWriterSource: coWriterAccess.source,
+        coMarketerExpiresAt: coMarketerAccess.expiresAt,
+        coWriterExpiresAt: coWriterAccess.expiresAt,
+      },
+      trial: {
+        enabled: trialSettings.enabled,
+        hasUsedTrial: trialStatus.hasUsedTrial,
+        isTrialActive: trialStatus.isTrialActive,
+        trialExpiresAt: trialStatus.trialExpiresAt,
+        trialOfferCreditsRemaining: trialStatus.trialOfferCreditsRemaining,
+        canStartTrial: !trialStatus.hasUsedTrial && trialSettings.enabled,
+        trialDurationDays: trialSettings.durationDays,
+        trialOfferCreditsAmount: trialSettings.offerCreditsAmount,
+        trialEnablesCoMarketer: trialSettings.enableCoMarketer,
+        trialEnablesCoWriter: trialSettings.enableCoWriter,
       },
     });
   } catch (error: any) {

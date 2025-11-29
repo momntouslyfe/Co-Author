@@ -314,9 +314,14 @@ function calculateCreditSummary(
   const wordCreditsFromPlanAvailable = Math.max(0, wordCreditsFromPlan - userSub.wordCreditsUsedThisCycle);
   const offerCreditsFromPlanAvailable = Math.max(0, offerCreditsFromPlan - (userSub.offerCreditsUsedThisCycle || 0));
   
+  const now = new Date();
+  const trialExpiresAt = (userSub as any).trialExpiresAt?.toDate?.();
+  const isTrialActive = trialExpiresAt && trialExpiresAt > now;
+  const remainingOfferCreditsFromTrial = isTrialActive ? ((userSub as any).remainingOfferCreditsFromTrial || 0) : 0;
+  
   const bookCreditsAvailable = bookCreditsFromPlanAvailable + userSub.remainingBookCreditsFromAddons + userSub.remainingBookCreditsFromAdmin;
   const wordCreditsAvailable = wordCreditsFromPlanAvailable + userSub.remainingWordCreditsFromAddons + userSub.remainingWordCreditsFromAdmin;
-  const offerCreditsAvailable = offerCreditsFromPlanAvailable + (userSub.remainingOfferCreditsFromAddons || 0) + (userSub.remainingOfferCreditsFromAdmin || 0);
+  const offerCreditsAvailable = offerCreditsFromPlanAvailable + (userSub.remainingOfferCreditsFromAddons || 0) + (userSub.remainingOfferCreditsFromAdmin || 0) + remainingOfferCreditsFromTrial;
   
   const totalBookCreditsFromAddons = userSub.totalBookCreditsFromAddonsThisCycle ?? userSub.remainingBookCreditsFromAddons;
   const totalWordCreditsFromAddons = userSub.totalWordCreditsFromAddonsThisCycle ?? userSub.remainingWordCreditsFromAddons;
@@ -324,10 +329,11 @@ function calculateCreditSummary(
   const totalBookCreditsFromAdmin = userSub.totalBookCreditsFromAdminThisCycle ?? userSub.remainingBookCreditsFromAdmin;
   const totalWordCreditsFromAdmin = userSub.totalWordCreditsFromAdminThisCycle ?? userSub.remainingWordCreditsFromAdmin;
   const totalOfferCreditsFromAdmin = userSub.totalOfferCreditsFromAdminThisCycle ?? (userSub.remainingOfferCreditsFromAdmin || 0);
+  const totalOfferCreditsFromTrial = isTrialActive ? ((userSub as any).trialOfferCreditsGiven || 0) : 0;
   
   const bookCreditsTotal = bookCreditsFromPlan + totalBookCreditsFromAddons + totalBookCreditsFromAdmin;
   const wordCreditsTotal = wordCreditsFromPlan + totalWordCreditsFromAddons + totalWordCreditsFromAdmin;
-  const offerCreditsTotal = offerCreditsFromPlan + totalOfferCreditsFromAddons + totalOfferCreditsFromAdmin;
+  const offerCreditsTotal = offerCreditsFromPlan + totalOfferCreditsFromAddons + totalOfferCreditsFromAdmin + totalOfferCreditsFromTrial;
   
   const totalBookCreditsUsed = bookCreditsTotal - bookCreditsAvailable;
   const totalWordCreditsUsed = wordCreditsTotal - wordCreditsAvailable;
@@ -515,8 +521,19 @@ export async function deductCredits(
         throw new Error(`Insufficient offer credits. Available: ${summary.offerCreditsAvailable}, Needed: ${amount}`);
       }
       
+      const now = new Date();
+      const trialExpiresAt = (userSub as any).trialExpiresAt?.toDate?.();
+      const isTrialActive = trialExpiresAt && trialExpiresAt > now;
+      const remainingOfferCreditsFromTrial = isTrialActive ? ((userSub as any).remainingOfferCreditsFromTrial || 0) : 0;
       const remainingOfferCreditsFromAddons = userSub.remainingOfferCreditsFromAddons || 0;
       const remainingOfferCreditsFromAdmin = userSub.remainingOfferCreditsFromAdmin || 0;
+      
+      if (remainingOfferCreditsFromTrial > 0 && remainingToDeduct > 0) {
+        const trialDeduction = Math.min(remainingToDeduct, remainingOfferCreditsFromTrial);
+        updateData.remainingOfferCreditsFromTrial = admin.firestore.FieldValue.increment(-trialDeduction);
+        updateData.trialOfferCreditsUsed = admin.firestore.FieldValue.increment(trialDeduction);
+        remainingToDeduct -= trialDeduction;
+      }
       
       if (remainingOfferCreditsFromAddons > 0 && remainingToDeduct > 0) {
         const addonDeduction = Math.min(remainingToDeduct, remainingOfferCreditsFromAddons);

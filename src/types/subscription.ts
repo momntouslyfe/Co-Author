@@ -271,3 +271,66 @@ export interface ValidateCouponResponse {
   discountAmount?: number;
   finalAmount?: number;
 }
+
+// Trial Settings (Global admin configuration)
+export interface TrialSettings {
+  enabled: boolean;
+  durationDays: number;
+  offerCreditsAmount: number;
+  enableCoMarketer: boolean;
+  enableCoWriter: boolean;
+}
+
+// User Trial Status (stored per user in userSubscriptions)
+export interface UserTrialStatus {
+  hasUsedTrial: boolean;
+  trialStartedAt?: Timestamp;
+  trialExpiresAt?: Timestamp;
+  trialOfferCreditsGiven: number;
+  trialOfferCreditsUsed: number;
+}
+
+// Admin Feature Grant (stored in userFeatureGrants collection)
+export type FeatureGrantType = 'coMarketer' | 'coWriter';
+
+export interface UserFeatureGrant {
+  id: string;
+  userId: string;
+  feature: FeatureGrantType;
+  expiresAt: Timestamp;
+  grantedBy: string;
+  grantedAt: Timestamp;
+  notes?: string;
+}
+
+export interface CreateFeatureGrantInput {
+  userId: string;
+  feature: FeatureGrantType;
+  durationDays?: number;
+  expiresAt?: Date;
+  notes?: string;
+}
+
+export interface UpdateFeatureGrantInput {
+  expiresAt?: Date;
+  notes?: string;
+}
+
+// Extended User Subscription with trial fields
+export interface UserSubscriptionWithTrial extends UserSubscription {
+  // Trial fields
+  hasUsedTrial?: boolean;
+  trialStartedAt?: Timestamp;
+  trialExpiresAt?: Timestamp;
+  trialOfferCreditsGiven?: number;
+  trialOfferCreditsUsed?: number;
+  remainingOfferCreditsFromTrial?: number;
+}
+
+// Feature Access Result (for checking access with details)
+export interface FeatureAccessResult {
+  hasAccess: boolean;
+  source: 'subscription' | 'trial' | 'adminGrant' | 'credits' | 'none';
+  expiresAt?: Date;
+  isTrial?: boolean;
+}

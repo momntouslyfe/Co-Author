@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, UserX, UserCheck } from 'lucide-react';
+import { Loader2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
@@ -16,12 +16,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { FeatureGrantManager } from './feature-grant-manager';
 import type { UserManagement as UserManagementType } from '@/lib/definitions';
 
 export function UserManagement() {
   const [users, setUsers] = useState<UserManagementType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const loadUsers = async () => {
@@ -140,40 +143,59 @@ export function UserManagement() {
                   <div className="text-right">Actions</div>
                 </div>
                 {users.map((user) => (
-                  <div
+                  <Collapsible
                     key={user.id}
-                    className="grid grid-cols-5 gap-4 border-b p-3 text-sm last:border-0"
+                    open={expandedUserId === user.id}
+                    onOpenChange={(open) => setExpandedUserId(open ? user.id : null)}
                   >
-                    <div className="font-medium">{user.displayName}</div>
-                    <div className="text-muted-foreground">{user.email}</div>
-                    <div className="text-muted-foreground">
-                      {new Date(user.createdAt).toLocaleDateString()}
+                    <div className="border-b last:border-0">
+                      <div className="grid grid-cols-5 gap-4 p-3 text-sm">
+                        <div className="font-medium">{user.displayName}</div>
+                        <div className="text-muted-foreground">{user.email}</div>
+                        <div className="text-muted-foreground">
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={!user.isDisabled}
+                            onCheckedChange={(checked) =>
+                              handleToggleUser(user.id, !checked)
+                            }
+                          />
+                          <span className="text-xs">
+                            {user.isDisabled ? (
+                              <span className="text-destructive">Disabled</span>
+                            ) : (
+                              <span className="text-green-600">Active</span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              {expandedUserId === user.id ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </CollapsibleTrigger>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteUserId(user.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <CollapsibleContent>
+                        <div className="border-t bg-muted/30 p-4">
+                          <FeatureGrantManager userId={user.id} userEmail={user.email} />
+                        </div>
+                      </CollapsibleContent>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={!user.isDisabled}
-                        onCheckedChange={(checked) =>
-                          handleToggleUser(user.id, !checked)
-                        }
-                      />
-                      <span className="text-xs">
-                        {user.isDisabled ? (
-                          <span className="text-destructive">Disabled</span>
-                        ) : (
-                          <span className="text-green-600">Active</span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteUserId(user.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  </Collapsible>
                 ))}
               </div>
             )}
