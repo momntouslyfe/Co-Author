@@ -176,7 +176,10 @@ export default function OfferSectionsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="font-headline text-3xl">Step 3: Write Your Offer</CardTitle>
-                <CardDescription>
+                {offerDraft.title && (
+                  <p className="text-xl font-semibold text-primary mt-2">{offerDraft.title}</p>
+                )}
+                <CardDescription className="mt-2">
                   Your blueprint is ready. Select a section below to start writing with your AI co-author.
                 </CardDescription>
               </div>
