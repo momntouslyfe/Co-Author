@@ -11,6 +11,17 @@ Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and F
   - Chapter parsers updated to handle chapters outside Parts, assigning virtual "Introduction" and "Conclusion" part names
   - Conclusion chapter uses "Final Words" section instead of "Coming Up Next"
   - All chapter writing, rewriting, and copy functions support both section types
+- **Introduction and Conclusion Sections in Offer Workspace**:
+  - Offer blueprint AI now generates Introduction/Conclusion sections with tailored sub-topics
+  - Introduction sub-topics: What this covers, Who it's for, How to use it, Promise
+  - Conclusion sub-topics: Key takeaways, Action plan, Resources, Final words
+  - Sections page displays Introduction before Parts and Conclusion after Parts as clickable sections
+  - Part writing page handles `introduction` and `conclusion` as special partId values (partNumber 0 and -1)
+  - Conclusion uses "Final Words" section instead of "Coming Up Next" (matching book workflow)
+  - PartEditor component updated with isSpecialSection, isConclusion, and subTopics props
+  - buildPartSkeleton function generates appropriate skeleton for special sections
+  - UI headers dynamically show "Introduction" or "Conclusion" instead of "Part X: Title" for special sections
+  - Content saving correctly handles both section types with proper section ID generation
 - **High-Converting Title Generation (Books and Offers)**:
   - Implemented Three Gateways Framework (Positioning, Curiosity, Hook)
   - Added 8 proven title formulas: Warrior/Hero, Number+Promise, Question Hook, Counterintuitive, Secret/Hidden, Ultimatum, Made-Up Word, Transformation Story

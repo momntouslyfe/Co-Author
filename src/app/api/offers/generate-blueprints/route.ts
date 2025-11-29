@@ -82,8 +82,10 @@ export async function POST(request: Request) {
         title: bp.title,
         subtitle: undefined,
         summary: bp.summary,
+        introductionSubTopics: bp.introductionSubTopics || [],
         parts,
-        estimatedWordCount: bp.estimatedWordCount || (structure.parts * structure.modulesPerPart * structure.wordsPerModule),
+        conclusionSubTopics: bp.conclusionSubTopics || [],
+        estimatedWordCount: bp.estimatedWordCount || (structure.parts * structure.modulesPerPart * structure.wordsPerModule + 1000),
       };
     });
 

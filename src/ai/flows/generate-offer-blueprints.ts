@@ -27,15 +27,21 @@ export type GenerateOfferBlueprintsInput = z.infer<typeof GenerateOfferBlueprint
 const GenerateOfferBlueprintsOutputSchema = z.object({
   blueprint1_title: z.string().describe('Title for blueprint 1'),
   blueprint1_summary: z.string().describe('2-3 sentence summary for blueprint 1'),
+  blueprint1_introduction: z.string().describe('JSON string of introduction sub-topics array: ["Sub-topic 1", "Sub-topic 2", "Sub-topic 3", "Sub-topic 4"]'),
   blueprint1_parts: z.string().describe('JSON string of parts array: [{"title":"Part Title","modules":["Module 1","Module 2"]}]'),
+  blueprint1_conclusion: z.string().describe('JSON string of conclusion sub-topics array: ["Sub-topic 1", "Sub-topic 2", "Sub-topic 3", "Sub-topic 4"]'),
   blueprint1_wordCount: z.number().describe('Estimated word count for blueprint 1'),
   blueprint2_title: z.string().describe('Title for blueprint 2'),
   blueprint2_summary: z.string().describe('2-3 sentence summary for blueprint 2'),
+  blueprint2_introduction: z.string().describe('JSON string of introduction sub-topics array: ["Sub-topic 1", "Sub-topic 2", "Sub-topic 3", "Sub-topic 4"]'),
   blueprint2_parts: z.string().describe('JSON string of parts array: [{"title":"Part Title","modules":["Module 1","Module 2"]}]'),
+  blueprint2_conclusion: z.string().describe('JSON string of conclusion sub-topics array: ["Sub-topic 1", "Sub-topic 2", "Sub-topic 3", "Sub-topic 4"]'),
   blueprint2_wordCount: z.number().describe('Estimated word count for blueprint 2'),
   blueprint3_title: z.string().describe('Title for blueprint 3'),
   blueprint3_summary: z.string().describe('2-3 sentence summary for blueprint 3'),
+  blueprint3_introduction: z.string().describe('JSON string of introduction sub-topics array: ["Sub-topic 1", "Sub-topic 2", "Sub-topic 3", "Sub-topic 4"]'),
   blueprint3_parts: z.string().describe('JSON string of parts array: [{"title":"Part Title","modules":["Module 1","Module 2"]}]'),
+  blueprint3_conclusion: z.string().describe('JSON string of conclusion sub-topics array: ["Sub-topic 1", "Sub-topic 2", "Sub-topic 3", "Sub-topic 4"]'),
   blueprint3_wordCount: z.number().describe('Estimated word count for blueprint 3'),
 });
 
@@ -46,7 +52,9 @@ export interface GenerateOfferBlueprintsOutput {
     id?: string;
     title: string;
     summary: string;
+    introductionSubTopics: string[];
     parts: Array<{ title: string; modules: string[] }>;
+    conclusionSubTopics: string[];
     estimatedWordCount: number;
   }>;
 }
@@ -184,30 +192,49 @@ ${categoryPrompt}
 
 1. **LANGUAGE:** Write ALL content in {{{language}}}.
 
-2. **STRUCTURE:** Each blueprint MUST have exactly ${structure.parts} Parts, with ${structure.modulesPerPart} Modules per Part.
+2. **STRUCTURE:** Each blueprint MUST have:
+   - An INTRODUCTION section (appears BEFORE Part 1) with 4 sub-topics
+   - Exactly ${structure.parts} Parts, with ${structure.modulesPerPart} Modules per Part
+   - A CONCLUSION section (appears AFTER the last Part) with 4 sub-topics
 
-3. **THREE DISTINCT BLUEPRINTS:** Create three blueprints with genuinely different angles:
+3. **INTRODUCTION SECTION (Before Part 1):**
+   Generate 4 sub-topics tailored to this specific offer. Sub-topics should cover:
+   - What this offer covers and its value proposition
+   - Who this offer is for (target reader profile)
+   - How to get the most out of this material
+   - The author's promise or what readers will achieve
+
+4. **CONCLUSION SECTION (After All Parts):**
+   Generate 4 sub-topics tailored to this specific offer. Sub-topics should cover:
+   - Key takeaways and main lessons recap
+   - Action plan or immediate next steps
+   - Additional resources for continued growth
+   - Final words of encouragement or motivation
+
+5. **THREE DISTINCT BLUEPRINTS:** Create three blueprints with genuinely different angles:
    - Blueprint 1: A comprehensive, methodical approach
    - Blueprint 2: A practical, action-oriented approach
    - Blueprint 3: A creative, engaging approach
 
-4. **CONTENT ALIGNMENT:** Each blueprint must directly relate to:
+6. **CONTENT ALIGNMENT:** Each blueprint must directly relate to:
    - The offer title and description
    - The source book's topic and content
    - The target audience's needs and pain points
 
-5. **MODULE TITLES:** Each module title should be clear, benefit-focused, and indicate what the reader will learn or do.
+7. **MODULE TITLES:** Each module title should be clear, benefit-focused, and indicate what the reader will learn or do.
 
-6. **WORD COUNT:** Each module is designed for ~${structure.wordsPerModule} words. Calculate estimatedWordCount as: ${structure.parts} parts × ${structure.modulesPerPart} modules × ${structure.wordsPerModule} words = ${structure.parts * structure.modulesPerPart * structure.wordsPerModule} words (approximately).
+8. **WORD COUNT:** Each module is designed for ~${structure.wordsPerModule} words. Calculate estimatedWordCount as: ${structure.parts} parts × ${structure.modulesPerPart} modules × ${structure.wordsPerModule} words = ${structure.parts * structure.modulesPerPart * structure.wordsPerModule} words (approximately), plus ~500 words each for Introduction and Conclusion.
 
 **OUTPUT FORMAT:**
 For each of the 3 blueprints, provide:
 - blueprint{N}_title: A unique, compelling title
-- blueprint{N}_summary: A 2-3 sentence summary explaining the blueprint's angle  
+- blueprint{N}_summary: A 2-3 sentence summary explaining the blueprint's angle
+- blueprint{N}_introduction: A JSON string array of 4 introduction sub-topics: ["Sub-topic 1", "Sub-topic 2", "Sub-topic 3", "Sub-topic 4"]
 - blueprint{N}_parts: A JSON string array of parts, formatted as: [{"title":"Part 1 Title","modules":["Module 1","Module 2","Module 3"]},{"title":"Part 2 Title","modules":["Module 1","Module 2","Module 3"]}]
-- blueprint{N}_wordCount: Estimated total word count (approximately ${structure.parts * structure.modulesPerPart * structure.wordsPerModule})
+- blueprint{N}_conclusion: A JSON string array of 4 conclusion sub-topics: ["Sub-topic 1", "Sub-topic 2", "Sub-topic 3", "Sub-topic 4"]
+- blueprint{N}_wordCount: Estimated total word count (approximately ${structure.parts * structure.modulesPerPart * structure.wordsPerModule + 1000})
 
-Generate the three blueprints now. IMPORTANT: The parts field must be a valid JSON string.`,
+Generate the three blueprints now. IMPORTANT: All JSON fields (introduction, parts, conclusion) must be valid JSON strings.`,
     });
 
     const { output } = await prompt(
@@ -218,6 +245,35 @@ Generate the three blueprints now. IMPORTANT: The parts field must be a valid JS
     if (!output) {
       throw new Error('Failed to generate offer blueprints. Please try again.');
     }
+
+    const parseSubTopicsJson = (subTopicsStr: string): string[] => {
+      if (!subTopicsStr) return [];
+      
+      try {
+        let cleanedStr = subTopicsStr.trim();
+        
+        if (cleanedStr.startsWith('```json')) {
+          cleanedStr = cleanedStr.slice(7);
+        } else if (cleanedStr.startsWith('```')) {
+          cleanedStr = cleanedStr.slice(3);
+        }
+        if (cleanedStr.endsWith('```')) {
+          cleanedStr = cleanedStr.slice(0, -3);
+        }
+        cleanedStr = cleanedStr.trim();
+        cleanedStr = cleanedStr.replace(/,\s*([\]}])/g, '$1');
+        cleanedStr = cleanedStr.replace(/'/g, '"');
+        
+        const parsed = JSON.parse(cleanedStr);
+        if (Array.isArray(parsed)) {
+          return parsed.map(String).filter(s => s.length > 0);
+        }
+        return [];
+      } catch (e) {
+        console.error('Failed to parse sub-topics JSON:', subTopicsStr, e);
+        return [];
+      }
+    };
 
     const parsePartsJson = (partsStr: string): Array<{ title: string; modules: string[] }> => {
       if (!partsStr) return [];
@@ -289,21 +345,27 @@ Generate the three blueprints now. IMPORTANT: The parts field must be a valid JS
         id: 'blueprint-1',
         title: output.blueprint1_title,
         summary: output.blueprint1_summary,
+        introductionSubTopics: parseSubTopicsJson(output.blueprint1_introduction),
         parts: parsePartsJson(output.blueprint1_parts),
+        conclusionSubTopics: parseSubTopicsJson(output.blueprint1_conclusion),
         estimatedWordCount: output.blueprint1_wordCount,
       },
       {
         id: 'blueprint-2',
         title: output.blueprint2_title,
         summary: output.blueprint2_summary,
+        introductionSubTopics: parseSubTopicsJson(output.blueprint2_introduction),
         parts: parsePartsJson(output.blueprint2_parts),
+        conclusionSubTopics: parseSubTopicsJson(output.blueprint2_conclusion),
         estimatedWordCount: output.blueprint2_wordCount,
       },
       {
         id: 'blueprint-3',
         title: output.blueprint3_title,
         summary: output.blueprint3_summary,
+        introductionSubTopics: parseSubTopicsJson(output.blueprint3_introduction),
         parts: parsePartsJson(output.blueprint3_parts),
+        conclusionSubTopics: parseSubTopicsJson(output.blueprint3_conclusion),
         estimatedWordCount: output.blueprint3_wordCount,
       },
     ].filter(bp => bp.title && bp.parts.length > 0);
