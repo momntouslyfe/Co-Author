@@ -47,8 +47,7 @@ const isCanonicalSection = (section: OfferSection): boolean => {
          lower === 'your action steps' ||
          lower === 'action steps' ||
          lower === 'coming up next' ||
-         lower === 'coming up' ||
-         lower === 'final words';
+         lower === 'coming up';
 };
 
 const PartEditor = ({
@@ -70,9 +69,6 @@ const PartEditor = ({
   onRewritePart,
   user,
   refreshCredits,
-  isSpecialSection = false,
-  isConclusion = false,
-  subTopics = [],
 }: {
   project: Project;
   offerDraft: OfferDraft;
@@ -92,9 +88,6 @@ const PartEditor = ({
   onRewritePart: (instruction?: string) => void;
   user: any;
   refreshCredits: () => void;
-  isSpecialSection?: boolean;
-  isConclusion?: boolean;
-  subTopics?: string[];
 }) => {
   const [isExtending, setIsExtending] = useState<number | null>(null);
   const [extendInstruction, setExtendInstruction] = useState('');
@@ -120,22 +113,14 @@ const PartEditor = ({
     .map(m => m.moduleTitle);
 
   const buildPartSkeleton = useCallback(() => {
-    if (isSpecialSection) {
-      let skeleton = '';
-      subTopics.forEach(topic => {
-        skeleton += `$$${topic}$$\n\n\n\n`;
-      });
-      return skeleton;
-    }
-    
     let skeleton = `$$Introduction$$\n\n\n\n`;
     coreModuleTitles.forEach(title => {
       skeleton += `$$${title}$$\n\n\n\n`;
     });
     skeleton += `$$Your Action Steps$$\n\n\n\n`;
-    skeleton += isConclusion ? `$$Final Words$$\n\n\n\n` : `$$Coming Up Next$$\n\n\n\n`;
+    skeleton += `$$Coming Up Next$$\n\n\n\n`;
     return skeleton;
-  }, [coreModuleTitles, isSpecialSection, isConclusion, subTopics]);
+  }, [coreModuleTitles]);
 
   const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
   const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
@@ -790,11 +775,7 @@ export default function PartWritingPage() {
   const projectId = params.projectId;
   const offerId = params.offerId;
   const partId = params.partId;
-  
-  const isIntroduction = partId === 'introduction';
-  const isConclusion = partId === 'conclusion';
-  const isSpecialSection = isIntroduction || isConclusion;
-  const partNumber = isIntroduction ? 0 : isConclusion ? -1 : (partId.startsWith('part-') ? parseInt(partId.replace('part-', ''), 10) : parseInt(partId, 10));
+  const partNumber = partId.startsWith('part-') ? parseInt(partId.replace('part-', ''), 10) : parseInt(partId, 10);
 
   const { user } = useAuthUser();
   const firestore = useFirestore();
@@ -855,7 +836,7 @@ export default function PartWritingPage() {
 
           const partSections = draft.sections?.filter(s => s.partNumber === partNumber) || [];
 
-          const isCanonicalType = (s: OfferSection): 'introduction' | 'actionSteps' | 'comingUp' | 'finalWords' | null => {
+          const isCanonicalType = (s: OfferSection): 'introduction' | 'actionSteps' | 'comingUp' | null => {
             if (s.sectionType === 'introduction') return 'introduction';
             if (s.sectionType === 'actionSteps') return 'actionSteps';
             if (s.sectionType === 'comingUp') return 'comingUp';
@@ -863,56 +844,33 @@ export default function PartWritingPage() {
             if (lower === 'introduction') return 'introduction';
             if (lower === 'your action steps' || lower === 'action steps') return 'actionSteps';
             if (lower === 'coming up next' || lower === 'coming up') return 'comingUp';
-            if (lower === 'final words') return 'finalWords';
             return null;
           };
 
-          if (isSpecialSection) {
-            const subTopics = isIntroduction 
-              ? draft.blueprint?.introductionSubTopics || []
-              : draft.blueprint?.conclusionSubTopics || [];
-            const specialSection = partSections.find(s => s.partNumber === partNumber);
-            const hasContent = specialSection?.content && specialSection.content.trim().length > 0;
-            const finalSectionName = isConclusion ? 'Final Words' : 'Coming Up Next';
+          const coreModules = partSections.filter(s => !isCanonicalType(s));
+          const introSection = partSections.find(s => isCanonicalType(s) === 'introduction');
+          const actionSection = partSections.find(s => isCanonicalType(s) === 'actionSteps');
+          const comingSection = partSections.find(s => isCanonicalType(s) === 'comingUp');
 
-            if (hasContent) {
-              setContent(specialSection.content);
-              setPageState('writing');
-            } else {
-              let skeleton = `$$Introduction$$\n\n\n\n`;
-              subTopics.forEach(topic => {
-                skeleton += `$$${topic}$$\n\n\n\n`;
-              });
-              skeleton += `$$Your Action Steps$$\n\n\n\n`;
-              skeleton += `$$${finalSectionName}$$\n\n\n\n`;
-              setContent(skeleton);
-            }
+          const hasAnyContent = partSections.some(s => s.content);
+
+          if (hasAnyContent) {
+            let reconstructed = `$$Introduction$$\n\n${introSection?.content || ''}\n\n`;
+            coreModules.forEach(m => {
+              reconstructed += `$$${m.moduleTitle}$$\n\n${m.content || ''}\n\n`;
+            });
+            reconstructed += `$$Your Action Steps$$\n\n${actionSection?.content || ''}\n\n`;
+            reconstructed += `$$Coming Up Next$$\n\n${comingSection?.content || ''}\n\n`;
+            setContent(reconstructed);
+            setPageState('writing');
           } else {
-            const coreModules = partSections.filter(s => !isCanonicalType(s));
-            const introSection = partSections.find(s => isCanonicalType(s) === 'introduction');
-            const actionSection = partSections.find(s => isCanonicalType(s) === 'actionSteps');
-            const comingSection = partSections.find(s => isCanonicalType(s) === 'comingUp');
-
-            const hasAnyContent = partSections.some(s => s.content);
-
-            if (hasAnyContent) {
-              let reconstructed = `$$Introduction$$\n\n${introSection?.content || ''}\n\n`;
-              coreModules.forEach(m => {
-                reconstructed += `$$${m.moduleTitle}$$\n\n${m.content || ''}\n\n`;
-              });
-              reconstructed += `$$Your Action Steps$$\n\n${actionSection?.content || ''}\n\n`;
-              reconstructed += `$$Coming Up Next$$\n\n${comingSection?.content || ''}\n\n`;
-              setContent(reconstructed);
-              setPageState('writing');
-            } else {
-              let skeleton = `$$Introduction$$\n\n\n\n`;
-              coreModules.forEach(m => {
-                skeleton += `$$${m.moduleTitle}$$\n\n\n\n`;
-              });
-              skeleton += `$$Your Action Steps$$\n\n\n\n`;
-              skeleton += `$$Coming Up Next$$\n\n\n\n`;
-              setContent(skeleton);
-            }
+            let skeleton = `$$Introduction$$\n\n\n\n`;
+            coreModules.forEach(m => {
+              skeleton += `$$${m.moduleTitle}$$\n\n\n\n`;
+            });
+            skeleton += `$$Your Action Steps$$\n\n\n\n`;
+            skeleton += `$$Coming Up Next$$\n\n\n\n`;
+            setContent(skeleton);
           }
         }
       } catch (error) {
@@ -935,14 +893,7 @@ export default function PartWritingPage() {
     return partSections.filter(s => !isCanonicalSection(s));
   }, [partSections]);
 
-  const subTopics = useMemo(() => {
-    if (!offerDraft?.blueprint) return [];
-    if (isIntroduction) return offerDraft.blueprint.introductionSubTopics || [];
-    if (isConclusion) return offerDraft.blueprint.conclusionSubTopics || [];
-    return [];
-  }, [offerDraft?.blueprint, isIntroduction, isConclusion]);
-
-  const partTitle = isIntroduction ? 'Introduction' : isConclusion ? 'Conclusion' : (partSections[0]?.partTitle || `Part ${partNumber}`);
+  const partTitle = partSections[0]?.partTitle || `Part ${partNumber}`;
 
   const extractSectionContent = (fullContent: string, sectionTitle: string): string => {
     const regex = new RegExp(`\\$\\$${sectionTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\$\\$([\\s\\S]*?)(?=\\$\\$|$)`, 'i');
@@ -956,7 +907,7 @@ export default function PartWritingPage() {
     try {
       const draftRef = doc(firestore, 'users', user.uid, 'projects', projectId, 'offerDrafts', offerId);
 
-      const getCanonicalType = (s: OfferSection): 'introduction' | 'actionSteps' | 'comingUp' | 'finalWords' | null => {
+      const getCanonicalType = (s: OfferSection): 'introduction' | 'actionSteps' | 'comingUp' | null => {
         if (s.sectionType === 'introduction') return 'introduction';
         if (s.sectionType === 'actionSteps') return 'actionSteps';
         if (s.sectionType === 'comingUp') return 'comingUp';
@@ -964,11 +915,8 @@ export default function PartWritingPage() {
         if (lower === 'introduction') return 'introduction';
         if (lower === 'your action steps' || lower === 'action steps') return 'actionSteps';
         if (lower === 'coming up next' || lower === 'coming up') return 'comingUp';
-        if (lower === 'final words') return 'finalWords';
         return null;
       };
-
-      const finalSectionName = isConclusion ? 'Final Words' : 'Coming Up Next';
 
       const countWords = (text: string): number => {
         const cleanedText = text.replace(/\$\$[^$]+\$\$/g, '');
@@ -980,7 +928,7 @@ export default function PartWritingPage() {
       const existingSectionsForPart = offerDraft.sections.filter(s => s.partNumber === partNumber);
       const hasIntro = existingSectionsForPart.some(s => getCanonicalType(s) === 'introduction');
       const hasActionSteps = existingSectionsForPart.some(s => getCanonicalType(s) === 'actionSteps');
-      const hasFinalSection = existingSectionsForPart.some(s => getCanonicalType(s) === 'comingUp' || getCanonicalType(s) === 'finalWords');
+      const hasComingUp = existingSectionsForPart.some(s => getCanonicalType(s) === 'comingUp');
 
       let updatedSections = offerDraft.sections.map(section => {
         if (section.partNumber === partNumber) {
@@ -991,8 +939,8 @@ export default function PartWritingPage() {
             sectionContent = extractSectionContent(content, 'Introduction');
           } else if (canonicalType === 'actionSteps') {
             sectionContent = extractSectionContent(content, 'Your Action Steps');
-          } else if (canonicalType === 'comingUp' || canonicalType === 'finalWords') {
-            sectionContent = extractSectionContent(content, finalSectionName);
+          } else if (canonicalType === 'comingUp') {
+            sectionContent = extractSectionContent(content, 'Coming Up Next');
           } else {
             sectionContent = extractSectionContent(content, section.moduleTitle);
           }
@@ -1036,17 +984,17 @@ export default function PartWritingPage() {
         } as OfferSection);
       }
 
-      if (!hasFinalSection) {
-        const finalContent = extractSectionContent(content, finalSectionName);
+      if (!hasComingUp) {
+        const comingUpContent = extractSectionContent(content, 'Coming Up Next');
         updatedSections.push({
-          id: `part-${partNumber}-${isConclusion ? 'finalwords' : 'comingup'}`,
+          id: `part-${partNumber}-comingup`,
           partNumber,
           partTitle: currentPartTitle,
-          moduleTitle: finalSectionName,
-          sectionType: isConclusion ? 'comingUp' : 'comingUp',
-          content: finalContent,
-          wordCount: countWords(finalContent),
-          status: finalContent ? 'completed' : 'pending',
+          moduleTitle: 'Coming Up Next',
+          sectionType: 'comingUp',
+          content: comingUpContent,
+          wordCount: countWords(comingUpContent),
+          status: comingUpContent ? 'completed' : 'pending',
         } as OfferSection);
       }
 
@@ -1297,11 +1245,7 @@ export default function PartWritingPage() {
     return notFound();
   }
 
-  if (!isSpecialSection && (isNaN(partNumber) || partSections.length === 0)) {
-    return notFound();
-  }
-
-  if (isSpecialSection && subTopics.length === 0 && partSections.length === 0) {
+  if (isNaN(partNumber) || partSections.length === 0) {
     return notFound();
   }
 
@@ -1331,12 +1275,8 @@ export default function PartWritingPage() {
               <Badge variant="outline" className="mb-2">
                 {OFFER_CATEGORY_LABELS[offerDraft.category]}
               </Badge>
-              <CardTitle className="font-headline text-xl">{isSpecialSection ? partTitle : `Part ${partNumber}: ${partTitle}`}</CardTitle>
-              <CardDescription>
-                {isSpecialSection 
-                  ? `This section contains ${subTopics.length} sub-topics to write.` 
-                  : `This part contains ${corePartSections.length} modules to write.`}
-              </CardDescription>
+              <CardTitle className="font-headline text-xl">Part {partNumber}: {partTitle}</CardTitle>
+              <CardDescription>This part contains {corePartSections.length} modules to write.</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -1353,27 +1293,15 @@ export default function PartWritingPage() {
                   <div className="flex items-start gap-3">
                     <BookOpen className="w-5 h-5 mt-1 text-primary" />
                     <div>
-                      <h4 className="font-semibold">{isSpecialSection ? 'Section Sub-Topics' : 'Part Modules'}</h4>
-                      {isSpecialSection ? (
-                        subTopics.length > 0 ? (
-                          <ul className="list-disc pl-5 space-y-1 text-sm mt-1">
-                            {subTopics.map((topic, index) => (
-                              <li key={index}>{topic}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm text-muted-foreground mt-1">No sub-topics found for this section.</p>
-                        )
+                      <h4 className="font-semibold">Part Modules</h4>
+                      {corePartSections.length > 0 ? (
+                        <ul className="list-disc pl-5 space-y-1 text-sm mt-1">
+                          {corePartSections.map((section, index) => (
+                            <li key={index}>{section.moduleTitle}</li>
+                          ))}
+                        </ul>
                       ) : (
-                        corePartSections.length > 0 ? (
-                          <ul className="list-disc pl-5 space-y-1 text-sm mt-1">
-                            {corePartSections.map((section, index) => (
-                              <li key={index}>{section.moduleTitle}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm text-muted-foreground mt-1">No modules found for this part.</p>
-                        )
+                        <p className="text-sm text-muted-foreground mt-1">No modules found for this part.</p>
                       )}
                     </div>
                   </div>
@@ -1479,12 +1407,8 @@ export default function PartWritingPage() {
               <Badge variant="outline" className="mb-2">
                 {OFFER_CATEGORY_LABELS[offerDraft.category]}
               </Badge>
-              <CardTitle className="font-headline text-xl">{isSpecialSection ? partTitle : `Part ${partNumber}: ${partTitle}`}</CardTitle>
-              <CardDescription>
-                {isSpecialSection 
-                  ? `Writing ${subTopics.length} sub-topics` 
-                  : `Writing ${partSections.length} modules`}
-              </CardDescription>
+              <CardTitle className="font-headline text-xl">Part {partNumber}: {partTitle}</CardTitle>
+              <CardDescription>Writing {partSections.length} modules</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button onClick={() => setPageState('overview')} variant="outline">Back to Overview</Button>
@@ -1524,9 +1448,6 @@ export default function PartWritingPage() {
                     onRewritePart={handleRewritePart}
                     user={user}
                     refreshCredits={refreshCredits}
-                    isSpecialSection={isSpecialSection}
-                    isConclusion={isConclusion}
-                    subTopics={subTopics}
                   />
                 </div>
                 <div className="flex justify-end pt-4 border-t">

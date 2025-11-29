@@ -258,9 +258,7 @@ export type OfferBlueprint = {
   title: string;
   subtitle?: string;
   summary?: string;
-  introductionSubTopics?: string[];
   parts: OfferBlueprintPart[];
-  conclusionSubTopics?: string[];
   estimatedWordCount: number;
 };
 

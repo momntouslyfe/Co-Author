@@ -5,7 +5,7 @@ import { useParams, notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ChevronRight, Check, FileText, BookOpen, Flag } from 'lucide-react';
+import { Loader2, ArrowLeft, ChevronRight, Check, FileText } from 'lucide-react';
 import { useAuthUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import type { OfferDraft, Project, OfferSection } from '@/lib/definitions';
 import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
@@ -119,19 +119,6 @@ export default function OfferSectionsPage() {
     return offerDraft.sections.reduce((acc, s) => acc + (s.wordCount || 0), 0);
   }, [offerDraft?.sections]);
 
-  const introductionSection = useMemo(() => {
-    if (!offerDraft?.sections) return null;
-    return offerDraft.sections.find(s => s.partNumber === 0 && s.partTitle === 'Introduction');
-  }, [offerDraft?.sections]);
-
-  const conclusionSection = useMemo(() => {
-    if (!offerDraft?.sections) return null;
-    return offerDraft.sections.find(s => s.partNumber === -1 && s.partTitle === 'Conclusion');
-  }, [offerDraft?.sections]);
-
-  const hasIntroduction = !!offerDraft?.blueprint?.introductionSubTopics?.length || !!introductionSection;
-  const hasConclusion = !!offerDraft?.blueprint?.conclusionSubTopics?.length || !!conclusionSection;
-
   if (isLoading || isProjectLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -219,50 +206,10 @@ export default function OfferSectionsPage() {
             </div>
 
             <div className="space-y-3">
-              {hasIntroduction && (
-                <Link
-                  href={`/dashboard/offer-workspace/${projectId}/${offerId}/sections/introduction`}
-                  className="block"
-                >
-                  <Card className="hover:bg-muted/50 transition-colors cursor-pointer border-l-4 border-l-blue-500">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          {introductionSection?.status === 'completed' ? (
-                            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                              <Check className="h-5 w-5 text-green-600" />
-                            </div>
-                          ) : (
-                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                              <BookOpen className="h-5 w-5 text-blue-600" />
-                            </div>
-                          )}
-                          <div>
-                            <h3 className="font-semibold text-lg">Introduction</h3>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span>{offerDraft?.blueprint?.introductionSubTopics?.length || 4} sub-topics</span>
-                              <span>{introductionSection?.wordCount?.toLocaleString() || 0} words</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge 
-                            variant={introductionSection?.status === 'completed' ? "default" : "secondary"}
-                            className={introductionSection?.status === 'completed' ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}
-                          >
-                            {introductionSection?.status === 'completed' ? 'Written' : 'Pending'}
-                          </Badge>
-                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              )}
-
               {groupedSections.map(group => {
                 const completedModules = group.sections.filter(s => s.status === 'completed').length;
                 const totalModules = group.sections.length;
+                // Calculate word count from ALL sections for this part (including canonical sections)
                 const allPartSections = offerDraft.sections?.filter(s => s.partNumber === group.partNumber) || [];
                 const partWordCount = allPartSections.reduce((acc, s) => acc + (s.wordCount || 0), 0);
                 const isPartComplete = completedModules === totalModules && totalModules > 0;
@@ -311,47 +258,6 @@ export default function OfferSectionsPage() {
                   </Link>
                 );
               })}
-
-              {hasConclusion && (
-                <Link
-                  href={`/dashboard/offer-workspace/${projectId}/${offerId}/sections/conclusion`}
-                  className="block"
-                >
-                  <Card className="hover:bg-muted/50 transition-colors cursor-pointer border-l-4 border-l-amber-500">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          {conclusionSection?.status === 'completed' ? (
-                            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                              <Check className="h-5 w-5 text-green-600" />
-                            </div>
-                          ) : (
-                            <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
-                              <Flag className="h-5 w-5 text-amber-600" />
-                            </div>
-                          )}
-                          <div>
-                            <h3 className="font-semibold text-lg">Conclusion</h3>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span>{offerDraft?.blueprint?.conclusionSubTopics?.length || 4} sub-topics</span>
-                              <span>{conclusionSection?.wordCount?.toLocaleString() || 0} words</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge 
-                            variant={conclusionSection?.status === 'completed' ? "default" : "secondary"}
-                            className={conclusionSection?.status === 'completed' ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}
-                          >
-                            {conclusionSection?.status === 'completed' ? 'Written' : 'Pending'}
-                          </Badge>
-                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              )}
             </div>
           </CardContent>
         </Card>
