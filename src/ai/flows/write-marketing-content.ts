@@ -59,8 +59,10 @@ export async function writeMarketingContent(
 {{/if}}
 
 {{#if styleProfile}}
-**Style Profile (Writing Style to Match):**
+**Style Profile (Writing Style to Match - CRITICAL):**
 {{{styleProfile}}}
+
+**CODE-MIXING REQUIREMENT:** If the style profile demonstrates code-mixing (mixing words/phrases from multiple languages like English mixed with Bengali, Hindi, or other languages), you MUST replicate that exact code-mixing pattern in your writing. Match the frequency and style of language mixing shown in the profile.
 {{/if}}
 
 {{#if authorProfile}}
@@ -100,10 +102,11 @@ Write the complete content piece based on the title and context provided above.
 2. The content should be compelling, engaging, and designed to attract potential book buyers.
 3. Showcase the author's expertise and the book's value proposition naturally.
 4. Write in {{{language}}}.
-5. If a style profile is provided, match that writing style.
+5. If a style profile is provided, match that writing style EXACTLY - including any code-mixing patterns (mixing of languages), vocabulary choices, sentence structures, and tone.
 6. If a storytelling framework is provided, incorporate those storytelling elements.
 7. If a content framework is provided, structure the content according to that framework.
 8. Make the content valuable standalone while also encouraging readers to get the book.
+9. CRITICAL: If the style profile shows code-mixing (e.g., English with Bengali/Hindi words), you MUST incorporate the same language mixing pattern throughout your writing.
 
 **CONTENT PURPOSE:**
 This content will be used for book marketing - it should:

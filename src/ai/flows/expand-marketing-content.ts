@@ -54,8 +54,10 @@ export async function expandMarketingContent(
 {{/if}}
 
 {{#if styleProfile}}
-**Style Profile (Writing Style to Match):**
+**Style Profile (Writing Style to Match - CRITICAL):**
 {{{styleProfile}}}
+
+**CODE-MIXING REQUIREMENT:** If the style profile demonstrates code-mixing (mixing words/phrases from multiple languages like English mixed with Bengali, Hindi, or other languages), you MUST replicate that exact code-mixing pattern in your expanded content. Match the frequency and style of language mixing shown in the profile.
 {{/if}}
 
 {{#if customInstructions}}
@@ -81,8 +83,9 @@ Expand the above content to approximately {{{targetWordCount}}} words by adding 
 3. Add new valuable points, examples, or explanations.
 4. Keep the marketing purpose and persuasive elements.
 5. Write in {{{language}}}.
-6. If a style profile is provided, match that writing style.
+6. If a style profile is provided, match that writing style EXACTLY - including any code-mixing patterns (mixing of languages), vocabulary choices, sentence structures, and tone.
 7. If custom instructions are provided, follow them closely.
+8. CRITICAL: If the style profile shows code-mixing (e.g., English with Bengali/Hindi words), you MUST incorporate the same language mixing pattern throughout your expanded content.
 
 **EXPANSION STRATEGIES:**
 - Add more detailed examples or case studies

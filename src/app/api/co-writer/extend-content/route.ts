@@ -73,8 +73,10 @@ export async function POST(request: Request) {
 {{/if}}
 
 {{#if styleProfile}}
-**Style Profile (Writing Style to Match):**
+**Style Profile (Writing Style to Match - CRITICAL):**
 {{{styleProfile}}}
+
+**CODE-MIXING REQUIREMENT:** If the style profile demonstrates code-mixing (mixing words/phrases from multiple languages like English mixed with Bengali, Hindi, or other languages), you MUST replicate that exact code-mixing pattern in your extended content. Match the frequency and style of language mixing shown in the profile.
 {{/if}}
 
 ---
@@ -100,8 +102,9 @@ Generate one to three NEW paragraphs that naturally continue from the starting p
 3. Use short, readable paragraphs (3-5 sentences) with varied length for good rhythm.
 4. Ensure a double newline (blank line) exists between every paragraph.
 5. Write in {{{language}}}.
-6. If a style profile is provided, match that writing style exactly.
+6. If a style profile is provided, match that writing style EXACTLY - including any code-mixing patterns (mixing of languages), vocabulary choices, sentence structures, and tone.
 7. If an instruction is provided, follow it to guide what you write next.
+8. CRITICAL: If the style profile shows code-mixing (e.g., English with Bengali/Hindi words), you MUST incorporate the same language mixing pattern throughout your extended content.
 
 **CONTENT STRATEGIES:**
 - Add supporting examples or case studies
