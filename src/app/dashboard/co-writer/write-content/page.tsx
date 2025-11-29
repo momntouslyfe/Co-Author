@@ -80,6 +80,17 @@ const contentFrameworks = [
   { value: 'APP (Agree, Promise, Preview)', label: 'APP - Agree, Promise, Preview' },
 ];
 
+const contentCategories = [
+  { value: 'Blog Post', label: 'Blog Post' },
+  { value: 'Email Newsletter', label: 'Email Newsletter' },
+  { value: 'Social Media Post', label: 'Social Media Post' },
+  { value: 'Video Script', label: 'Video Script' },
+  { value: 'Podcast Script', label: 'Podcast Script' },
+  { value: 'Lead Magnet', label: 'Lead Magnet' },
+  { value: 'Case Study', label: 'Case Study' },
+  { value: 'Book Review', label: 'Book Review' },
+];
+
 function WriteContentPageContent() {
   const searchParams = useSearchParams();
   const projectIdParam = searchParams.get('projectId');
@@ -97,6 +108,7 @@ function WriteContentPageContent() {
   const [targetWordCount, setTargetWordCount] = useState<number>(500);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const [customInstructions, setCustomInstructions] = useState<string>('');
+  const [contentCategory, setContentCategory] = useState<string>('');
   const [contentFramework, setContentFramework] = useState<string>('');
   const [storytellingFramework, setStorytellingFramework] = useState<string>('');
   const [selectedResearchProfileId, setSelectedResearchProfileId] = useState<string>('');
@@ -181,6 +193,9 @@ function WriteContentPageContent() {
     if (selectedIdea && !draftLoaded) {
       setContentTitle(selectedIdea.title);
       setContentDescription(selectedIdea.description);
+      if (selectedIdea.category) {
+        setContentCategory(selectedIdea.category);
+      }
     }
   }, [selectedIdea, draftLoaded]);
 
@@ -247,6 +262,7 @@ function WriteContentPageContent() {
         bookOutline: selectedProject.outline || '',
         contentTitle: contentTitle,
         contentDescription: contentDescription || undefined,
+        contentCategory: contentCategory || undefined,
         language: selectedLanguage,
         targetWordCount: targetWordCount,
         customInstructions: customInstructions || undefined,
@@ -482,6 +498,9 @@ function WriteContentPageContent() {
       if (customInstructions) {
         draftData.customInstructions = customInstructions;
       }
+      if (contentCategory) {
+        draftData.contentCategory = contentCategory;
+      }
       if (contentFramework) {
         draftData.contentFramework = contentFramework;
       }
@@ -606,6 +625,25 @@ function WriteContentPageContent() {
                       </Select>
                     </div>
                   )}
+
+                  <div className="space-y-2">
+                    <Label>Content Category</Label>
+                    <Select value={contentCategory} onValueChange={setContentCategory}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select content category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contentCategories.map(cat => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Auto-filled from saved idea. Helps AI tailor the content format.
+                    </p>
+                  </div>
 
                   <div className="space-y-2">
                     <Label>Content Title *</Label>

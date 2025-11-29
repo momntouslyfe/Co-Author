@@ -11,6 +11,7 @@ const WriteMarketingContentInputSchema = z.object({
   bookOutline: z.string().describe('The master blueprint/outline of the book.'),
   contentTitle: z.string().describe('The title of the content to write.'),
   contentDescription: z.string().optional().describe('Description of what the content should cover.'),
+  contentCategory: z.string().optional().describe('Category of the content (e.g., Blog Post, Email Newsletter, Social Media Post).'),
   language: z.string().describe('The language for the content.'),
   targetWordCount: z.number().describe('Target word count for the content.'),
   customInstructions: z.string().optional().describe('Custom instructions for the AI to follow.'),
@@ -91,6 +92,9 @@ CORRECT: "আপনার বিজনেস এর জন্য মার্ক
 
 **CONTENT TO WRITE:**
 - Title: {{{contentTitle}}}
+{{#if contentCategory}}
+- Content Type: {{{contentCategory}}}
+{{/if}}
 {{#if contentDescription}}
 - Description: {{{contentDescription}}}
 {{/if}}
