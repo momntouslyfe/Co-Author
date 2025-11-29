@@ -19,37 +19,86 @@ import {
 import { WorkflowNavigation } from '@/components/workflow-navigation';
 
 // Helper function to parse the Markdown outline into a structured format
-const parseOutline = (outline: string): { parts: { title: string; chapters: Chapter[] }[] } => {
+const parseOutline = (outline: string): { parts: { title: string; chapters: Chapter[]; isSpecial?: boolean }[] } => {
   if (!outline) return { parts: [] };
 
   const lines = outline.split('\n');
-  const parts: { title: string; chapters: Chapter[] }[] = [];
-  let currentPart: { title: string; chapters: Chapter[] } | null = null;
+  const parts: { title: string; chapters: Chapter[]; isSpecial?: boolean }[] = [];
+  let currentPart: { title: string; chapters: Chapter[]; isSpecial?: boolean } | null = null;
   let chapterCounter = 0;
+  let introductionPart: { title: string; chapters: Chapter[]; isSpecial?: boolean } | null = null;
+  let conclusionPart: { title: string; chapters: Chapter[]; isSpecial?: boolean } | null = null;
+  let foundFirstPart = false;
 
   for (const line of lines) {
     const trimmedLine = line.trim();
+    
     if (trimmedLine.startsWith('## ')) {
       // It's a Part
-      if (currentPart) {
+      foundFirstPart = true;
+      if (currentPart && currentPart !== introductionPart) {
         parts.push(currentPart);
       }
       currentPart = { title: trimmedLine.substring(3), chapters: [] };
-    } else if (trimmedLine.startsWith('### ') && currentPart) {
-      // It's a Chapter
+    } else if (trimmedLine.startsWith('### ')) {
+      const chapterTitle = trimmedLine.substring(4);
       chapterCounter++;
-      currentPart.chapters.push({
-        id: `chapter-${chapterCounter}`,
-        title: trimmedLine.substring(4),
-        part: currentPart.title,
-        content: '', // Initially empty
-      });
+      
+      // Check if it's Introduction (before any Part)
+      if (!foundFirstPart && chapterTitle.toLowerCase().startsWith('introduction')) {
+        if (!introductionPart) {
+          introductionPart = { title: 'Introduction', chapters: [], isSpecial: true };
+        }
+        introductionPart.chapters.push({
+          id: `chapter-${chapterCounter}`,
+          title: chapterTitle,
+          part: 'Introduction',
+          content: '',
+        });
+      }
+      // Check if it's Conclusion (detected by title pattern)
+      else if (chapterTitle.toLowerCase().startsWith('conclusion')) {
+        if (!conclusionPart) {
+          conclusionPart = { title: 'Conclusion', chapters: [], isSpecial: true };
+        }
+        conclusionPart.chapters.push({
+          id: `chapter-${chapterCounter}`,
+          title: chapterTitle,
+          part: 'Conclusion',
+          content: '',
+        });
+      }
+      // Regular chapter inside a Part
+      else if (currentPart) {
+        currentPart.chapters.push({
+          id: `chapter-${chapterCounter}`,
+          title: chapterTitle,
+          part: currentPart.title,
+          content: '',
+        });
+      }
     }
   }
-  if (currentPart) {
+  
+  // Push the last current part if exists
+  if (currentPart && currentPart !== introductionPart) {
     parts.push(currentPart);
   }
-  return { parts };
+  
+  // Build final result: Introduction first, then regular parts, then Conclusion
+  const result: { title: string; chapters: Chapter[]; isSpecial?: boolean }[] = [];
+  
+  if (introductionPart && introductionPart.chapters.length > 0) {
+    result.push(introductionPart);
+  }
+  
+  result.push(...parts);
+  
+  if (conclusionPart && conclusionPart.chapters.length > 0) {
+    result.push(conclusionPart);
+  }
+  
+  return { parts: result };
 };
 
 

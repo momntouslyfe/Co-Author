@@ -4,6 +4,13 @@
 Co-Author Pro is an AI-powered book writing platform built with Next.js 15 and Firebase, designed to assist authors from concept to completion. It offers AI-driven topic research, blueprint generation, interactive chapter writing, and tools for creating marketing content and bonus materials. The platform features a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It leverages Google's Gemini AI via Genkit for all AI operations and Firebase for authentication and data. The UI is built with shadcn/ui and Tailwind CSS. The project aims to provide authoritative, well-researched, and credible writing support, avoiding fabricated information, and includes an administrative panel for centralized management and enhanced security. Key features include an "Offer Workspace" for developing bonus materials, a "Co-Writer" for marketing content generation, and a "Co-Marketer" for creating book offers and sales funnels.
 
 ## Recent Changes
+- **Introduction and Conclusion Chapters in Book Blueprint**:
+  - AI blueprint generation now includes standalone Introduction and Conclusion chapters outside the Part structure
+  - Introduction chapter appears before Part 1 with tailored sub-topics (who book is for, what you'll learn, how to use, author's promise)
+  - Conclusion chapter appears after the last Part with tailored sub-topics (key takeaways, action plan, resources, final words)
+  - Chapter parsers updated to handle chapters outside Parts, assigning virtual "Introduction" and "Conclusion" part names
+  - Conclusion chapter uses "Final Words" section instead of "Coming Up Next"
+  - All chapter writing, rewriting, and copy functions support both section types
 - **High-Converting Title Generation (Books and Offers)**:
   - Implemented Three Gateways Framework (Positioning, Curiosity, Hook)
   - Added 8 proven title formulas: Warrior/Hero, Number+Promise, Question Hook, Counterintuitive, Secret/Hidden, Ultimatum, Made-Up Word, Transformation Story

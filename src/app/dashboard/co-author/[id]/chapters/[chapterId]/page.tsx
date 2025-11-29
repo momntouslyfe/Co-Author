@@ -31,7 +31,8 @@ import { FloatingCreditWidget } from '@/components/credits/floating-credit-widge
 export const maxDuration = 300;
 
 // Enhanced helper to parse chapter details including sub-topics
-const parseChapterDetails = (outline: string, chapterId: string): { chapter: Chapter, subTopics: string[] } | null => {
+// Handles Introduction/Conclusion chapters that are outside of Parts
+const parseChapterDetails = (outline: string, chapterId: string): { chapter: Chapter, subTopics: string[], isConclusion?: boolean } | null => {
     if (!outline) return null;
 
     const lines = outline.split('\n');
@@ -40,22 +41,41 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
     let inTargetChapter = false;
     let chapter: Chapter | null = null;
     const subTopics: string[] = [];
+    let foundFirstPart = false;
+    let isConclusion = false;
 
     for (const line of lines) {
         const trimmedLine = line.trim();
         if (trimmedLine.startsWith('## ')) {
+            foundFirstPart = true;
             currentPart = trimmedLine.substring(3);
             if (inTargetChapter) break; 
-        } else if (trimmedLine.startsWith('### ') && currentPart) {
-            if (inTargetChapter) break; 
+        } else if (trimmedLine.startsWith('### ')) {
+            if (inTargetChapter) break;
+            
+            const chapterTitle = trimmedLine.substring(4);
             chapterCounter++;
             const currentChapterId = `chapter-${chapterCounter}`;
+            
+            // Determine the part for this chapter
+            let partName: string;
+            if (!foundFirstPart && chapterTitle.toLowerCase().startsWith('introduction')) {
+                partName = 'Introduction';
+            } else if (chapterTitle.toLowerCase().startsWith('conclusion')) {
+                partName = 'Conclusion';
+            } else if (currentPart) {
+                partName = currentPart;
+            } else {
+                continue; // Skip chapters without a valid part
+            }
+            
             if (currentChapterId === chapterId) {
                 inTargetChapter = true;
+                isConclusion = chapterTitle.toLowerCase().startsWith('conclusion');
                 chapter = {
                     id: currentChapterId,
-                    title: trimmedLine.substring(4),
-                    part: currentPart,
+                    title: chapterTitle,
+                    part: partName,
                     content: '', 
                 };
             }
@@ -72,7 +92,7 @@ const parseChapterDetails = (outline: string, chapterId: string): { chapter: Cha
     }
     
     if (chapter) {
-        return { chapter, subTopics };
+        return { chapter, subTopics, isConclusion };
     }
 
     return null;
@@ -86,6 +106,7 @@ const ChapterEditor = ({
     project, 
     chapterDetails,
     subTopics,
+    isConclusion,
     content, 
     onContentChange, 
     onCopyContent,
@@ -103,6 +124,7 @@ const ChapterEditor = ({
     project: Project, 
     chapterDetails: Chapter, 
     subTopics: string[],
+    isConclusion: boolean;
     content: string; 
     onContentChange: (newContent: string | ((prev: string) => string)) => void;
     onCopyContent: () => void;
@@ -148,9 +170,10 @@ const ChapterEditor = ({
           skeleton += `$$${topic}$$\n\n\n\n`;
         });
         skeleton += `$$Your Action Step$$\n\n\n\n`;
-        skeleton += `$$Coming Up Next$$\n\n\n\n`;
+        // Use "Final Words" for Conclusion chapter, "Coming Up Next" for others
+        skeleton += isConclusion ? `$$Final Words$$\n\n\n\n` : `$$Coming Up Next$$\n\n\n\n`;
         return skeleton;
-    }, [subTopics]);
+    }, [subTopics, isConclusion]);
 
     // Helper to get selected profiles
     const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
@@ -299,7 +322,7 @@ const ChapterEditor = ({
             }
             
             const title = titleToFind.replaceAll('$$', '').trim();
-            const needsFullContext = title === 'Your Action Step' || title === 'Coming Up Next';
+            const needsFullContext = title === 'Your Action Step' || title === 'Coming Up Next' || title === 'Final Words';
     
             const selectedStyle = styleProfiles?.find(p => p.id === selectedStyleId);
             const relevantResearchProfile = researchProfiles?.find(p => p.id === selectedResearchId);
@@ -358,7 +381,8 @@ const ChapterEditor = ({
         }
         setIsGenerating(true);
     
-        const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", "Coming Up Next"];
+        const finalSectionTitle = isConclusion ? "Final Words" : "Coming Up Next";
+        const allSectionTitles = ["Introduction", ...subTopics, "Your Action Step", finalSectionTitle];
         onContentChange(buildChapterSkeleton());
     
         const failedSections: Array<{ index: number; title: string; error: any }> = [];
@@ -768,6 +792,7 @@ export default function ChapterPage() {
 
   const chapterDetails = chapterData?.chapter;
   const subTopics = chapterData?.subTopics || [];
+  const isConclusion = chapterData?.isConclusion || false;
   
   const buildChapterSkeleton = useCallback(() => {
     if (!chapterDetails) return '';
@@ -776,9 +801,10 @@ export default function ChapterPage() {
       skeleton += `$$${topic}$$\n\n\n\n`;
     });
     skeleton += `$$Your Action Step$$\n\n\n\n`;
-    skeleton += `$$Coming Up Next$$\n\n\n\n`;
+    // Use "Final Words" for Conclusion chapter, "Coming Up Next" for others
+    skeleton += isConclusion ? `$$Final Words$$\n\n\n\n` : `$$Coming Up Next$$\n\n\n\n`;
     return skeleton;
-  }, [chapterDetails, subTopics]);
+  }, [chapterDetails, subTopics, isConclusion]);
 
   useEffect(() => {
     if (project) {
@@ -916,7 +942,7 @@ export default function ChapterPage() {
             plainContent += `${nextPart}\n\n`;
           }
           if (nextPart) i++;
-        } else if (sectionTitle === 'Your Action Step' || sectionTitle === 'Coming Up Next') {
+        } else if (sectionTitle === 'Your Action Step' || sectionTitle === 'Coming Up Next' || sectionTitle === 'Final Words') {
           if (nextPart) {
             htmlContent += formatContentToHtml(nextPart);
             plainContent += `${nextPart}\n\n`;
@@ -1172,6 +1198,7 @@ export default function ChapterPage() {
                           project={project}
                           chapterDetails={chapterDetails}
                           subTopics={subTopics}
+                          isConclusion={isConclusion}
                           content={chapterContent}
                           onContentChange={setChapterContent}
                           onCopyContent={handleCopyContent}

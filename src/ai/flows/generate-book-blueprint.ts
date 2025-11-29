@@ -93,22 +93,47 @@ The following style profile describes HOW to write, NOT WHAT to write about. App
     *   Everything except the labels "Outline A", "Outline B", and "Outline C" must be in {{{language}}}.
 
 2.  **Strict Markdown Formatting:** You MUST use Markdown for structuring the outlines.
+    *   **Introduction Chapter:** Use \`### Introduction:\` followed by a catchy title (BEFORE any Part). This is a standalone chapter, NOT inside any Part.
     *   **Parts:** Use \`##\` for Part titles (e.g., \`## Part 1: The Setup\`).
     *   **Chapters:** Use \`###\` for Chapter titles (e.g., \`### Chapter 1: The Ordinary World\`).
     *   **Chapter Description:** After the chapter title, provide a single, concise, italicized sentence describing the chapter's purpose (e.g., *This chapter introduces the protagonist's normal life before the adventure begins.*).
     *   **Sub-topics:** Use a hyphen-based unordered list (\`-\`) for the sub-topics within each chapter.
+    *   **Conclusion Chapter:** Use \`### Conclusion:\` followed by a catchy title (AFTER all Parts). This is a standalone chapter, NOT inside any Part.
 
 3.  **Structure Requirements:**
+    *   Each outline MUST start with an **Introduction** chapter (standalone, before Part 1).
     *   Each outline MUST be divided into 3 to 5 "Parts".
-    *   Each outline MUST contain a total of 12 to 15 "Chapters".
+    *   Each outline MUST contain a total of 12 to 15 "Chapters" (excluding Introduction and Conclusion).
+    *   Each outline MUST end with a **Conclusion** chapter (standalone, after the last Part).
     *   Each Chapter MUST contain 4 to 6 detailed sub-topics (talking points).
 
-4.  **Content Rules:**
+4.  **Introduction Chapter Sub-topics (REQUIRED):**
+    The Introduction chapter MUST include sub-topics covering:
+    *   Who this book is for (target reader)
+    *   What the reader will learn or gain
+    *   How to get the most from this book
+    *   The author's promise or unique perspective
+
+5.  **Conclusion Chapter Sub-topics (REQUIRED):**
+    The Conclusion chapter MUST include sub-topics covering:
+    *   Key takeaways recap
+    *   Action plan or next steps for the reader
+    *   Resources for continued growth (optional)
+    *   Final words of encouragement or call to action
+
+6.  **Content Rules:**
     *   Be an outliner, not a writer. The output must be a structural outline only.
     *   Sub-topics should be short phrases or questions. DO NOT write paragraphs for sub-topics.
     *   Ensure each of the three outlines (A, B, and C) offers a genuinely different angle or structure for the book.
 
 **Example Structure for ONE outline:**
+
+### Introduction: Your Journey Begins Here
+*This chapter welcomes readers and sets expectations for the transformative journey ahead.*
+- Who this book is written for
+- The promise: what you will achieve by the end
+- How to read and apply this book
+- A personal note from the author
 
 ## Part 1: The Call to Adventure
 ### Chapter 1: The Ordinary World
@@ -124,6 +149,13 @@ The following style profile describes HOW to write, NOT WHAT to write about. App
 - The hero's initial reaction: disbelief or fear
 - The stakes of the conflict are revealed
 - The hero is faced with a choice
+
+### Conclusion: Your New Beginning
+*This chapter brings closure and empowers readers to take action.*
+- The key lessons from your journey
+- Your personalized action plan
+- Staying connected and continuing growth
+- Final words of encouragement
 
 Return ONLY the three formatted, concise outlines, following all rules precisely.
 `,
