@@ -20,19 +20,9 @@ import { getIdToken } from '@/lib/client-auth';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
 import { OfferWorkflowNavigation } from '@/components/offer-workflow-navigation';
 import { Badge } from '@/components/ui/badge';
+import { STORYTELLING_FRAMEWORKS, getFrameworkConcept } from '@/lib/storytelling-frameworks';
 
 export const maxDuration = 300;
-
-const frameworks = [
-  { value: "The Hero's Journey", label: "The Hero's Journey" },
-  { value: "The Mentor's Journey", label: "The Mentor's Journey" },
-  { value: 'Three-Act Structure', label: 'Three-Act Structure' },
-  { value: 'Fichtean Curve', label: 'Fichtean Curve' },
-  { value: 'Save the Cat', label: 'Save the Cat' },
-  { value: 'Story Circle', label: 'Story Circle' },
-  { value: 'Seven-Point Story Structure', label: 'Seven-Point Story Structure' },
-  { value: "Freytag's Pyramid", label: "Freytag's Pyramid" },
-];
 
 type PageState = 'overview' | 'writing' | 'rewriting' | 'generating';
 
@@ -1317,11 +1307,18 @@ export default function PartWritingPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">None</SelectItem>
-                          {frameworks.map(fw => (
+                          {STORYTELLING_FRAMEWORKS.map(fw => (
                             <SelectItem key={fw.value} value={fw.value}>{fw.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {selectedFramework && selectedFramework !== 'none' && (
+                        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
+                          <p className="text-xs text-blue-700 dark:text-blue-300">
+                            <strong>Concept:</strong> {getFrameworkConcept(selectedFramework)}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -30,6 +30,7 @@ import { getIdToken } from '@/lib/client-auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { OfferWorkflowNavigation } from '@/components/offer-workflow-navigation';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
+import { STORYTELLING_FRAMEWORKS, getFrameworkConcept } from '@/lib/storytelling-frameworks';
 
 const formSchema = z.object({
   description: z.string().min(10, 'Please describe your offer in at least 10 characters.'),
@@ -48,14 +49,6 @@ const languages = [
   { value: 'German', label: 'German' },
   { value: 'Bangla', label: 'Bangla' },
   { value: 'Hindi', label: 'Hindi' },
-];
-
-const frameworks = [
-  { value: "The Hero's Journey", label: "The Hero's Journey" },
-  { value: "The Mentor's Journey", label: "The Mentor's Journey" },
-  { value: 'Three-Act Structure', label: 'Three-Act Structure' },
-  { value: 'Fichtean Curve', label: 'Fichtean Curve' },
-  { value: 'Save the Cat', label: 'Save the Cat' },
 ];
 
 export default function OfferDraftPage() {
@@ -522,11 +515,18 @@ export default function OfferDraftPage() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="none">None</SelectItem>
-                            {frameworks.map(fw => (
+                            {STORYTELLING_FRAMEWORKS.map(fw => (
                               <SelectItem key={fw.value} value={fw.value}>{fw.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                        {field.value && field.value !== 'none' && (
+                          <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
+                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                              <strong>Concept:</strong> {getFrameworkConcept(field.value)}
+                            </p>
+                          </div>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
