@@ -182,6 +182,10 @@ const ChapterEditor = ({
     const researchPrompt = relevantResearchProfile
         ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
         : undefined;
+    
+    const frameworkWithConcept = selectedFramework
+        ? `${selectedFramework}\nConcept: ${getFrameworkConcept(selectedFramework)}`
+        : undefined;
 
     const handleExtendClick = async (paragraph: string, sectionIndex: number, paragraphIndex: number, instruction?: string) => {
         if (!user) return;
@@ -200,7 +204,7 @@ const ChapterEditor = ({
                 instruction,
                 styleProfile: selectedStyle?.styleAnalysis,
                 researchProfile: researchPrompt,
-                storytellingFramework: selectedFramework,
+                storytellingFramework: frameworkWithConcept,
             });
 
             onContentChange(prevContent => {
@@ -270,7 +274,7 @@ const ChapterEditor = ({
                 previousContent: currentContentForContext,
                 styleProfile: selectedStyle?.styleAnalysis,
                 researchProfile: researchPrompt,
-                storytellingFramework: selectedFramework,
+                storytellingFramework: frameworkWithConcept,
             });
     
             if (result && result.sectionContent) {
@@ -338,7 +342,7 @@ const ChapterEditor = ({
                 chapterContent: needsFullContext ? content : undefined,
                 styleProfile: selectedStyle?.styleAnalysis,
                 researchProfile: researchPrompt,
-                storytellingFramework: selectedFramework,
+                storytellingFramework: frameworkWithConcept,
                 language: project.language,
                 instruction,
             });
@@ -411,7 +415,7 @@ const ChapterEditor = ({
               previousContent: currentContentForContext,
               styleProfile: selectedStyle?.styleAnalysis,
               researchProfile: researchPrompt,
-              storytellingFramework: selectedFramework,
+              storytellingFramework: frameworkWithConcept,
             });
     
             if (result && result.sectionContent) {
@@ -478,7 +482,7 @@ const ChapterEditor = ({
                   previousContent: currentContentForContext,
                   styleProfile: selectedStyle?.styleAnalysis,
                   researchProfile: researchPrompt,
-                  storytellingFramework: selectedFramework,
+                  storytellingFramework: frameworkWithConcept,
                 });
         
                 if (result && result.sectionContent) {
@@ -991,13 +995,16 @@ export default function ChapterPage() {
             ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
             : undefined;
 
+        const localFrameworkWithConcept = selectedFramework
+            ? `${selectedFramework}\nConcept: ${getFrameworkConcept(selectedFramework)}`
+            : undefined;
         const result = await rewriteChapter({
             userId: user.uid,
             idToken,
             chapterContent: chapterContent,
             styleProfile: stylePrompt,
             researchProfile: researchPrompt,
-            storytellingFramework: selectedFramework,
+            storytellingFramework: localFrameworkWithConcept,
             language: project.language,
             instruction,
             model: undefined

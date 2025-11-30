@@ -118,6 +118,10 @@ const PartEditor = ({
     ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
     : undefined;
 
+  const frameworkWithConcept = selectedFramework && selectedFramework !== 'none'
+    ? `${selectedFramework}\nConcept: ${getFrameworkConcept(selectedFramework)}`
+    : undefined;
+
   const blueprintSummary = offerDraft.masterBlueprint?.substring(0, 2000) || '';
 
   const handleExtendClick = async (paragraph: string, sectionIndex: number, paragraphIndex: number, instruction?: string) => {
@@ -232,7 +236,7 @@ const PartEditor = ({
           language: language,
           styleProfile: selectedStyle?.styleAnalysis,
           researchProfile: researchPrompt,
-          storytellingFramework: selectedFramework,
+          storytellingFramework: frameworkWithConcept,
         }),
       });
 
@@ -311,7 +315,7 @@ const PartEditor = ({
           moduleTitle: title,
           styleProfile: selectedStyle?.styleAnalysis,
           researchProfile: researchPrompt,
-          storytellingFramework: selectedFramework !== 'none' ? selectedFramework : undefined,
+          storytellingFramework: frameworkWithConcept,
           language: language,
           rewriteInstructions: instruction,
         }),
@@ -396,7 +400,7 @@ const PartEditor = ({
             language: language,
             styleProfile: selectedStyle?.styleAnalysis,
             researchProfile: researchPrompt,
-            storytellingFramework: selectedFramework,
+            storytellingFramework: frameworkWithConcept,
           }),
         });
 
@@ -477,7 +481,7 @@ const PartEditor = ({
                 language: language,
                 styleProfile: selectedStyle?.styleAnalysis,
                 researchProfile: researchPrompt,
-                storytellingFramework: selectedFramework,
+                storytellingFramework: frameworkWithConcept,
               }),
             });
 
@@ -1181,6 +1185,9 @@ export default function PartWritingPage() {
       const researchPrompt = relevantResearchProfile
         ? `Target Audience: ${relevantResearchProfile.targetAudienceSuggestion}\nPain Points: ${relevantResearchProfile.painPointAnalysis}\nDeep Research:\n${relevantResearchProfile.deepTopicResearch}`
         : undefined;
+      const localFrameworkWithConcept = selectedFramework && selectedFramework !== 'none'
+        ? `${selectedFramework}\nConcept: ${getFrameworkConcept(selectedFramework)}`
+        : undefined;
 
       const response = await fetch('/api/offers/rewrite-section', {
         method: 'POST',
@@ -1193,7 +1200,7 @@ export default function PartWritingPage() {
           moduleTitle: partTitle,
           styleProfile: stylePrompt,
           researchProfile: researchPrompt,
-          storytellingFramework: selectedFramework !== 'none' ? selectedFramework : undefined,
+          storytellingFramework: localFrameworkWithConcept,
           language: offerDraft?.language || project.language || 'English',
           rewriteInstructions: instruction,
         }),

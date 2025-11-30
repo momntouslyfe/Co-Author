@@ -28,6 +28,7 @@ import { useAuthUser, useCollection, useFirestore, useMemoFirebase, useDoc } fro
 import { collection, doc, getDoc, setDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import type { Project, ResearchProfile, StyleProfile, ProjectContentIdeas, ContentIdea } from '@/lib/definitions';
 import { STORYTELLING_FRAMEWORKS, getFrameworkConcept } from '@/lib/storytelling-frameworks';
+import { CONTENT_FRAMEWORKS, getContentFrameworkConcept } from '@/lib/content-frameworks';
 import { useToast } from '@/hooks/use-toast';
 import { generateContentIdeas } from '@/ai/flows/generate-content-ideas';
 import { getIdToken } from '@/lib/client-auth';
@@ -49,21 +50,6 @@ const languages = [
   { value: 'German', label: 'German' },
   { value: 'Bangla', label: 'Bangla' },
   { value: 'Hindi', label: 'Hindi' },
-];
-
-const contentFrameworks = [
-  { value: 'AIDA (Attention, Interest, Desire, Action)', label: 'AIDA - Attention, Interest, Desire, Action' },
-  { value: 'PAS (Problem, Agitation, Solution)', label: 'PAS - Problem, Agitation, Solution' },
-  { value: 'BAB (Before, After, Bridge)', label: 'BAB - Before, After, Bridge' },
-  { value: 'FAB (Features, Advantages, Benefits)', label: 'FAB - Features, Advantages, Benefits' },
-  { value: '4Ps (Promise, Picture, Proof, Push)', label: '4Ps - Promise, Picture, Proof, Push' },
-  { value: 'PASTOR (Problem, Amplify, Story, Transformation, Offer, Response)', label: 'PASTOR - Problem to Response' },
-  { value: 'QUEST (Qualify, Understand, Educate, Stimulate, Transition)', label: 'QUEST - Qualify to Transition' },
-  { value: 'SLAP (Stop, Look, Act, Purchase)', label: 'SLAP - Stop, Look, Act, Purchase' },
-  { value: 'ACCA (Awareness, Comprehension, Conviction, Action)', label: 'ACCA - Awareness to Action' },
-  { value: 'PPPP (Picture, Promise, Prove, Push)', label: '4P - Picture, Promise, Prove, Push' },
-  { value: 'SSS (Star, Story, Solution)', label: 'SSS - Star, Story, Solution' },
-  { value: 'APP (Agree, Promise, Preview)', label: 'APP - Agree, Promise, Preview' },
 ];
 
 const contentCategories = [
@@ -421,7 +407,7 @@ function GenerateContentIdeasContent() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        {contentFrameworks.map(fw => (
+                        {CONTENT_FRAMEWORKS.map(fw => (
                           <SelectItem key={fw.value} value={fw.value}>
                             {fw.label}
                           </SelectItem>

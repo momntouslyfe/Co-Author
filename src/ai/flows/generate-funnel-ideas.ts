@@ -14,7 +14,8 @@ const GenerateFunnelIdeasInputSchema = z.object({
   previousStepIdeas: z.string().optional().describe('Titles and descriptions of selected ideas from previous steps.'),
   researchProfile: z.string().optional().describe('Optional research profile for context.'),
   styleProfile: z.string().optional().describe('Optional style profile for writing style.'),
-  storytellingFramework: z.string().optional().describe('Optional storytelling framework.'),
+  storytellingFramework: z.string().optional().describe('Optional storytelling framework with concept.'),
+  contentFramework: z.string().optional().describe('Optional content/marketing framework with concept.'),
   authorProfile: z.string().optional().describe('Optional author profile for context.'),
   model: z.string().optional().describe('The generative AI model to use.'),
 });
@@ -77,7 +78,13 @@ The fundamental concept is that when someone solves one problem, a NEW problem e
 {{/if}}
 
 {{#if storytellingFramework}}
-**Storytelling Framework:** {{{storytellingFramework}}}
+**Storytelling Framework:**
+{{{storytellingFramework}}}
+{{/if}}
+
+{{#if contentFramework}}
+**Content Framework:**
+{{{contentFramework}}}
 {{/if}}
 
 {{#if styleProfile}}

@@ -44,6 +44,8 @@ import { generateFunnelIdeas } from '@/ai/flows/generate-funnel-ideas';
 import { getIdToken } from '@/lib/client-auth';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
+import { STORYTELLING_FRAMEWORKS, getFrameworkConcept } from '@/lib/storytelling-frameworks';
+import { CONTENT_FRAMEWORKS, getContentFrameworkConcept } from '@/lib/content-frameworks';
 
 const STEP_LABELS: Record<number, { title: string; description: string }> = {
   1: { title: 'First Challenge', description: 'What readers struggle with immediately after finishing your book' },
@@ -69,6 +71,8 @@ export default function FunnelBuilderPage() {
   const [selectedResearchProfileId, setSelectedResearchProfileId] = useState<string>('');
   const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string>('');
   const [selectedAuthorProfileId, setSelectedAuthorProfileId] = useState<string>('');
+  const [selectedStorytellingFramework, setSelectedStorytellingFramework] = useState<string>('');
+  const [selectedContentFramework, setSelectedContentFramework] = useState<string>('');
   const [activeStep, setActiveStep] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -176,6 +180,16 @@ export default function FunnelBuilderPage() {
 
       const previousContext = step > 1 ? getPreviousStepsContext(step) : undefined;
 
+      const storytellingFw = selectedStorytellingFramework || project.storytellingFramework;
+      const storytellingWithConcept = storytellingFw
+        ? `${storytellingFw}\nConcept: ${getFrameworkConcept(storytellingFw)}`
+        : undefined;
+      
+      const contentFw = selectedContentFramework;
+      const contentWithConcept = contentFw
+        ? `${contentFw}\nConcept: ${getContentFrameworkConcept(contentFw)}`
+        : undefined;
+
       const result = await generateFunnelIdeas({
         userId: user.uid,
         idToken,
@@ -186,7 +200,8 @@ export default function FunnelBuilderPage() {
         previousStepIdeas: previousContext,
         researchProfile: researchContent,
         styleProfile: styleContent,
-        storytellingFramework: project.storytellingFramework,
+        storytellingFramework: storytellingWithConcept,
+        contentFramework: contentWithConcept,
         authorProfile: authorContent,
       });
 
@@ -710,6 +725,54 @@ export default function FunnelBuilderPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Storytelling Framework (Optional)</Label>
+                <Select value={selectedStorytellingFramework || '__none__'} onValueChange={(v) => setSelectedStorytellingFramework(v === '__none__' ? '' : v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select storytelling framework" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    {STORYTELLING_FRAMEWORKS.map(fw => (
+                      <SelectItem key={fw.value} value={fw.value}>
+                        {fw.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedStorytellingFramework && selectedStorytellingFramework !== '__none__' && (
+                  <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      <strong>Concept:</strong> {getFrameworkConcept(selectedStorytellingFramework)}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Content Framework (Optional)</Label>
+                <Select value={selectedContentFramework || '__none__'} onValueChange={(v) => setSelectedContentFramework(v === '__none__' ? '' : v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select content framework" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    {CONTENT_FRAMEWORKS.map(fw => (
+                      <SelectItem key={fw.value} value={fw.value}>
+                        {fw.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedContentFramework && selectedContentFramework !== '__none__' && (
+                  <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      <strong>Concept:</strong> {getContentFrameworkConcept(selectedContentFramework)}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex justify-end">
