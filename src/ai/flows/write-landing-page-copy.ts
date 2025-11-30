@@ -16,17 +16,17 @@ const WriteLandingPageCopyInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
   idToken: z.string().describe('Firebase ID token for authentication verification.'),
   bookTitle: z.string().describe('The title of the book.'),
-  bookSubtitle: z.string().optional().describe('The subtitle of the book.'),
   bookOutline: z.string().describe('The master blueprint/outline of the book.'),
   bookDescription: z.string().optional().describe('Description of the book.'),
   language: z.string().describe('The language for the content.'),
-  targetWordCount: z.number().describe('Target word count for the landing page copy.'),
+  targetWordCount: z.number().describe('Target word count for the landing page copy (500-2500 words).'),
   offers: z.array(OfferContextSchema).optional().describe('Up to 3 offers to include as bonuses.'),
   customInstructions: z.string().optional().describe('Custom instructions for the AI.'),
   researchProfile: z.string().optional().describe('Research profile for audience context.'),
   styleProfile: z.string().optional().describe('Style profile for writing style.'),
   authorProfile: z.string().optional().describe('Author profile for credentials and bio.'),
   storytellingFramework: z.string().optional().describe('Storytelling framework to use.'),
+  contentFramework: z.string().optional().describe('Content/marketing framework to use (e.g., AIDA, PAS).'),
   model: z.string().optional().describe('The generative AI model to use.'),
 });
 
@@ -54,7 +54,7 @@ export type WriteLandingPageCopyOutput = z.infer<typeof WriteLandingPageCopyOutp
 export async function writeLandingPageCopy(
   input: WriteLandingPageCopyInput
 ): Promise<WriteLandingPageCopyOutput> {
-  const estimatedWords = Math.max(input.targetWordCount, 1500);
+  const estimatedWords = Math.max(input.targetWordCount, 500);
   await preflightCheckWordCredits(input.userId, estimatedWords);
 
   const { ai, model: routedModel } = await getGenkitInstanceForFunction('chapter', input.userId, input.idToken);
@@ -65,6 +65,16 @@ export async function writeLandingPageCopy(
       input: { schema: WriteLandingPageCopyInputSchema },
       output: { schema: WriteLandingPageCopyOutputSchema },
       prompt: `You are an expert direct response copywriter specializing in book sales pages and high-converting landing pages. Your task is to write a complete, high-value landing page copy for a book.
+
+**CRITICAL WORD COUNT REQUIREMENT:**
+You MUST write EXACTLY approximately {{{targetWordCount}}} words (±10%).
+- If target is 500 words, write 450-550 words
+- If target is 1000 words, write 900-1100 words
+- If target is 1500 words, write 1350-1650 words
+- If target is 2000 words, write 1800-2200 words
+- If target is 2500 words, write 2250-2750 words
+
+DO NOT write significantly more or less than the target. Adjust depth and detail to match the word count.
 
 **THE VALUE EQUATION FRAMEWORK (MANDATORY):**
 VALUE = (Dream Outcome × Perceived Likelihood of Achievement) ÷ (Time Delay × Effort & Sacrifice)
@@ -105,8 +115,8 @@ You MUST apply this framework throughout the copy:
 
 **BOOK CONTEXT:**
 - Book Title: {{{bookTitle}}}
-{{#if bookSubtitle}}- Book Subtitle: {{{bookSubtitle}}}{{/if}}
 - Language: {{{language}}}
+- Target Word Count: {{{targetWordCount}}} words (FOLLOW THIS STRICTLY)
 
 **Book Blueprint/Outline:**
 {{{bookOutline}}}
@@ -142,6 +152,11 @@ If the style profile demonstrates code-mixing:
 **Storytelling Framework:** {{{storytellingFramework}}}
 {{/if}}
 
+{{#if contentFramework}}
+**Content/Marketing Framework:** {{{contentFramework}}}
+Apply this framework structure to organize and present the marketing message effectively.
+{{/if}}
+
 {{#if offers}}
 **BONUS OFFERS TO INCLUDE:**
 {{#each offers}}
@@ -164,7 +179,7 @@ If the style profile demonstrates code-mixing:
 ---
 
 **YOUR TASK:**
-Write a complete, high-converting landing page copy for this book. Target approximately {{{targetWordCount}}} words.
+Write a complete, high-converting landing page copy for this book. You MUST write exactly approximately {{{targetWordCount}}} words (±10%).
 
 **REQUIRED SECTIONS (in order):**
 
@@ -234,8 +249,16 @@ Write a complete, high-converting landing page copy for this book. Target approx
 7. Each section should flow naturally into the next
 8. Create multiple CTA opportunities throughout
 
+**WORD COUNT ADJUSTMENT GUIDE:**
+- For 500-800 words: Be concise, focus on headline, problem, solution, CTA. Minimal testimonial placeholders.
+- For 900-1200 words: Add author section and basic offer stack.
+- For 1300-1800 words: Full sections with moderate detail.
+- For 1900-2500 words: Comprehensive landing page with full details, multiple testimonials, detailed benefits.
+
 **OUTPUT FORMAT:**
 Provide the complete landing page copy with clear section headers (use ## for main sections, ### for subsections).
+
+REMEMBER: Your output MUST be approximately {{{targetWordCount}}} words (±10%). Count your words and adjust accordingly.
 
 Write the complete landing page copy now.`,
     });

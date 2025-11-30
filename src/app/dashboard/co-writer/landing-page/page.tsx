@@ -16,11 +16,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   ArrowLeft,
@@ -31,18 +30,22 @@ import {
   Check,
   Gift,
   Target,
-  Info,
   FileText,
   ChevronDown,
   ChevronUp,
+  RefreshCw,
+  Save,
+  Wand2,
+  Pencil,
 } from 'lucide-react';
-import { useAuthUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Project, ResearchProfile, StyleProfile, AuthorProfile, OfferDraft } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
 import { getIdToken } from '@/lib/client-auth';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
+import { rewriteMarketingContent } from '@/ai/flows/rewrite-marketing-content';
 
 const languages = [
   { value: 'English', label: 'English' },
@@ -61,6 +64,21 @@ const storytellingFrameworks = [
   { value: 'Save the Cat', label: 'Save the Cat' },
 ];
 
+const contentFrameworks = [
+  { value: 'AIDA (Attention, Interest, Desire, Action)', label: 'AIDA - Attention, Interest, Desire, Action' },
+  { value: 'PAS (Problem, Agitation, Solution)', label: 'PAS - Problem, Agitation, Solution' },
+  { value: 'BAB (Before, After, Bridge)', label: 'BAB - Before, After, Bridge' },
+  { value: 'FAB (Features, Advantages, Benefits)', label: 'FAB - Features, Advantages, Benefits' },
+  { value: '4Ps (Promise, Picture, Proof, Push)', label: '4Ps - Promise, Picture, Proof, Push' },
+  { value: 'PASTOR (Problem, Amplify, Story, Transformation, Offer, Response)', label: 'PASTOR - Problem to Response' },
+  { value: 'QUEST (Qualify, Understand, Educate, Stimulate, Transition)', label: 'QUEST - Qualify to Transition' },
+  { value: 'SLAP (Stop, Look, Act, Purchase)', label: 'SLAP - Stop, Look, Act, Purchase' },
+  { value: 'ACCA (Awareness, Comprehension, Conviction, Action)', label: 'ACCA - Awareness to Action' },
+  { value: 'PPPP (Picture, Promise, Prove, Push)', label: '4P - Picture, Promise, Prove, Push' },
+  { value: 'SSS (Star, Story, Solution)', label: 'SSS - Star, Story, Solution' },
+  { value: 'APP (Agree, Promise, Preview)', label: 'APP - Agree, Promise, Preview' },
+];
+
 export default function LandingPageCopyPage() {
   const { toast } = useToast();
   const { user, isUserLoading } = useAuthUser();
@@ -69,20 +87,35 @@ export default function LandingPageCopyPage() {
 
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedOfferIds, setSelectedOfferIds] = useState<string[]>([]);
-  const [targetWordCount, setTargetWordCount] = useState<number>(2000);
+  const [targetWordCount, setTargetWordCount] = useState<number>(1500);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
   const [customInstructions, setCustomInstructions] = useState<string>('');
   const [storytellingFramework, setStorytellingFramework] = useState<string>('');
+  const [contentFramework, setContentFramework] = useState<string>('');
   const [selectedResearchProfileId, setSelectedResearchProfileId] = useState<string>('');
   const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string>('');
   const [selectedAuthorProfileId, setSelectedAuthorProfileId] = useState<string>('');
 
   const [generatedContent, setGeneratedContent] = useState<string>('');
   const [currentWordCount, setCurrentWordCount] = useState<number>(0);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRewriting, setIsRewriting] = useState(false);
+  const [isExpanding, setIsExpanding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSettings, setShowSettings] = useState(true);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const [rewriteInstruction, setRewriteInstruction] = useState<string>('');
+  const [expandInstruction, setExpandInstruction] = useState<string>('');
+  const [paragraphExpandInstruction, setParagraphExpandInstruction] = useState<string>('');
+  const [expandTargetWords, setExpandTargetWords] = useState<number>(2000);
+  const [openRewritePopover, setOpenRewritePopover] = useState(false);
+  const [openExpandPopover, setOpenExpandPopover] = useState(false);
+  const [expandingParagraphIndex, setExpandingParagraphIndex] = useState<number | null>(null);
+  const [openExpandParagraphPopover, setOpenExpandParagraphPopover] = useState<number | null>(null);
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -132,6 +165,7 @@ export default function LandingPageCopyPage() {
   );
 
   const isLoading = isUserLoading || projectsLoading;
+  const isProcessing = isGenerating || isRewriting || isExpanding;
 
   useEffect(() => {
     if (generatedContent) {
@@ -217,6 +251,7 @@ export default function LandingPageCopyPage() {
           styleProfile: selectedStyle?.styleAnalysis,
           authorProfile: authorContext,
           storytellingFramework: storytellingFramework || selectedProject.storytellingFramework,
+          contentFramework: contentFramework || undefined,
         }),
       });
 
@@ -232,6 +267,7 @@ export default function LandingPageCopyPage() {
       }
 
       setGeneratedContent(result.content);
+      setShowSettings(false);
       refreshCredits();
 
       toast({
@@ -250,32 +286,250 @@ export default function LandingPageCopyPage() {
     }
   };
 
+  const handleRewrite = async (instruction?: string) => {
+    if (!user || !generatedContent) {
+      toast({
+        title: 'No Content',
+        description: 'There is no content to rewrite.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsRewriting(true);
+    setOpenRewritePopover(false);
+    try {
+      const idToken = await getIdToken(user);
+      const selectedStyle = styleProfiles?.find(s => s.id === selectedStyleProfileId);
+
+      const result = await rewriteMarketingContent({
+        userId: user.uid,
+        idToken,
+        content: generatedContent,
+        language: selectedLanguage,
+        bookTitle: selectedProject?.title,
+        styleProfile: selectedStyle?.styleAnalysis,
+        customInstructions: instruction || undefined,
+      });
+
+      if (!result || !result.content) {
+        throw new Error('Failed to rewrite content. Please refresh the page and try again.');
+      }
+
+      setGeneratedContent(result.content);
+      refreshCredits();
+
+      toast({
+        title: 'Content Rewritten',
+        description: `Rewritten content: ${result.wordCount} words.`,
+      });
+    } catch (error: any) {
+      console.error('Error rewriting content:', error);
+      toast({
+        title: 'Rewrite Failed',
+        description: error.message || 'Failed to rewrite content. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRewriting(false);
+      setRewriteInstruction('');
+    }
+  };
+
+  const handleExpand = async (instruction?: string) => {
+    if (!user || !generatedContent) {
+      toast({
+        title: 'No Content',
+        description: 'There is no content to expand.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsExpanding(true);
+    setOpenExpandPopover(false);
+    try {
+      const idToken = await getIdToken(user);
+      const selectedStyle = styleProfiles?.find(s => s.id === selectedStyleProfileId);
+
+      const response = await fetch('/api/co-writer/expand-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          content: generatedContent,
+          language: selectedLanguage,
+          targetWordCount: expandTargetWords,
+          bookTitle: selectedProject?.title,
+          bookOutline: selectedProject?.outline,
+          styleProfile: selectedStyle?.styleAnalysis,
+          customInstructions: instruction || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to expand content');
+      }
+
+      const result = await response.json();
+
+      if (!result || !result.content) {
+        throw new Error('Failed to expand content. Please refresh the page and try again.');
+      }
+
+      setGeneratedContent(result.content);
+      refreshCredits();
+
+      toast({
+        title: 'Content Expanded',
+        description: `Expanded content to ${result.wordCount} words.`,
+      });
+    } catch (error: any) {
+      console.error('Error expanding content:', error);
+      toast({
+        title: 'Expand Failed',
+        description: error.message || 'Failed to expand content. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExpanding(false);
+      setExpandInstruction('');
+    }
+  };
+
+  const handleExtendParagraph = async (paragraph: string, paragraphIndex: number, instruction?: string) => {
+    if (!user || !paragraph.trim()) {
+      toast({
+        title: 'No Content',
+        description: 'There is no paragraph to extend.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setExpandingParagraphIndex(paragraphIndex);
+    setOpenExpandParagraphPopover(null);
+    try {
+      const idToken = await getIdToken(user);
+      const selectedStyle = styleProfiles?.find(s => s.id === selectedStyleProfileId);
+
+      const response = await fetch('/api/co-writer/extend-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          paragraph,
+          language: selectedLanguage,
+          bookTitle: selectedProject?.title,
+          bookOutline: selectedProject?.outline,
+          styleProfile: selectedStyle?.styleAnalysis,
+          instruction: instruction || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to extend paragraph');
+      }
+
+      const result = await response.json();
+
+      setGeneratedContent(prevContent => {
+        const paragraphs = prevContent.split('\n\n').filter(p => p.trim());
+        if (paragraphIndex >= 0 && paragraphIndex < paragraphs.length) {
+          paragraphs.splice(paragraphIndex + 1, 0, result.extendedContent);
+        }
+        return paragraphs.join('\n\n');
+      });
+      refreshCredits();
+
+      toast({
+        title: 'Content Extended',
+        description: 'New content has been added after the paragraph.',
+      });
+    } catch (error: any) {
+      console.error('Error extending paragraph:', error);
+      toast({
+        title: 'Extend Failed',
+        description: error.message || 'Failed to extend content. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setExpandingParagraphIndex(null);
+      setParagraphExpandInstruction('');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user || !selectedProjectId || !generatedContent) {
+      toast({
+        title: 'Cannot Save',
+        description: 'Please generate content first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const draftsCollection = collection(firestore, 'users', user.uid, 'projects', selectedProjectId, 'contentDrafts');
+
+      const draftData: Record<string, any> = {
+        userId: user.uid,
+        projectId: selectedProjectId,
+        title: `Landing Page Copy - ${selectedProject?.title || 'Untitled'}`,
+        content: generatedContent,
+        wordCount: currentWordCount,
+        targetWordCount: targetWordCount,
+        language: selectedLanguage,
+        contentType: 'landing-page',
+        updatedAt: serverTimestamp(),
+      };
+
+      if (customInstructions) {
+        draftData.customInstructions = customInstructions;
+      }
+      if (contentFramework) {
+        draftData.contentFramework = contentFramework;
+      }
+      if (storytellingFramework) {
+        draftData.storytellingFramework = storytellingFramework;
+      }
+
+      if (currentDraftId) {
+        const draftRef = doc(firestore, 'users', user.uid, 'projects', selectedProjectId, 'contentDrafts', currentDraftId);
+        await updateDoc(draftRef, draftData);
+      } else {
+        draftData.createdAt = serverTimestamp();
+        const newDraftRef = await addDoc(draftsCollection, draftData);
+        setCurrentDraftId(newDraftRef.id);
+      }
+
+      toast({
+        title: 'Content Saved',
+        description: 'Your landing page copy has been saved.',
+      });
+    } catch (error: any) {
+      console.error('Error saving draft:', error);
+      toast({
+        title: 'Save Failed',
+        description: error.message || 'Failed to save draft. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleCopy = async () => {
     if (!generatedContent) return;
     try {
-      const htmlContent = generatedContent
-        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-        .replace(/^\* (.+)$/gm, '<li>$1</li>')
-        .replace(/^- (.+)$/gm, '<li>$1</li>')
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/^/, '<p>')
-        .replace(/$/, '</p>');
-
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const plainBlob = new Blob([generatedContent], { type: 'text/plain' });
-
-      if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'text/html': blob,
-            'text/plain': plainBlob,
-          }),
-        ]);
-      } else {
-        await navigator.clipboard.writeText(generatedContent);
-      }
-
+      await navigator.clipboard.writeText(generatedContent);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       toast({
@@ -283,70 +537,12 @@ export default function LandingPageCopyPage() {
         description: 'Landing page copy copied to clipboard.',
       });
     } catch (error) {
-      await navigator.clipboard.writeText(generatedContent);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
       toast({
-        title: 'Copied',
-        description: 'Content copied as plain text.',
+        title: 'Copy Failed',
+        description: 'Failed to copy to clipboard.',
+        variant: 'destructive',
       });
     }
-  };
-
-  const renderContent = (content: string) => {
-    const paragraphs = content.split('\n\n').filter(p => p.trim());
-
-    return paragraphs.map((paragraph, index) => {
-      const trimmed = paragraph.trim();
-
-      if (trimmed.startsWith('## ')) {
-        return (
-          <h2 key={index} className="text-2xl font-bold mt-8 mb-4 text-foreground">
-            {trimmed.slice(3)}
-          </h2>
-        );
-      }
-
-      if (trimmed.startsWith('### ')) {
-        return (
-          <h3 key={index} className="text-xl font-semibold mt-6 mb-3 text-foreground">
-            {trimmed.slice(4)}
-          </h3>
-        );
-      }
-
-      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-        const listItems = trimmed.split('\n').filter(line => line.trim());
-        return (
-          <ul key={index} className="list-disc list-inside space-y-2 my-4 text-muted-foreground">
-            {listItems.map((item, i) => (
-              <li key={i} className="leading-relaxed">
-                {item.replace(/^[-*]\s*/, '')}
-              </li>
-            ))}
-          </ul>
-        );
-      }
-
-      if (/^\d+\.\s/.test(trimmed)) {
-        const listItems = trimmed.split('\n').filter(line => line.trim());
-        return (
-          <ol key={index} className="list-decimal list-inside space-y-2 my-4 text-muted-foreground">
-            {listItems.map((item, i) => (
-              <li key={i} className="leading-relaxed">
-                {item.replace(/^\d+\.\s*/, '')}
-              </li>
-            ))}
-          </ol>
-        );
-      }
-
-      return (
-        <p key={index} className="text-muted-foreground leading-relaxed mb-4">
-          {trimmed}
-        </p>
-      );
-    });
   };
 
   return (
@@ -378,69 +574,218 @@ export default function LandingPageCopyPage() {
           <div className="lg:col-span-1 space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  Book Selection
-                </CardTitle>
-                <CardDescription>Select the book for your landing page</CardDescription>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <BookOpen className="h-5 w-5" />
+                    Content Settings
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSettings(!showSettings)}
+                  >
+                    {showSettings ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <CardDescription>Configure your landing page copy</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Select Book *</Label>
-                  <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a book project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projectsWithOutline.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {selectedProject && (
-                  <div className="p-3 bg-muted rounded-lg text-sm">
-                    <p className="font-medium">{selectedProject.title}</p>
-                    {selectedProject.description && (
-                      <p className="text-muted-foreground line-clamp-2">{selectedProject.description}</p>
-                    )}
+              {showSettings && (
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Select Book *</Label>
+                    <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a book project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projectsWithOutline.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
 
-                <div className="space-y-2">
-                  <Label>Language</Label>
-                  <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {languages.map((lang) => (
-                        <SelectItem key={lang.value} value={lang.value}>
-                          {lang.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {selectedProject && (
+                    <div className="p-3 bg-muted rounded-lg text-sm">
+                      <p className="font-medium">{selectedProject.title}</p>
+                      {selectedProject.description && (
+                        <p className="text-muted-foreground line-clamp-2">{selectedProject.description}</p>
+                      )}
+                    </div>
+                  )}
 
-                <div className="space-y-2">
-                  <Label>Target Word Count: {targetWordCount}</Label>
-                  <Slider
-                    value={[targetWordCount]}
-                    onValueChange={([value]) => setTargetWordCount(value)}
-                    min={1000}
-                    max={5000}
-                    step={100}
-                    className="mt-2"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Recommended: 2000-3000 words for comprehensive landing pages
-                  </p>
-                </div>
-              </CardContent>
+                  <div className="space-y-2">
+                    <Label>Language</Label>
+                    <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages.map((lang) => (
+                          <SelectItem key={lang.value} value={lang.value}>
+                            {lang.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label>Target Word Count</Label>
+                      <span className="text-sm text-muted-foreground">{targetWordCount} words</span>
+                    </div>
+                    <Slider
+                      value={[targetWordCount]}
+                      onValueChange={([value]) => setTargetWordCount(value)}
+                      min={500}
+                      max={2500}
+                      step={100}
+                      className="mt-2"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Recommended: 1500-2000 words for comprehensive landing pages
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Custom Instructions (Optional)</Label>
+                    <Textarea
+                      placeholder="Any specific instructions for the AI..."
+                      value={customInstructions}
+                      onChange={(e) => setCustomInstructions(e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                    className="w-full justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      Advanced Settings
+                    </span>
+                    {showAdvancedSettings ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+
+                  {showAdvancedSettings && (
+                    <div className="space-y-4 pt-2 border-t">
+                      <div className="space-y-2">
+                        <Label>Content Framework (Optional)</Label>
+                        <Select value={contentFramework} onValueChange={setContentFramework}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select content framework" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {contentFrameworks.map(fw => (
+                              <SelectItem key={fw.value} value={fw.value}>
+                                {fw.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Marketing/persuasion structure for your content.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Storytelling Framework (Optional)</Label>
+                        <Select value={storytellingFramework} onValueChange={setStorytellingFramework}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select storytelling framework" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {storytellingFrameworks.map((framework) => (
+                              <SelectItem key={framework.value} value={framework.value}>
+                                {framework.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Narrative structure for your content.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Research Profile (Optional)</Label>
+                        <Select value={selectedResearchProfileId} onValueChange={setSelectedResearchProfileId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select research profile" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {researchProfiles?.map((profile) => (
+                              <SelectItem key={profile.id} value={profile.id}>
+                                {profile.topic}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Style Profile (Optional)</Label>
+                        <Select value={selectedStyleProfileId} onValueChange={setSelectedStyleProfileId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select style profile" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {styleProfiles?.map((profile) => (
+                              <SelectItem key={profile.id} value={profile.id}>
+                                {profile.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Author Profile (Optional)</Label>
+                        <Select value={selectedAuthorProfileId} onValueChange={setSelectedAuthorProfileId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select author profile" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {authorProfiles?.map((profile) => (
+                              <SelectItem key={profile.id} value={profile.id}>
+                                {profile.penName || profile.fullName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button
+                    className="w-full"
+                    onClick={handleGenerate}
+                    disabled={isProcessing || !selectedProjectId}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate Landing Page Copy
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              )}
             </Card>
 
             {selectedProjectId && (
@@ -451,7 +796,7 @@ export default function LandingPageCopyPage() {
                     Bonus Offers (Optional)
                   </CardTitle>
                   <CardDescription>
-                    Select up to 3 offers to include as bonuses in your landing page
+                    Select up to 3 offers to include as bonuses
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -498,189 +843,298 @@ export default function LandingPageCopyPage() {
                 </CardContent>
               </Card>
             )}
-
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">AI Context Options</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-                  >
-                    {showAdvancedSettings ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </CardHeader>
-              {showAdvancedSettings && (
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Research Profile</Label>
-                    <Select value={selectedResearchProfileId} onValueChange={setSelectedResearchProfileId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select research profile" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {researchProfiles?.map((profile) => (
-                          <SelectItem key={profile.id} value={profile.id}>
-                            {profile.topic}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Style Profile</Label>
-                    <Select value={selectedStyleProfileId} onValueChange={setSelectedStyleProfileId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select style profile" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {styleProfiles?.map((profile) => (
-                          <SelectItem key={profile.id} value={profile.id}>
-                            {profile.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Author Profile</Label>
-                    <Select value={selectedAuthorProfileId} onValueChange={setSelectedAuthorProfileId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select author profile" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {authorProfiles?.map((profile) => (
-                          <SelectItem key={profile.id} value={profile.id}>
-                            {profile.penName || profile.fullName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Storytelling Framework</Label>
-                    <Select value={storytellingFramework} onValueChange={setStorytellingFramework}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select framework (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {storytellingFrameworks.map((framework) => (
-                          <SelectItem key={framework.value} value={framework.value}>
-                            {framework.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Custom Instructions</Label>
-                    <Textarea
-                      placeholder="Add any specific instructions for the AI..."
-                      value={customInstructions}
-                      onChange={(e) => setCustomInstructions(e.target.value)}
-                      rows={3}
-                    />
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating || !selectedProjectId}
-              className="w-full"
-              size="lg"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Landing Page Copy...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Landing Page Copy
-                </>
-              )}
-            </Button>
           </div>
 
           <div className="lg:col-span-2">
             <Card className="h-full">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Landing Page Copy
+                    <CardTitle>
+                      {selectedProject ? `Landing Page - ${selectedProject.title}` : 'Generated Landing Page Copy'}
                     </CardTitle>
-                    {currentWordCount > 0 && (
-                      <CardDescription>{currentWordCount} words</CardDescription>
-                    )}
+                    <CardDescription>
+                      {generatedContent ? 'Your high-converting landing page copy' : 'Configure settings and generate content'}
+                    </CardDescription>
                   </div>
                   {generatedContent && (
-                    <Button variant="outline" size="sm" onClick={handleCopy}>
-                      {copied ? (
-                        <>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Popover open={openRewritePopover} onOpenChange={setOpenRewritePopover}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" disabled={isProcessing}>
+                            {isRewriting ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                            )}
+                            Rewrite
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                          <div className="grid gap-4">
+                            <div className="space-y-2">
+                              <h4 className="font-medium leading-none">Rewrite Content</h4>
+                              <p className="text-sm text-muted-foreground">
+                                Improve and polish the generated content.
+                              </p>
+                            </div>
+                            <div className="grid gap-2">
+                              <Textarea
+                                placeholder="Optional: Specific instructions for rewrite..."
+                                value={rewriteInstruction}
+                                onChange={(e) => setRewriteInstruction(e.target.value)}
+                                rows={3}
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1"
+                                  onClick={() => handleRewrite()}
+                                  disabled={isProcessing}
+                                >
+                                  Just Rewrite
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => handleRewrite(rewriteInstruction)}
+                                  disabled={isProcessing || !rewriteInstruction.trim()}
+                                >
+                                  Guided Rewrite
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+
+                      <Popover open={openExpandPopover} onOpenChange={setOpenExpandPopover}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" disabled={isProcessing}>
+                            {isExpanding ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Sparkles className="mr-2 h-4 w-4" />
+                            )}
+                            Expand
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                          <div className="grid gap-4">
+                            <div className="space-y-2">
+                              <h4 className="font-medium leading-none">Expand Content</h4>
+                              <p className="text-sm text-muted-foreground">
+                                Add more valuable content and detail.
+                              </p>
+                            </div>
+                            <div className="grid gap-2">
+                              <div className="space-y-2">
+                                <div className="flex justify-between">
+                                  <Label>Target Word Count</Label>
+                                  <span className="text-sm text-muted-foreground">{expandTargetWords} words</span>
+                                </div>
+                                <Slider
+                                  value={[expandTargetWords]}
+                                  onValueChange={([v]) => setExpandTargetWords(v)}
+                                  min={currentWordCount + 100}
+                                  max={currentWordCount + 1500}
+                                  step={100}
+                                />
+                              </div>
+                              <Textarea
+                                placeholder="Optional: What to add or focus on..."
+                                value={expandInstruction}
+                                onChange={(e) => setExpandInstruction(e.target.value)}
+                                rows={2}
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1"
+                                  onClick={() => handleExpand()}
+                                  disabled={isProcessing}
+                                >
+                                  Just Expand
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => handleExpand(expandInstruction)}
+                                  disabled={isProcessing || !expandInstruction.trim()}
+                                >
+                                  Guided Expand
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+
+                      <span className="text-sm text-muted-foreground px-2">
+                        {currentWordCount.toLocaleString()} words
+                      </span>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopy}
+                        disabled={isProcessing}
+                      >
+                        {copied ? (
                           <Check className="mr-2 h-4 w-4" />
-                          Copied
-                        </>
-                      ) : (
-                        <>
+                        ) : (
                           <Copy className="mr-2 h-4 w-4" />
-                          Copy
-                        </>
-                      )}
-                    </Button>
+                        )}
+                        {copied ? 'Copied' : 'Copy'}
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        onClick={handleSave}
+                        disabled={isProcessing || isSaving}
+                      >
+                        {isSaving ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="mr-2 h-4 w-4" />
+                        )}
+                        Save Content
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardHeader>
               <CardContent>
                 {isGenerating ? (
                   <div className="flex flex-col items-center justify-center py-16">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                    <p className="text-muted-foreground">Generating high-converting copy...</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Applying Value Equation and Offer Stack frameworks...
-                    </p>
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                    <p className="text-muted-foreground">Generating landing page copy...</p>
+                    <p className="text-sm text-muted-foreground mt-1">This may take a moment.</p>
                   </div>
                 ) : generatedContent ? (
                   <div className="prose prose-sm max-w-none dark:prose-invert">
-                    {renderContent(generatedContent)}
+                    {generatedContent.split('\n\n').filter(p => p.trim()).map((paragraph, pIndex) => {
+                      const trimmed = paragraph.trim();
+                      
+                      if (trimmed.startsWith('### ')) {
+                        return (
+                          <h5 key={`heading-${pIndex}`} className="text-base font-semibold mt-6 mb-3">
+                            {trimmed.substring(4)}
+                          </h5>
+                        );
+                      }
+                      if (trimmed.startsWith('## ')) {
+                        return (
+                          <h4 key={`heading-${pIndex}`} className="text-lg font-semibold mt-8 mb-4">
+                            {trimmed.substring(3)}
+                          </h4>
+                        );
+                      }
+                      
+                      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                        const items = trimmed.split('\n').filter(line => line.trim());
+                        return (
+                          <ul key={`list-${pIndex}`} className="list-disc list-inside space-y-1 mb-4 ml-4">
+                            {items.map((item, idx) => (
+                              <li key={idx} className="text-base leading-relaxed">
+                                {item.replace(/^[-*]\s*/, '')}
+                              </li>
+                            ))}
+                          </ul>
+                        );
+                      }
+                      
+                      if (/^\d+\.\s/.test(trimmed)) {
+                        const items = trimmed.split('\n').filter(line => line.trim());
+                        return (
+                          <ol key={`list-${pIndex}`} className="list-decimal list-inside space-y-1 mb-4 ml-4">
+                            {items.map((item, idx) => (
+                              <li key={idx} className="text-base leading-relaxed">
+                                {item.replace(/^\d+\.\s*/, '')}
+                              </li>
+                            ))}
+                          </ol>
+                        );
+                      }
+                      
+                      return (
+                        <div key={`paragraph-${pIndex}`} className="mb-4 group/paragraph">
+                          <p className="text-base leading-relaxed whitespace-pre-wrap">{paragraph}</p>
+                          <div className="text-right opacity-0 group-hover/paragraph:opacity-100 transition-opacity mt-2">
+                            <Popover 
+                              open={openExpandParagraphPopover === pIndex} 
+                              onOpenChange={(isOpen) => setOpenExpandParagraphPopover(isOpen ? pIndex : null)}
+                            >
+                              <PopoverTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-xs" 
+                                  disabled={expandingParagraphIndex === pIndex || isProcessing}
+                                >
+                                  {expandingParagraphIndex === pIndex ? (
+                                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Sparkles className="mr-2 h-3 w-3" />
+                                  )}
+                                  Extend With AI
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-80">
+                                <div className="grid gap-4">
+                                  <div className="space-y-2">
+                                    <h4 className="font-medium leading-none">Guided Extend</h4>
+                                    <p className="text-sm text-muted-foreground">Give the AI specific instructions.</p>
+                                  </div>
+                                  <div className="grid gap-2">
+                                    <Label htmlFor={`extend-instruction-${pIndex}`} className="sr-only">Instruction</Label>
+                                    <Textarea 
+                                      id={`extend-instruction-${pIndex}`} 
+                                      placeholder="e.g., Add a practical example" 
+                                      value={paragraphExpandInstruction} 
+                                      onChange={(e) => setParagraphExpandInstruction(e.target.value)} 
+                                    />
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => handleExtendParagraph(paragraph, pIndex, paragraphExpandInstruction)} 
+                                      disabled={!paragraphExpandInstruction || expandingParagraphIndex === pIndex}
+                                    >
+                                      <Pencil className="mr-2 h-4 w-4" /> Write With My Instruction
+                                    </Button>
+                                  </div>
+                                  <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                      <span className="w-full border-t" />
+                                    </div>
+                                    <div className="relative flex justify-center text-xs uppercase">
+                                      <span className="bg-popover px-2 text-muted-foreground">Or</span>
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    variant="secondary" 
+                                    onClick={() => handleExtendParagraph(paragraph, pIndex)} 
+                                    disabled={expandingParagraphIndex === pIndex}
+                                  >
+                                    <Wand2 className="mr-2 h-4 w-4" /> Just Write More
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <Target className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Ready to Create Your Landing Page</h3>
-                    <p className="text-muted-foreground max-w-md">
-                      Select a book project and optionally add bonus offers. The AI will generate 
-                      high-converting copy using the Value Equation framework.
+                    <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                    <p className="text-muted-foreground mb-2">No content generated yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      Select a book and click Generate to create high-converting landing page copy.
                     </p>
-                    <div className="mt-6 p-4 bg-muted rounded-lg text-left max-w-md">
-                      <h4 className="font-medium text-sm mb-2">Your landing page will include:</h4>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        <li>Compelling headline and subheadline</li>
-                        <li>Problem/pain point agitation</li>
-                        <li>Solution and benefits presentation</li>
-                        <li>Book contents preview</li>
-                        <li>About the author section</li>
-                        <li>Offer stack with bonuses</li>
-                        <li>Testimonial placeholders</li>
-                        <li>Guarantee and risk reversal</li>
-                        <li>Urgency and scarcity elements</li>
-                        <li>Strong calls to action</li>
-                      </ul>
-                    </div>
                   </div>
                 )}
               </CardContent>

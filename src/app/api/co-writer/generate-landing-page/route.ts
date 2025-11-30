@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
     
     const {
       bookTitle,
-      bookSubtitle,
       bookOutline,
       bookDescription,
       language,
@@ -30,6 +29,7 @@ export async function POST(request: NextRequest) {
       styleProfile,
       authorProfile,
       storytellingFramework,
+      contentFramework,
     } = body;
 
     if (!bookTitle || !bookOutline) {
@@ -43,17 +43,17 @@ export async function POST(request: NextRequest) {
       userId: decodedToken.uid,
       idToken,
       bookTitle,
-      bookSubtitle,
       bookOutline,
       bookDescription,
       language: language || 'English',
-      targetWordCount: targetWordCount || 2000,
+      targetWordCount: targetWordCount || 1500,
       offers: offers || undefined,
       customInstructions: customInstructions || undefined,
       researchProfile: researchProfile || undefined,
       styleProfile: styleProfile || undefined,
       authorProfile: authorProfile || undefined,
       storytellingFramework: storytellingFramework || undefined,
+      contentFramework: contentFramework || undefined,
     });
 
     return NextResponse.json(result);

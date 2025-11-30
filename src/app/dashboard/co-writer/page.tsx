@@ -19,31 +19,30 @@ export default function CoWriterPage() {
         <Card className="hover:shadow-lg transition-shadow border-primary/20">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-yellow-500/10 rounded-lg">
+              <div className="p-3 bg-yellow-500/10 rounded-lg flex-shrink-0">
                 <Lightbulb className="h-6 w-6 text-yellow-600" />
               </div>
-              <div>
-                <CardTitle>Generate Content Ideas</CardTitle>
-                <CardDescription>Create content ideas to sell your book</CardDescription>
+              <div className="min-w-0">
+                <CardTitle className="truncate">Generate Content Ideas</CardTitle>
+                <CardDescription className="truncate">Create content ideas to sell your book</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Generate compelling content ideas tailored to your book&apos;s topic, audience, and marketing goals. 
-              Perfect for social media, blogs, emails, and more.
+              Generate compelling content ideas tailored to your book&apos;s topic, audience, and marketing goals.
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button asChild className="flex-1">
                 <Link href="/dashboard/co-writer/content-ideas/generate">
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Ideas
+                  <Sparkles className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Generate</span>
                 </Link>
               </Button>
               <Button asChild variant="outline" className="flex-1">
                 <Link href="/dashboard/co-writer/content-ideas/saved">
-                  View Saved Ideas
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <span className="truncate">View Saved</span>
+                  <ArrowRight className="ml-2 h-4 w-4 flex-shrink-0" />
                 </Link>
               </Button>
             </div>
@@ -53,31 +52,30 @@ export default function CoWriterPage() {
         <Card className="hover:shadow-lg transition-shadow border-primary/20">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-500/10 rounded-lg">
+              <div className="p-3 bg-blue-500/10 rounded-lg flex-shrink-0">
                 <PenTool className="h-6 w-6 text-blue-600" />
               </div>
-              <div>
-                <CardTitle>Write Content</CardTitle>
-                <CardDescription>Write full content pieces with AI</CardDescription>
+              <div className="min-w-0">
+                <CardTitle className="truncate">Write Content</CardTitle>
+                <CardDescription className="truncate">Write full content pieces with AI</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Write complete marketing content from your saved ideas. Customize with word count, 
-              frameworks, and custom instructions. Rewrite and expand as needed.
+              Write complete marketing content from your saved ideas. Rewrite and expand as needed.
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button asChild className="flex-1">
                 <Link href="/dashboard/co-writer/write-content">
-                  <PenTool className="mr-2 h-4 w-4" />
-                  Start Writing
+                  <PenTool className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Start Writing</span>
                 </Link>
               </Button>
               <Button asChild variant="outline" className="flex-1">
                 <Link href="/dashboard/co-writer/saved-drafts">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Saved Content
+                  <FileText className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Saved</span>
                 </Link>
               </Button>
             </div>
@@ -87,24 +85,23 @@ export default function CoWriterPage() {
         <Card className="hover:shadow-lg transition-shadow border-green-500/20 bg-gradient-to-br from-green-50/50 to-transparent dark:from-green-950/20">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-green-500/10 rounded-lg">
+              <div className="p-3 bg-green-500/10 rounded-lg flex-shrink-0">
                 <Target className="h-6 w-6 text-green-600" />
               </div>
-              <div>
-                <CardTitle>Landing Page Copy</CardTitle>
-                <CardDescription>High-converting sales copy</CardDescription>
+              <div className="min-w-0">
+                <CardTitle className="truncate">Landing Page Copy</CardTitle>
+                <CardDescription className="truncate">High-converting sales copy</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Generate high-converting landing page copy using the Value Equation framework. 
-              Include bonus offers and create irresistible sales pages.
+              Generate high-converting landing page copy using the Value Equation framework.
             </p>
             <Button asChild className="w-full">
               <Link href="/dashboard/co-writer/landing-page">
-                <Target className="mr-2 h-4 w-4" />
-                Create Landing Page Copy
+                <Target className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">Create Landing Page</span>
               </Link>
             </Button>
           </CardContent>
