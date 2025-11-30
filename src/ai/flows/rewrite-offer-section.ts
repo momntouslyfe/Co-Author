@@ -4,6 +4,7 @@ import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { sanitizeStyleProfileForAI } from '@/lib/style-sanitizer';
 
 const RewriteOfferSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -33,6 +34,12 @@ export async function rewriteOfferSection(
   const originalWordCount = input.originalContent.split(/\s+/).filter(w => w.length > 0).length;
 
   await preflightCheckWordCredits(input.userId, originalWordCount);
+
+  // Sanitize style profile to remove parenthetical translations that AI tends to copy
+  const sanitizedInput = {
+    ...input,
+    styleProfile: sanitizeStyleProfileForAI(input.styleProfile),
+  };
 
   const result = await retryWithBackoff(
     async () => {
@@ -98,7 +105,7 @@ Provide the rewritten content now.`,
       });
 
       try {
-        const { output } = await prompt(input, { model: input.model || routedModel });
+        const { output } = await prompt(sanitizedInput, { model: input.model || routedModel });
 
         if (!output || !output.rewrittenContent) {
           throw new Error('AI failed to rewrite the content.');

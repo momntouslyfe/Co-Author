@@ -16,6 +16,7 @@ import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { sanitizeStyleProfileForAI } from '@/lib/style-sanitizer';
 
 const RewriteChapterInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -37,6 +38,12 @@ export type RewriteChapterOutput = z.infer<typeof RewriteChapterOutputSchema>;
 
 export async function rewriteChapter(input: RewriteChapterInput): Promise<RewriteChapterOutput> {
   await preflightCheckWordCredits(input.userId, 3000);
+  
+  // Sanitize style profile to remove parenthetical translations that AI tends to copy
+  const sanitizedInput = {
+    ...input,
+    styleProfile: sanitizeStyleProfileForAI(input.styleProfile),
+  };
   
   const { ai, model: routedModel } = await getGenkitInstanceForFunction('rewrite', input.userId, input.idToken);
   
@@ -101,7 +108,7 @@ Proceed to rewrite the entire chapter now. You must not stop until all sections 
 `,
   });
   
-  const { output } = await rewriteChapterPrompt(input, { model: input.model || routedModel });
+  const { output } = await rewriteChapterPrompt(sanitizedInput, { model: input.model || routedModel });
 
   if (!output || !output.rewrittenContent) {
     throw new Error("AI failed to rewrite the chapter content.");

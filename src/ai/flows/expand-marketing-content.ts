@@ -3,6 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { sanitizeStyleProfileForAI } from '@/lib/style-sanitizer';
 
 const ExpandMarketingContentInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -32,6 +33,12 @@ export async function expandMarketingContent(
   const currentWords = input.content.split(/\s+/).length;
   const additionalWords = Math.max(input.targetWordCount - currentWords, 200);
   await preflightCheckWordCredits(input.userId, additionalWords);
+
+  // Sanitize style profile to remove parenthetical translations that AI tends to copy
+  const sanitizedInput = {
+    ...input,
+    styleProfile: sanitizeStyleProfileForAI(input.styleProfile),
+  };
 
   const { ai, model: routedModel } = await getGenkitInstanceForFunction('expand', input.userId, input.idToken);
 
@@ -133,7 +140,7 @@ Return the final content using markdown formatting:
 Provide the complete expanded content.`,
     });
 
-    const { output } = await prompt(input, { model: input.model || routedModel });
+    const { output } = await prompt(sanitizedInput, { model: input.model || routedModel });
 
     if (!output || !output.content) {
       throw new Error('Failed to expand content. Please try again.');

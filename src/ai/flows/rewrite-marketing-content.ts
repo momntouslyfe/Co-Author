@@ -3,6 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { sanitizeStyleProfileForAI } from '@/lib/style-sanitizer';
 
 const RewriteMarketingContentInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -29,6 +30,12 @@ export async function rewriteMarketingContent(
 ): Promise<RewriteMarketingContentOutput> {
   const estimatedWords = input.content.split(/\s+/).length;
   await preflightCheckWordCredits(input.userId, estimatedWords);
+
+  // Sanitize style profile to remove parenthetical translations that AI tends to copy
+  const sanitizedInput = {
+    ...input,
+    styleProfile: sanitizeStyleProfileForAI(input.styleProfile),
+  };
 
   const { ai, model: routedModel } = await getGenkitInstanceForFunction('rewrite', input.userId, input.idToken);
 
@@ -111,7 +118,7 @@ Return the final content using markdown formatting with blank lines between para
 Provide the complete rewritten content.`,
     });
 
-    const { output } = await prompt(input, { model: input.model || routedModel });
+    const { output } = await prompt(sanitizedInput, { model: input.model || routedModel });
 
     if (!output || !output.content) {
       throw new Error('Failed to rewrite content. Please try again.');
