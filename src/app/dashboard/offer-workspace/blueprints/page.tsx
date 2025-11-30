@@ -32,6 +32,8 @@ import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 
+import { STORYTELLING_FRAMEWORKS, getFrameworkConcept } from '@/lib/storytelling-frameworks';
+
 const languages = [
   { value: 'English', label: 'English' },
   { value: 'Spanish', label: 'Spanish' },
@@ -39,17 +41,6 @@ const languages = [
   { value: 'German', label: 'German' },
   { value: 'Bangla', label: 'Bangla' },
   { value: 'Hindi', label: 'Hindi' },
-];
-
-const storytellingFrameworks = [
-  { value: 'The Hero\'s Journey', label: 'The Hero\'s Journey' },
-  { value: 'The Mentor\'s Journey', label: 'The Mentor\'s Journey' },
-  { value: 'Three-Act Structure', label: 'Three-Act Structure' },
-  { value: 'Fichtean Curve', label: 'Fichtean Curve' },
-  { value: 'Save the Cat', label: 'Save the Cat' },
-  { value: 'AIDA (Attention, Interest, Desire, Action)', label: 'AIDA' },
-  { value: 'PAS (Problem, Agitation, Solution)', label: 'PAS' },
-  { value: 'BAB (Before, After, Bridge)', label: 'BAB' },
 ];
 
 export default function BlueprintSelectionPage() {
@@ -438,11 +429,18 @@ export default function BlueprintSelectionPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {storytellingFrameworks.map(framework => (
+                    {STORYTELLING_FRAMEWORKS.map(framework => (
                       <SelectItem key={framework.value} value={framework.value}>{framework.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {selectedStorytellingFramework && selectedStorytellingFramework !== 'none' && (
+                  <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      <strong>Concept:</strong> {getFrameworkConcept(selectedStorytellingFramework)}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

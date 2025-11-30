@@ -33,6 +33,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { WorkflowNavigation } from '@/components/workflow-navigation';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
+import { STORYTELLING_FRAMEWORKS, getFrameworkConcept } from '@/lib/storytelling-frameworks';
 
 
 const formSchema = z.object({
@@ -53,14 +54,6 @@ const languages = [
     { value: 'German', label: 'German' },
     { value: 'Bangla', label: 'Bangla' },
     { value: 'Hindi', label: 'Hindi' },
-];
-
-const frameworks = [
-    { value: 'The Hero\'s Journey', label: 'The Hero\'s Journey' },
-    { value: 'The Mentor\'s Journey', label: 'The Mentor\'s Journey' },
-    { value: 'Three-Act Structure', label: 'Three-Act Structure' },
-    { value: 'Fichtean Curve', label: 'Fichtean Curve' },
-    { value: 'Save the Cat', label: 'Save the Cat' },
 ];
 
 export default function CoAuthorWorkspacePage() {
@@ -369,11 +362,18 @@ export default function CoAuthorWorkspacePage() {
                             </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                            {frameworks.map(fw => (
+                            {STORYTELLING_FRAMEWORKS.map(fw => (
                                 <SelectItem key={fw.value} value={fw.value}>{fw.label}</SelectItem>
                             ))}
                             </SelectContent>
                         </Select>
+                        {field.value && (
+                          <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
+                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                              <strong>Concept:</strong> {getFrameworkConcept(field.value)}
+                            </p>
+                          </div>
+                        )}
                         <FormMessage />
                         </FormItem>
                     )}
