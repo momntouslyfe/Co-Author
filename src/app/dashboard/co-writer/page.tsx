@@ -101,7 +101,7 @@ export default function CoWriterPage() {
             <Button asChild className="w-full">
               <Link href="/dashboard/co-writer/landing-page">
                 <Target className="mr-2 h-4 w-4 flex-shrink-0" />
-                <span className="truncate">Create Landing Page</span>
+                <span className="truncate">Write Landing Page Copy</span>
               </Link>
             </Button>
           </CardContent>

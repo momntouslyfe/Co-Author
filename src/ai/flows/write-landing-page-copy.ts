@@ -136,11 +136,17 @@ You MUST apply this framework throughout the copy:
 {{{styleProfile}}}
 
 **CODE-MIXING INTEGRITY (MANDATORY):**
-If the style profile demonstrates code-mixing:
+If the style profile demonstrates code-mixing (mixing words/phrases from multiple languages):
 1. Use mixed-language words NATURALLY without any explanation
-2. NEVER add parenthetical translations like "প্রমোশন (promotion)"
+2. NEVER add parenthetical translations like "প্রমোশন (promotion)" - just write "প্রমোশন"
 3. NEVER add brackets, glosses, or English explanations after non-English words
 4. Blend languages seamlessly as a native speaker would
+5. Match the exact frequency and pattern of language mixing from the profile
+
+WRONG: "আপনার বিজনেস (business) এর জন্য মার্কেটিং (marketing) স্ট্রাটেজি (strategy)"
+CORRECT: "আপনার বিজনেস এর জন্য মার্কেটিং স্ট্রাটেজি"
+
+CRITICAL: If the style profile shows code-mixing (e.g., English with Bengali/Hindi words), you MUST incorporate the same language mixing pattern throughout your entire landing page copy.
 {{/if}}
 
 {{#if authorProfile}}
@@ -239,13 +245,25 @@ Write a complete, high-converting landing page copy for this book. You MUST writ
 
 ---
 
+**STRUCTURE COMPLIANCE (MANDATORY - Critical for readability):**
+You MUST structure your output properly for beautiful layout:
+1. MINIMUM 8-12 paragraphs spread across sections
+2. Use ## for main section headers, ### for subsections
+3. Each paragraph should be 2-4 sentences maximum
+4. Separate ALL paragraphs with blank lines
+5. Mix short punchy paragraphs (1-2 sentences) with medium ones (3-4 sentences)
+6. Use bullet points or numbered lists for benefits, features, and offer stacks
+7. NEVER write a wall of text - always break into multiple paragraphs
+8. Each section should have at least 2-3 paragraphs minimum
+9. Add visual breaks with horizontal rules (---) between major sections
+
 **WRITING GUIDELINES:**
 1. Write in {{{language}}}
 2. Use conversational, engaging tone
-3. Short paragraphs (2-4 sentences max)
+3. Short paragraphs (2-4 sentences max) - NEVER exceed 4 sentences per paragraph
 4. Use power words (discover, unlock, transform, proven, secret)
 5. Include specific numbers where possible
-6. Match the style profile if provided
+6. Match the style profile if provided, including any code-mixing patterns
 7. Each section should flow naturally into the next
 8. Create multiple CTA opportunities throughout
 
