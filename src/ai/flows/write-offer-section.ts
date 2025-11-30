@@ -5,7 +5,6 @@ import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
 import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
-import { sanitizeStyleProfileForAI } from '@/lib/style-sanitizer';
 import type { OfferCategory } from '@/lib/definitions';
 
 const WriteOfferSectionInputSchema = z.object({
@@ -42,12 +41,6 @@ export async function writeOfferSection(
   const context = `Module: "${input.moduleTitle}" in Part: "${input.partTitle}"`;
 
   await preflightCheckWordCredits(input.userId, input.targetWordCount);
-
-  // Sanitize style profile to remove parenthetical translations that AI tends to copy
-  const sanitizedInput = {
-    ...input,
-    styleProfile: sanitizeStyleProfileForAI(input.styleProfile),
-  };
 
   const category = input.offerCategory as Exclude<OfferCategory, 'all'>;
   const categoryLabel = OFFER_CATEGORY_LABELS[category] || input.offerCategory;
@@ -140,7 +133,7 @@ Write the section content now.`,
       });
 
       try {
-        const { output } = await prompt(sanitizedInput, { model: input.model || routedModel });
+        const { output } = await prompt(input, { model: input.model || routedModel });
 
         if (!output || !output.sectionContent) {
           throw new Error('AI failed to generate the section content.');

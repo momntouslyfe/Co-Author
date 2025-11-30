@@ -3,7 +3,6 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { sanitizeStyleProfileForAI } from '@/lib/style-sanitizer';
 
 const OfferContextSchema = z.object({
   title: z.string().describe('The offer title.'),
@@ -57,12 +56,6 @@ export async function writeLandingPageCopy(
 ): Promise<WriteLandingPageCopyOutput> {
   const estimatedWords = Math.max(input.targetWordCount, 500);
   await preflightCheckWordCredits(input.userId, estimatedWords);
-
-  // Sanitize style profile to remove parenthetical translations that AI tends to copy
-  const sanitizedInput = {
-    ...input,
-    styleProfile: sanitizeStyleProfileForAI(input.styleProfile),
-  };
 
   const { ai, model: routedModel } = await getGenkitInstanceForFunction('chapter', input.userId, input.idToken);
 
@@ -288,7 +281,7 @@ REMEMBER: Your output MUST be approximately {{{targetWordCount}}} words (±10%).
 Write the complete landing page copy now.`,
     });
 
-    const { output } = await prompt(sanitizedInput, { model: input.model || routedModel });
+    const { output } = await prompt(input, { model: input.model || routedModel });
 
     if (!output || !output.content) {
       throw new Error('Failed to generate landing page copy. Please try again.');

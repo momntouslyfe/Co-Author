@@ -4,7 +4,6 @@ import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { sanitizeStyleProfileForAI } from '@/lib/style-sanitizer';
 
 const ExpandOfferSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -34,12 +33,6 @@ export async function expandOfferSection(
   const additionalWords = Math.max(0, input.targetWordCount - originalWordCount);
 
   await preflightCheckWordCredits(input.userId, additionalWords);
-
-  // Sanitize style profile to remove parenthetical translations that AI tends to copy
-  const sanitizedInput = {
-    ...input,
-    styleProfile: sanitizeStyleProfileForAI(input.styleProfile),
-  };
 
   const result = await retryWithBackoff(
     async () => {
@@ -102,7 +95,7 @@ Provide the expanded content now.`,
       });
 
       try {
-        const { output } = await prompt(sanitizedInput, { model: input.model || routedModel });
+        const { output } = await prompt(input, { model: input.model || routedModel });
 
         if (!output || !output.expandedContent) {
           throw new Error('AI failed to expand the content.');

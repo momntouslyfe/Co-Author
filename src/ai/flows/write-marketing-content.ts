@@ -3,7 +3,6 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { sanitizeStyleProfileForAI } from '@/lib/style-sanitizer';
 
 const WriteMarketingContentInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -38,12 +37,6 @@ export async function writeMarketingContent(
 ): Promise<WriteMarketingContentOutput> {
   const estimatedWords = Math.max(input.targetWordCount, 500);
   await preflightCheckWordCredits(input.userId, estimatedWords);
-
-  // Sanitize style profile to remove parenthetical translations that AI tends to copy
-  const sanitizedInput = {
-    ...input,
-    styleProfile: sanitizeStyleProfileForAI(input.styleProfile),
-  };
 
   const { ai, model: routedModel } = await getGenkitInstanceForFunction('chapter', input.userId, input.idToken);
 
@@ -149,7 +142,7 @@ This content will be used for book marketing - it should:
 Write the complete content now. Do not include the title in the output - start directly with the content.`,
     });
 
-    const { output } = await prompt(sanitizedInput, { model: input.model || routedModel });
+    const { output } = await prompt(input, { model: input.model || routedModel });
 
     if (!output || !output.content) {
       throw new Error('Failed to generate marketing content. Please try again.');

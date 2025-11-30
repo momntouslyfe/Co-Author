@@ -17,7 +17,6 @@ import {z} from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { sanitizeStyleProfileForAI } from '@/lib/style-sanitizer';
 
 const WriteChapterSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -44,12 +43,6 @@ export async function writeChapterSection(input: WriteChapterSectionInput): Prom
   const context = `Section: "${input.sectionTitle}" in Chapter: "${input.chapterTitle}"`;
   
   await preflightCheckWordCredits(input.userId, 500);
-  
-  // Sanitize style profile to remove parenthetical translations that AI tends to copy
-  const sanitizedInput = {
-    ...input,
-    styleProfile: sanitizeStyleProfileForAI(input.styleProfile),
-  };
   
   const result = await retryWithBackoff(
     async () => {
@@ -210,7 +203,7 @@ Proceed to write the section content now.
   }
   
       try {
-        const { output } = await chosenPrompt(sanitizedInput, { model: input.model || routedModel });
+        const { output } = await chosenPrompt(input, { model: input.model || routedModel });
 
         if (!output || !output.sectionContent) {
           throw new Error("AI failed to generate the section content.");
