@@ -98,12 +98,20 @@ export default function CoWriterPage() {
             <p className="text-sm text-muted-foreground mb-4">
               Generate high-converting landing page copy using the Value Equation framework.
             </p>
-            <Button asChild className="w-full">
-              <Link href="/dashboard/co-writer/landing-page">
-                <Target className="mr-2 h-4 w-4 flex-shrink-0" />
-                <span className="truncate">Write Landing Page Copy</span>
-              </Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button asChild className="flex-1">
+                <Link href="/dashboard/co-writer/landing-page">
+                  <Target className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Write Copy</span>
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1">
+                <Link href="/dashboard/co-writer/landing-page/saved">
+                  <FileText className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">View Saved</span>
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

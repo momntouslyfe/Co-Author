@@ -238,6 +238,7 @@ export type ContentDraft = {
   contentFramework?: string;
   storytellingFramework?: string;
   language?: string;
+  contentType?: 'marketing-content' | 'landing-page';
   createdAt: string;
   updatedAt: string;
 };

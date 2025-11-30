@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -39,7 +40,7 @@ import {
   Pencil,
 } from 'lucide-react';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import type { Project, ResearchProfile, StyleProfile, AuthorProfile, OfferDraft } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
 import { getIdToken } from '@/lib/client-auth';
@@ -84,6 +85,11 @@ export default function LandingPageCopyPage() {
   const { user, isUserLoading } = useAuthUser();
   const firestore = useFirestore();
   const { refreshCredits } = useCreditSummary();
+  const searchParams = useSearchParams();
+  
+  const urlProjectId = searchParams.get('projectId');
+  const urlDraftId = searchParams.get('draftId');
+  const [isLoadingDraft, setIsLoadingDraft] = useState(false);
 
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedOfferIds, setSelectedOfferIds] = useState<string[]>([]);
@@ -164,7 +170,7 @@ export default function LandingPageCopyPage() {
     [completedOffers, selectedOfferIds]
   );
 
-  const isLoading = isUserLoading || projectsLoading;
+  const isLoading = isUserLoading || projectsLoading || isLoadingDraft;
   const isProcessing = isGenerating || isRewriting || isExpanding;
 
   useEffect(() => {
@@ -179,6 +185,56 @@ export default function LandingPageCopyPage() {
   useEffect(() => {
     setSelectedOfferIds([]);
   }, [selectedProjectId]);
+
+  useEffect(() => {
+    const loadDraft = async () => {
+      if (!user || !urlProjectId || !urlDraftId || !firestore) return;
+      
+      setIsLoadingDraft(true);
+      try {
+        const draftRef = doc(firestore, 'users', user.uid, 'projects', urlProjectId, 'contentDrafts', urlDraftId);
+        const draftSnap = await getDoc(draftRef);
+        
+        if (draftSnap.exists()) {
+          const draftData = draftSnap.data();
+          
+          setSelectedProjectId(urlProjectId);
+          setGeneratedContent(draftData.content || '');
+          setCurrentDraftId(urlDraftId);
+          
+          if (draftData.language) setSelectedLanguage(draftData.language);
+          if (draftData.targetWordCount) setTargetWordCount(draftData.targetWordCount);
+          if (draftData.customInstructions) setCustomInstructions(draftData.customInstructions);
+          if (draftData.contentFramework) setContentFramework(draftData.contentFramework);
+          if (draftData.storytellingFramework) setStorytellingFramework(draftData.storytellingFramework);
+          
+          setShowSettings(false);
+          
+          toast({
+            title: 'Draft Loaded',
+            description: 'Your saved landing page copy has been loaded for editing.',
+          });
+        } else {
+          toast({
+            title: 'Draft Not Found',
+            description: 'The requested draft could not be found.',
+            variant: 'destructive',
+          });
+        }
+      } catch (error: any) {
+        console.error('Error loading draft:', error);
+        toast({
+          title: 'Load Failed',
+          description: 'Failed to load the saved draft.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoadingDraft(false);
+      }
+    };
+    
+    loadDraft();
+  }, [user, urlProjectId, urlDraftId, firestore, toast]);
 
   const handleOfferToggle = (offerId: string) => {
     setSelectedOfferIds(prev => {
