@@ -1,102 +1,7 @@
 # Co-Author
 
 ## Overview
-Co-Author is an AI-powered book writing platform built with Next.js 15 and Firebase, designed to assist authors from concept to completion. It offers AI-driven topic research, blueprint generation, interactive chapter writing, and tools for creating marketing content and bonus materials. The platform features a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It leverages Google's Gemini AI via Genkit for all AI operations and Firebase for authentication and data. The UI is built with shadcn/ui and Tailwind CSS. The project aims to provide authoritative, well-researched, and credible writing support, avoiding fabricated information, and includes an administrative panel for centralized management and enhanced security. Key features include an "Offer Workspace" for developing bonus materials, a "Co-Writer" for marketing content generation, and a "Co-Marketer" for creating book offers and sales funnels.
-
-## Recent Changes
-- **Author Profile Support in Book Blueprint Generation**:
-  - Added Author Profile dropdown selector to the book blueprint generation page
-  - Author profile provides context about the author's background, credentials, and expertise to the AI
-  - AI uses author profile to tailor the book's perspective and establish credibility
-  - Author profile selection is saved with the project and shown in the AI Context Active alert
-  - generateBookBlueprint AI flow updated to accept and use authorProfile parameter
-- **Framework Separation (Storytelling vs Content Frameworks)**:
-  - Removed AIDA, PAS, BAB from offer blueprint generation page (these are content frameworks, not storytelling frameworks)
-  - Offer blueprint page now only shows storytelling frameworks: Hero's Journey, Mentor's Journey, Three-Act Structure, Fichtean Curve, Save the Cat
-  - Co-Writer content idea generation page now has two dropdown selectors:
-    - Storytelling Frameworks: Hero's Journey, Mentor's Journey, Three-Act Structure, Fichtean Curve, Save the Cat
-    - Content Frameworks: AIDA, PAS, BAB, FAB, 4Ps, PASTOR, QUEST, SLAP, ACCA, PPPP, SSS, APP (12 total)
-  - Co-Writer content writing page also has the same two dropdown selectors (in Advanced Settings)
-  - Content Category field now uses dropdown with 8 categories: Blog Post, Email Newsletter, Social Media Post, Video Script, Podcast Script, Lead Magnet, Case Study, Book Review
-  - Clear distinction: storytelling frameworks for narrative structure, content frameworks for marketing/persuasion structure
-- **Introduction and Conclusion Chapters in Book Blueprint**:
-  - AI blueprint generation now includes standalone Introduction and Conclusion chapters outside the Part structure
-  - Introduction chapter appears before Part 1 with tailored sub-topics (who book is for, what you'll learn, how to use, author's promise)
-  - Conclusion chapter appears after the last Part with tailored sub-topics (key takeaways, action plan, resources, final words)
-  - Chapter parsers updated to handle chapters outside Parts, assigning virtual "Introduction" and "Conclusion" part names
-  - Conclusion chapter uses "Final Words" section instead of "Coming Up Next"
-  - All chapter writing, rewriting, and copy functions support both section types
-- **High-Converting Title Generation (Books and Offers)**:
-  - Implemented Three Gateways Framework (Positioning, Curiosity, Hook)
-  - Added 8 proven title formulas: Warrior/Hero, Number+Promise, Question Hook, Counterintuitive, Secret/Hidden, Ultimatum, Made-Up Word, Transformation Story
-  - Integrated psychological power words (Curiosity, Urgency, Transformation, Exclusivity, Desire, Identity)
-  - Subtitles now strictly limited to 5-8 words (short, punchy, intriguing)
-  - Main titles (3-7 words) MUST reflect the book's core idea/concept while being catchy
-  - Balance between curiosity-driven hooks AND communicating what the book is about
-  - Research Profile and Style Profile context now passed to title generator
-  - Code-mixing integrity for non-English titles
-  - Beautiful new UI with title cards showing formula badges
-  - Same framework now applied to Offer Workspace title generation for parity
-- **Co-Writer AI Code-Mixing and Style Profile Adherence**:
-  - All AI writing operations (write, rewrite, expand, extend) now properly follow code-mixing patterns from style profiles
-  - Added explicit CODE-MIXING INTEGRITY section to all prompts with examples
-  - AI must use code-mixed words NATURALLY without parenthetical translations (e.g., "প্রমোশন" not "প্রমোশন (promotion)")
-  - Added WRONG/CORRECT examples to guide proper code-mixing behavior
-  - Style profiles marked as CRITICAL with emphasis on matching vocabulary, sentence structures, and tone
-  - Added STRUCTURE COMPLIANCE section requiring minimum 4 paragraphs even for short content (500-700 words)
-  - Short content no longer collapses into single paragraph - proper structure enforced at all word counts
-- **Co-Writer AI Output Structure Improvements**:
-  - Updated rewrite and expand prompts with strict structure requirements to prevent single-paragraph output
-  - AI now produces properly formatted content with multiple paragraphs, varied lengths, and markdown formatting
-  - Added explicit paragraph structure rules: 2-5 sentences per paragraph, blank lines between paragraphs
-  - AI uses markdown headings (## and ###) to organize major sections
-  - AI uses bullet points and numbered lists where appropriate for clarity
-  - Short punchy paragraphs mixed with medium ones for better rhythm and readability
-- **Co-Writer Writing Page Improvements**:
-  - Added per-paragraph "Extend With AI" buttons that generate NEW content below the paragraph (matching chapter page behavior)
-  - Created `/api/co-writer/extend-content` API route for extending paragraphs with new content
-  - Created `/api/co-writer/expand-content` API route for expanding entire content
-  - Main "Expand" button expands the whole content, while per-paragraph buttons extend with new content below
-  - Beautiful content layout with proper markdown rendering:
-    - `##` headings render as `<h4>` styled headings
-    - `###` headings render as `<h5>` styled headings
-    - Bullet lists (`-` or `*`) render as styled `<ul>` lists
-    - Numbered lists render as styled `<ol>` lists
-    - Regular paragraphs render with proper spacing and typography
-  - Word count displayed beside Copy button
-  - "View Content" button on saved content ideas page for ideas with existing drafts
-- **Part Writing Page Enhancements**:
-  - Fixed 404 errors when selecting parts by properly parsing `part-X` format URLs
-  - Added `generating` state to PageState for proper state transitions during AI generation
-  - Added FloatingCreditWidget to the writing view for credit monitoring
-  - Fixed conflicting star exports warning in firebase/index.ts
-  - Fixed API field name mismatches for rewrite-section and expand-section calls
-  - Added client-side validation to prevent empty content submissions
-  - Updated AI prompts with strict section-specific rules (Introduction, Action Steps, Coming Up Next)
-- **Rich Text Copy Function**: Matching chapter page pattern with:
-  - HTML and plain text clipboard support using ClipboardItem API
-  - `##` markdown headings converted to `<h3>` tags
-  - `###` markdown headings converted to `<h4>` tags
-  - Bullet and numbered lists converted to `<ul>/<ol>` HTML
-  - Fallback to plain text when rich text clipboard not supported
-- **Subheading Display**: `##` and `###` markdown headings in section content now render as styled subheadings (`<h4>` and `<h5>` elements)
-- **AI Context Improvements**: Added storytellingFramework support to:
-  - write-offer-section AI flow and API route
-  - rewrite-offer-section AI flow and API route
-  - All profile selections (style, research, storytelling framework) now properly passed to AI
-- **Offer Workspace Restructuring**: Complete restructuring of offer workspace to match co-author workflow:
-  - Created dynamic routing structure `/offer-workspace/[projectId]/[offerId]/...`
-  - Built OfferWorkflowNavigation component mirroring book workflow navigation
-  - Created offer draft page with blueprint generation/editing and master blueprint saving
-  - Created offer title generator page (using `/api/offers/generate-titles` API)
-  - Created sections list page with grouped sections by parts
-  - Section writing page uses offer-specific API routes (`/api/offers/write-section`, `/api/offers/rewrite-section`, `/api/offers/expand-section`) with proper context (styleProfile, researchProfile, blueprintSummary, book context)
-- **Offer Credit API Routes**: Added `/api/user/check-offer-credit` and `/api/user/track-offer-creation` API routes for offer credit management
-- **Offer API Routes Updated**: Added styleProfile, researchProfile, and storytellingFramework support to write-section and rewrite-section API routes
-- **FloatingCreditWidget in Layout**: Moved FloatingCreditWidget to offer-workspace layout for consistent display across all pages
-- **Offer Blueprint Schema Fix**: Flattened the Genkit output schema to avoid Gemini's nesting depth limit (max 2 levels). Blueprint parts are now returned as JSON strings and parsed client-side with robust fallback handling.
-- **Offer Credits Display**: Added offer credits (with Gift icon) to FloatingCreditWidget and CreditSummaryCard, with progress bars showing usage.
-- **Admin Credit Allocation**: CreditAllocator now supports allocating offer credits in addition to word and book credits.
+Co-Author is an AI-powered book writing platform built with Next.js 15 and Firebase. It assists authors from concept to completion through AI-driven topic research, blueprint generation, interactive chapter writing, and tools for marketing content and bonus materials. The platform supports a hybrid monetization model (PAYG and subscriptions), an affiliate system, and an integrated blog. It utilizes Google's Gemini AI via Genkit for all AI operations and Firebase for authentication and data. The UI is built with shadcn/ui and Tailwind CSS. Co-Author aims to provide authoritative and credible writing support, avoiding AI-fabricated information. Key features include an "Offer Workspace" for bonus materials, a "Co-Writer" for marketing content, and a "Co-Marketer" for sales funnels. An administrative panel provides centralized management and enhanced security.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -106,53 +11,46 @@ Preferred communication style: Simple, everyday language.
 ### Frontend
 - **Framework**: Next.js 15 with App Router and React Server Components (RSC).
 - **UI Components**: shadcn/ui with Radix UI primitives.
-- **Styling**: Tailwind CSS with custom design system and dark mode support.
-- **State Management**: React Context API for global state and custom hooks.
+- **Styling**: Tailwind CSS with a custom design system and dark mode support.
+- **State Management**: React Context API and custom hooks.
 
 ### Backend
-- **AI Processing**: Google Genkit with Gemini 2.5 Flash for type-safe AI flows (topic research, blueprint generation, chapter content, expansion, rewriting, style analysis, title generation).
+- **AI Processing**: Google Genkit with Gemini 2.5 Flash for type-safe AI flows across all content generation and analysis tasks.
 - **Authentication**: Firebase Authentication with Google OAuth and role-based access control.
-- **Error Handling**: Global error boundary, event emitter, custom error types, and comprehensive AI flow error handling.
-- **Retry System**: Exponential backoff retry logic for robust AI operations.
+- **Error Handling**: Global error boundary, event emitter, custom error types, and comprehensive AI flow error handling with exponential backoff retry logic.
 
 ### Data Storage
-- **Database**: Cloud Firestore (NoSQL) for real-time syncing and offline support, secured by rules.
-- **Data Models**: User, Coupon, Project (with `currentStep` for workflow), ResearchProfile, StyleProfile, AuthorProfile, Chapter, OfferBlueprintModule, OfferDraft, ContentIdea, ProjectContentIdeas, ContentDraft, OfferCategory, OfferIdea, ProjectOffers, BookIdea, FunnelStep, ProjectFunnel.
-- **Workflow**: `currentStep` field in projects manages user progress.
+- **Database**: Cloud Firestore (NoSQL) for real-time syncing, offline support, and secured by rules.
+- **Data Models**: Comprehensive models for users, projects, profiles (research, style, author), chapters, offers, content ideas, and marketing funnels. The `currentStep` field in projects manages user workflow progress.
 
 ### Admin Features
-- **API Key Management**: Encrypted storage (AES-256-GCM) with test connection feature for Gemini and OpenAI.
-- **Admin Authentication**: Secure password hashing (bcrypt), HMAC SHA-256 tokens, environment variables.
-- **Subscription Management**: Credit and subscription tracking with admin CRUD for plans and add-ons, Uddoktapay integration, credit rollover, and dynamic credit calculation.
-- **Currency Management**: Multi-currency support (USD, BDT) with configurable conversion rates and default currency. Handles FREE_ORDER and legacy data.
-- **Payment Gateway Integration**: Uddoktapay for payment initiation, verification, and webhooks, with auto-approval and security validations.
-- **Coupon System**: Promotional and affiliate coupons with discounts, validity periods, usage limits, and product scope, with server-side validation and usage tracking.
+- **API Key Management**: Encrypted storage (AES-256-GCM) for AI service keys.
+- **Admin Authentication**: Secure password hashing (bcrypt) and HMAC SHA-256 tokens.
+- **Subscription Management**: Credit and subscription tracking, admin CRUD for plans, Uddoktapay integration, credit rollover, and dynamic credit calculation.
+- **Currency Management**: Multi-currency support (USD, BDT) with configurable rates.
+- **Payment Gateway Integration**: Uddoktapay for payment processing, verification, and webhooks.
+- **Coupon System**: Promotional and affiliate coupons with server-side validation and usage tracking.
 
 ## External Dependencies
 
 ### AI Services
-- **Google Gemini AI**: Primary AI model via `@genkit-ai/google-genai` plugin.
+- **Google Gemini AI**: Primary AI model integrated via `@genkit-ai/google-genai`.
 
 ### Firebase Services
-- **Firebase Client SDK**: For Authentication and Firestore.
-- **Firebase Admin SDK**: For server-side operations.
+- **Firebase Client SDK**: For client-side authentication and Firestore interactions.
+- **Firebase Admin SDK**: For server-side administrative operations.
 
 ### UI Component Libraries
-- **Radix UI**: Headless components.
+- **Radix UI**: Headless components for UI elements.
 - **Lucide React**: Icon library.
-- **Recharts**: Charting library.
+- **Recharts**: Charting library for data visualization.
 - **Embla Carousel**: Carousel functionality.
 
 ### Utilities
-- **date-fns**: Date manipulation.
-- **react-hook-form**: Form management.
-- **@hookform/resolvers**: Schema validation.
-- **Zod**: For AI flow schemas.
-
-### Development Tools
-- **TypeScript**: For type safety.
-- **patch-package**: For `node_modules` patches.
-- **dotenv**: Environment variable management.
+- **date-fns**: Date manipulation utility.
+- **react-hook-form**: Form management library.
+- **@hookform/resolvers**: Schema validation for forms.
+- **Zod**: Schema declaration and validation library, particularly for AI flow schemas.
 
 ### Image Hosting
 - **Whitelisted domains**: `placehold.co`, `images.unsplash.com`, `picsum.photos`.

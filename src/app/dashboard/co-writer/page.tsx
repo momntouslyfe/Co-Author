@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, PenTool, ArrowRight, Sparkles, FileText } from 'lucide-react';
+import { Lightbulb, PenTool, ArrowRight, Sparkles, FileText, Target } from 'lucide-react';
 
 export default function CoWriterPage() {
   return (
@@ -15,7 +15,7 @@ export default function CoWriterPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:shadow-lg transition-shadow border-primary/20">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -81,6 +81,32 @@ export default function CoWriterPage() {
                 </Link>
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow border-green-500/20 bg-gradient-to-br from-green-50/50 to-transparent dark:from-green-950/20">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-green-500/10 rounded-lg">
+                <Target className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <CardTitle>Landing Page Copy</CardTitle>
+                <CardDescription>High-converting sales copy</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Generate high-converting landing page copy using the Value Equation framework. 
+              Include bonus offers and create irresistible sales pages.
+            </p>
+            <Button asChild className="w-full">
+              <Link href="/dashboard/co-writer/landing-page">
+                <Target className="mr-2 h-4 w-4" />
+                Create Landing Page Copy
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
