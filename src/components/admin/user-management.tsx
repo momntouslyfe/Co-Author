@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, UserX, UserCheck } from 'lucide-react';
+import { Loader2, Trash2, UserX, UserCheck, Search, X } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
@@ -22,7 +23,17 @@ export function UserManagement() {
   const [users, setUsers] = useState<UserManagementType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
+
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    const query = searchQuery.toLowerCase().trim();
+    return users.filter(user => 
+      user.email.toLowerCase().includes(query) ||
+      user.displayName.toLowerCase().includes(query)
+    );
+  }, [users, searchQuery]);
 
   const loadUsers = async () => {
     try {
@@ -127,9 +138,37 @@ export function UserManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {users.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No users found</p>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by email or name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            
+            {searchQuery && (
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredUsers.length} of {users.length} users
+              </p>
+            )}
+
+            {filteredUsers.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                {searchQuery ? 'No users match your search' : 'No users found'}
+              </p>
             ) : (
               <>
                 <div className="hidden md:block rounded-md border overflow-x-auto">
@@ -144,7 +183,7 @@ export function UserManagement() {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.map((user) => (
+                      {filteredUsers.map((user) => (
                         <tr key={user.id} className="border-b last:border-0">
                           <td className="p-3 font-medium">{user.displayName}</td>
                           <td className="p-3 text-muted-foreground">{user.email}</td>
@@ -186,7 +225,7 @@ export function UserManagement() {
                 </div>
 
                 <div className="md:hidden space-y-3">
-                  {users.map((user) => (
+                  {filteredUsers.map((user) => (
                     <div key={user.id} className="rounded-lg border p-4 space-y-3">
                       <div className="flex items-start justify-between">
                         <div>

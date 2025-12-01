@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Clock, AlertCircle, Search, X } from 'lucide-react';
 import type { PaymentRecord } from '@/types/uddoktapay';
 
 export function PaymentManagement() {
@@ -17,15 +17,62 @@ export function PaymentManagement() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [approvalFilter, setApprovalFilter] = useState<string>('all');
+  const [emailSearch, setEmailSearch] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null);
   const [actionDialog, setActionDialog] = useState<'approve' | 'reject' | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const filteredPayments = useMemo(() => {
+    if (!emailSearch.trim()) return payments;
+    const query = emailSearch.toLowerCase().trim();
+    return payments.filter(payment =>
+      payment.userEmail?.toLowerCase().includes(query) ||
+      payment.userName?.toLowerCase().includes(query) ||
+      payment.orderId?.toLowerCase().includes(query)
+    );
+  }, [payments, emailSearch]);
+
   useEffect(() => {
-    loadPayments();
-  }, [statusFilter, approvalFilter]);
+    if (!emailSearch.trim()) {
+      loadPayments();
+    }
+  }, [statusFilter, approvalFilter, emailSearch]);
+
+  useEffect(() => {
+    if (emailSearch.trim()) {
+      const debounceTimer = setTimeout(() => {
+        loadPaymentsForSearch();
+      }, 300);
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [emailSearch]);
+
+  const loadPaymentsForSearch = async () => {
+    if (!emailSearch.trim()) return;
+    setLoading(true);
+    
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch('/api/admin/payment/list?limit=200', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load payments for search');
+      }
+
+      const data = await response.json();
+      setPayments(data.payments || []);
+    } catch (err) {
+      console.error('Search fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadPayments = async () => {
     setLoading(true);
@@ -174,40 +221,68 @@ export function PaymentManagement() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Payment Status</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+            {/* Search and Filters */}
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by email, name, or order ID..."
+                  value={emailSearch}
+                  onChange={(e) => setEmailSearch(e.target.value)}
+                  className="pl-9 pr-9"
+                />
+                {emailSearch && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                    onClick={() => setEmailSearch('')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Payment Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="processing">Processing</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label>Approval Status</Label>
-                <Select value={approvalFilter} onValueChange={setApprovalFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter by approval" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Approvals</SelectItem>
-                    <SelectItem value="pending">Pending Approval</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Label>Approval Status</Label>
+                  <Select value={approvalFilter} onValueChange={setApprovalFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter by approval" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Approvals</SelectItem>
+                      <SelectItem value="pending">Pending Approval</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
+            
+            {emailSearch && (
+              <p className="text-sm text-muted-foreground">
+                Searching across all orders - showing {filteredPayments.length} matches
+              </p>
+            )}
 
             {error && (
               <Alert variant="destructive">
@@ -221,13 +296,13 @@ export function PaymentManagement() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
-            ) : payments.length === 0 ? (
+            ) : filteredPayments.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No payments found
+                {emailSearch ? 'No orders match your search' : 'No payments found'}
               </div>
             ) : (
               <div className="space-y-4">
-                {payments.map((payment) => (
+                {filteredPayments.map((payment) => (
                   <Card key={payment.id} className="border-2">
                     <CardContent className="p-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

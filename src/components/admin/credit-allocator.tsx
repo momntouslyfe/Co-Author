@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Gift } from 'lucide-react';
+import { Loader2, Gift, Search, X, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -23,6 +24,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import type { CreditTypeCategory } from '@/types/subscription';
 
 interface UserInfo {
@@ -43,6 +49,8 @@ export function CreditAllocator() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAllocating, setIsAllocating] = useState(false);
+  const [userSearchOpen, setUserSearchOpen] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<AllocationFormData>({
@@ -51,6 +59,19 @@ export function CreditAllocator() {
     amount: 0,
     description: '',
   });
+
+  const filteredUsers = useMemo(() => {
+    if (!userSearchQuery.trim()) return users;
+    const query = userSearchQuery.toLowerCase().trim();
+    return users.filter(user =>
+      user.email.toLowerCase().includes(query) ||
+      user.displayName.toLowerCase().includes(query)
+    );
+  }, [users, userSearchQuery]);
+
+  const selectedUser = useMemo(() => {
+    return users.find(u => u.id === formData.userId);
+  }, [users, formData.userId]);
 
   const loadUsers = async () => {
     try {
@@ -85,6 +106,7 @@ export function CreditAllocator() {
       amount: 0,
       description: '',
     });
+    setUserSearchQuery('');
     setIsDialogOpen(true);
   };
 
@@ -179,21 +201,70 @@ export function CreditAllocator() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="user">Select User*</Label>
-              <Select
-                value={formData.userId}
-                onValueChange={(value) => setFormData({ ...formData, userId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.email} ({user.displayName})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={userSearchOpen} onOpenChange={setUserSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={userSearchOpen}
+                    className="justify-between font-normal"
+                  >
+                    {selectedUser ? (
+                      <span className="truncate">
+                        {selectedUser.email} ({selectedUser.displayName})
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Search and select a user...</span>
+                    )}
+                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-0" align="start">
+                  <div className="p-2 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by email or name..."
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        className="pl-8"
+                      />
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[250px]">
+                    {filteredUsers.length === 0 ? (
+                      <p className="p-4 text-sm text-center text-muted-foreground">No users found.</p>
+                    ) : (
+                      <div className="p-1">
+                        {filteredUsers.slice(0, 50).map((user) => (
+                          <button
+                            key={user.id}
+                            onClick={() => {
+                              setFormData({ ...formData, userId: user.id });
+                              setUserSearchQuery('');
+                              setUserSearchOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2 px-2 py-2 text-left text-sm rounded-md hover:bg-muted transition-colors"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{user.email}</p>
+                              <p className="text-xs text-muted-foreground truncate">{user.displayName}</p>
+                            </div>
+                            {formData.userId === user.id && (
+                              <Check className="h-4 w-4 text-primary shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                  {filteredUsers.length > 50 && (
+                    <p className="p-2 text-xs text-center text-muted-foreground border-t">
+                      Showing first 50 results. Refine your search.
+                    </p>
+                  )}
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="creditType">Credit Type*</Label>
