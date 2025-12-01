@@ -150,32 +150,43 @@ export default function Dashboard() {
             </Button>
           </Card>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
             {recentProjects.map((project) => (
-              <Link key={project.id} href={getProjectLink(project)} className="group">
-                <Card className="overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02]">
-                  <div className="aspect-[3/4] w-full relative">
-                    <Image
-                      src={project.imageUrl || `https://picsum.photos/seed/${project.id}/600/800`}
-                      alt={`Cover for ${project.title}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Card key={project.id} className="flex flex-col">
+                <CardHeader className="p-0">
+                  <Link href={getProjectLink(project)}>
+                    <div className="aspect-[3/4] w-full relative">
+                      <Image
+                        src={project.imageUrl || `https://picsum.photos/seed/${project.id}/600/800`}
+                        alt={`Cover for ${project.title}`}
+                        fill
+                        className="object-cover rounded-t-lg"
+                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                      />
+                    </div>
+                  </Link>
+                </CardHeader>
+                <CardContent className="p-4 flex-grow">
+                  <h3 className="font-bold font-headline text-lg">{project.title || 'Untitled Project'}</h3>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                    {project.description || 'No description yet.'}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
                     <Badge 
                       variant={project.status === 'Completed' ? 'default' : 'secondary'}
-                      className={`absolute top-2 right-2 text-xs ${project.status === 'Completed' ? 'bg-primary/90' : 'bg-background/90'}`}
+                      className={project.status === 'Completed' ? 'bg-primary/80' : ''}
                     >
                       {project.status}
                     </Badge>
+                    <span className="text-xs text-muted-foreground">{formatLastUpdated(project.lastUpdated)}</span>
                   </div>
-                  <CardContent className="p-3">
-                    <h3 className="font-semibold text-sm line-clamp-1">{project.title || 'Untitled Project'}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{formatLastUpdated(project.lastUpdated)}</p>
-                  </CardContent>
-                </Card>
-              </Link>
+                </CardContent>
+                <CardFooter className="p-4 pt-0">
+                  <Button asChild variant="secondary" className="w-full">
+                    <Link href={getProjectLink(project)}>Continue Writing</Link>
+                  </Button>
+                </CardFooter>
+              </Card>
             ))}
           </div>
         )}
