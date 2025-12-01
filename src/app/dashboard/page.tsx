@@ -1,22 +1,16 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ArrowUpRight, BookCopy, FileText, Search, Loader2, PenTool } from 'lucide-react';
 import { useAuthUser, useFirestore, useMemoFirebase } from '@/firebase';
@@ -131,68 +125,61 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline">Recent Projects</CardTitle>
-          <CardDescription>
-            A quick look at the books you&apos;ve been working on.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Updated</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
-                  </TableCell>
-                </TableRow>
-              ) : !recentProjects || recentProjects.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                    No projects yet. Start by creating your first project!
-                  </TableCell>
-                </TableRow>
-              ) : (
-                recentProjects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell>
-                      <div className="font-medium">{project.title || 'Untitled Project'}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={project.status === 'Completed' ? 'default' : 'secondary'}
-                        className={project.status === 'Completed' ? 'bg-primary/80' : ''}
-                      >
-                        {project.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatLastUpdated(project.lastUpdated)}</TableCell>
-                    <TableCell>
-                      <Button asChild variant="ghost" size="icon">
-                        <Link href={getProjectLink(project)}>
-                          <ArrowUpRight className="h-4 w-4" />
-                          <span className="sr-only">Continue</span>
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold font-headline">Recent Projects</h2>
+            <p className="text-sm text-muted-foreground">
+              A quick look at the books you&apos;ve been working on.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/co-author">View All</Link>
+          </Button>
+        </div>
+        
+        {isLoading ? (
+          <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : !recentProjects || recentProjects.length === 0 ? (
+          <Card className="flex flex-col items-center justify-center p-8 text-center border-dashed">
+            <p className="text-muted-foreground">No projects yet. Start by creating your first project!</p>
+            <Button asChild className="mt-4">
+              <Link href="/dashboard/co-author">Create Project</Link>
+            </Button>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {recentProjects.map((project) => (
+              <Link key={project.id} href={getProjectLink(project)} className="group">
+                <Card className="overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02]">
+                  <div className="aspect-[3/4] w-full relative">
+                    <Image
+                      src={project.imageUrl || `https://picsum.photos/seed/${project.id}/600/800`}
+                      alt={`Cover for ${project.title}`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <Badge 
+                      variant={project.status === 'Completed' ? 'default' : 'secondary'}
+                      className={`absolute top-2 right-2 text-xs ${project.status === 'Completed' ? 'bg-primary/90' : 'bg-background/90'}`}
+                    >
+                      {project.status}
+                    </Badge>
+                  </div>
+                  <CardContent className="p-3">
+                    <h3 className="font-semibold text-sm line-clamp-1">{project.title || 'Untitled Project'}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">{formatLastUpdated(project.lastUpdated)}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
