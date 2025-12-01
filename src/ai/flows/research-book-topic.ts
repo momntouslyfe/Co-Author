@@ -97,33 +97,42 @@ Use Markdown formatting: ## for headings, ### for subheadings, **bold** for key 
 
 ---
 
-## OUTPUT 2: painPointAnalysis (150-200 words - BE CONCISE)
+## OUTPUT 2: painPointAnalysis (200-300 words)
 
-List 4 pain points in a simple bullet format:
+List 5 pain points with brief descriptions:
 
-- **[Pain Point 1]:** One sentence description.
-- **[Pain Point 2]:** One sentence description.
-- **[Pain Point 3]:** One sentence description.
-- **[Pain Point 4]:** One sentence description.
+### Pain Point 1: [Title]
+2-3 sentences explaining the problem and its impact.
 
-Keep it brief and to the point. No lengthy explanations.
+### Pain Point 2: [Title]
+2-3 sentences explaining the problem and its impact.
+
+### Pain Point 3: [Title]
+2-3 sentences explaining the problem and its impact.
+
+### Pain Point 4: [Title]
+2-3 sentences explaining the problem and its impact.
+
+### Pain Point 5: [Title]
+2-3 sentences explaining the problem and its impact.
 
 ---
 
-## OUTPUT 3: targetAudienceSuggestion (150-200 words - BE CONCISE)
+## OUTPUT 3: targetAudienceSuggestion (250-350 words)
 
-List 4 target audiences in a simple format:
+List 5-7 target audiences:
 
 - **[Audience 1]:** One sentence describing who they are and why this topic matters to them.
 - **[Audience 2]:** One sentence describing who they are and why this topic matters to them.
 - **[Audience 3]:** One sentence describing who they are and why this topic matters to them.
 - **[Audience 4]:** One sentence describing who they are and why this topic matters to them.
-
-Keep it brief and to the point. No lengthy explanations.
+- **[Audience 5]:** One sentence describing who they are and why this topic matters to them.
+- **[Audience 6]:** One sentence describing who they are and why this topic matters to them.
+- **[Audience 7]:** One sentence describing who they are and why this topic matters to them.
 
 ---
 
-Generate all three outputs in {{{language}}}. Focus most content on deepTopicResearch. Keep painPointAnalysis and targetAudienceSuggestion very concise.`,
+Generate all three outputs in {{{language}}}. Focus most content on deepTopicResearch.`,
       });
       
       const {output} = await prompt(input, { model: input.model || routedModel });
