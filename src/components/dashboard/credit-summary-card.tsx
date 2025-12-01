@@ -63,6 +63,33 @@ export function CreditSummaryCard() {
     return null;
   }
 
+  if (!creditSummary.subscriptionPlan) {
+    return (
+      <Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                <Gift className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="font-medium text-amber-900 dark:text-amber-100">No Active Subscription</p>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  Subscribe to a plan to unlock all AI-powered writing features
+                </p>
+              </div>
+            </div>
+            <Button asChild>
+              <Link href="/dashboard/credits/purchase">
+                Get Started
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const bookUsagePercent = creditSummary.bookCreditsTotal > 0
     ? ((creditSummary.bookCreditsTotal - creditSummary.bookCreditsAvailable) / creditSummary.bookCreditsTotal) * 100
     : 0;
