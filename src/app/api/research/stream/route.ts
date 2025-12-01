@@ -18,8 +18,8 @@ const ResearchPlanSchema = z.object({
   focusAreas: z.array(z.string()),
 });
 
-const SectionContentSchema = z.object({
-  content: z.string().describe('The section content in Markdown format, 250-350 words'),
+const BatchContentSchema = z.object({
+  content: z.string().describe('Combined content for multiple sections in Markdown format'),
 });
 
 const PainPointSchema = z.object({
@@ -39,6 +39,14 @@ When writing in non-English languages (e.g., Bangla, Hindi), you MUST follow thi
 - Examples for Bangla: Write "টক্সিক সাইকেল" NOT "Toxic Cycle", Write "ভায়োলেশন" NOT "Violation", Write "গ্র্যাজুয়াল প্রসেস" NOT "Gradual process"
 - This applies to ALL borrowed English terms including: technical terms, brand names, common loanwords, and any English-origin vocabulary
 `;
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getRandomDelay(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
@@ -71,7 +79,7 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        const totalSteps = 12;
+        const totalSteps = 6;
         sendEvent('progress', { step: 0, message: 'Starting research...', total: totalSteps });
 
         await preflightCheckWordCredits(userId, 2500);
@@ -116,19 +124,21 @@ Keep this concise - just the structural plan with exactly 8 sections.`,
         
         sendEvent('plan', { plan });
 
-        const sectionPrompt = ai.definePrompt({
-          name: 'sectionResearchPrompt',
+        const batchPrompt = ai.definePrompt({
+          name: 'batchResearchPrompt',
           input: { schema: z.object({
             topic: z.string(),
             language: z.string(),
             targetMarket: z.string().optional(),
-            sectionTitle: z.string(),
-            keyPoints: z.array(z.string()),
-            sectionNumber: z.number(),
-            isLastSection: z.boolean(),
+            sections: z.array(z.object({
+              title: z.string(),
+              keyPoints: z.array(z.string()),
+            })),
+            batchNumber: z.number(),
+            isLastBatch: z.boolean(),
           })},
-          output: { schema: SectionContentSchema },
-          prompt: `You are a world-class research analyst. Generate comprehensive content for ONE section of a topic research document.
+          output: { schema: BatchContentSchema },
+          prompt: `You are a world-class research analyst. Generate comprehensive content for multiple sections of a topic research document.
 
 Topic: {{{topic}}}
 Language: {{{language}}}
@@ -136,67 +146,82 @@ Language: {{{language}}}
 
 ${CODE_MIXING_INSTRUCTIONS}
 
-**Section to Write:** ## {{{sectionTitle}}}
-
-**Key Points to Cover:**
+**Sections to Write:**
+{{#each sections}}
+### Section {{@index}}: {{{title}}}
+Key Points to Cover:
 {{#each keyPoints}}
 - {{{this}}}
 {{/each}}
 
+{{/each}}
+
 **CRITICAL INSTRUCTIONS:**
-1. Generate **250-350 words** of comprehensive, in-depth content for this section
-2. Start with the section heading: ## {{{sectionTitle}}}
+1. Generate **250-350 words per section** (total {{sections.length}} sections = {{#if isLastBatch}}500-700{{else}}750-1050{{/if}} words)
+2. Start each section with its heading: ## [Section Title]
 3. Use Markdown formatting with bullet points, **bold** for key terms
 4. Include statistics and data points where available
 5. Be accurate - if you don't know specific numbers, use qualifiers like "Studies suggest..."
 6. Include > blockquotes for expert quotes when relevant
 7. Write entirely in {{{language}}}
-{{#if isLastSection}}
-8. Since this is the last section, end with a "## References & Further Reading" section with 8-12 real, verifiable links formatted as:
+8. Separate each section with a blank line
+{{#if isLastBatch}}
+9. Since this is the last batch, end with a "## References & Further Reading" section with 8-12 real, verifiable links formatted as:
    - [Source Name](URL) - Brief description
 {{/if}}
 
-Generate the complete section content now.`,
+Generate ALL section content now, one after another.`,
         });
 
         let deepResearchContent = '';
+        const batches = [
+          plan.sections.slice(0, 3),
+          plan.sections.slice(3, 6),
+          plan.sections.slice(6, 8),
+        ];
 
-        for (let i = 0; i < plan.sections.length; i++) {
-          const section = plan.sections[i];
-          const stepNum = i + 2;
-          const isLastSection = i === plan.sections.length - 1;
+        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+          const batch = batches[batchIndex];
+          const isLastBatch = batchIndex === batches.length - 1;
+          const stepNum = batchIndex + 2;
           
           sendEvent('progress', { 
             step: stepNum, 
-            message: `Researching: ${section.title}...`, 
+            message: `Researching sections ${batchIndex * 3 + 1}-${Math.min((batchIndex + 1) * 3, 8)} of 8...`, 
             total: totalSteps 
           });
 
-          const { output: sectionContent } = await sectionPrompt({
+          if (batchIndex > 0) {
+            await delay(getRandomDelay(200, 400));
+          }
+
+          const { output: batchContent } = await batchPrompt({
             topic,
             language,
             targetMarket,
-            sectionTitle: section.title,
-            keyPoints: section.keyPoints,
-            sectionNumber: i + 1,
-            isLastSection,
+            sections: batch,
+            batchNumber: batchIndex + 1,
+            isLastBatch,
           }, { model: routedModel });
 
-          if (!sectionContent?.content) {
-            throw new Error(`Failed to generate content for section: ${section.title}`);
+          if (!batchContent?.content) {
+            throw new Error(`Failed to generate content for batch ${batchIndex + 1}`);
           }
 
-          deepResearchContent += sectionContent.content + '\n\n';
+          deepResearchContent += batchContent.content + '\n\n';
           
-          sendEvent('sectionComplete', { 
-            sectionIndex: i,
-            sectionTitle: section.title,
-            content: sectionContent.content 
+          sendEvent('batchComplete', { 
+            batchIndex,
+            sectionsCompleted: batch.map((s: { title: string }) => s.title),
+            content: batchContent.content 
           });
         }
 
         sendEvent('deepResearch', { content: deepResearchContent.trim() });
-        sendEvent('progress', { step: 10, message: 'Analyzing pain points...', total: totalSteps });
+        
+        await delay(getRandomDelay(200, 400));
+        
+        sendEvent('progress', { step: 5, message: 'Analyzing pain points...', total: totalSteps });
 
         const painPointPrompt = ai.definePrompt({
           name: 'painPointPrompt',
@@ -241,7 +266,10 @@ Generate the pain point analysis now.`,
         }
 
         sendEvent('painPoints', { content: painPoints.content });
-        sendEvent('progress', { step: 11, message: 'Identifying target audiences...', total: totalSteps });
+        
+        await delay(getRandomDelay(200, 400));
+        
+        sendEvent('progress', { step: 6, message: 'Identifying target audiences...', total: totalSteps });
 
         const audiencePrompt = ai.definePrompt({
           name: 'audiencePrompt',
@@ -294,7 +322,7 @@ Generate the target audience suggestions now.`,
           targetAudienceSuggestion: audiences.content,
         });
 
-        sendEvent('progress', { step: 12, message: 'Research complete!', total: totalSteps, done: true });
+        sendEvent('progress', { step: 6, message: 'Research complete!', total: totalSteps, done: true });
 
         try {
           const totalContent = deepResearchContent + '\n' + painPoints.content + '\n' + audiences.content;
@@ -310,7 +338,8 @@ Generate the target audience suggestions now.`,
           retryable: error.message?.includes('503') || 
                      error.message?.includes('overloaded') || 
                      error.message?.includes('timeout') ||
-                     error.message?.includes('rate limit')
+                     error.message?.includes('rate limit') ||
+                     error.message?.includes('429')
         });
       } finally {
         controller.close();

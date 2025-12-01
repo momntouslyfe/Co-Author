@@ -75,7 +75,7 @@ function ResearchPageContent() {
     painPointAnalysis?: string;
     targetAudienceSuggestion?: string;
   }>({});
-  const [sectionContents, setSectionContents] = useState<string[]>([]);
+  const [batchesCompleted, setBatchesCompleted] = useState<number>(0);
 
   const [funnelSource] = useState({
     projectId: searchParams.get('sourceFunnelProjectId') || '',
@@ -116,7 +116,7 @@ function ResearchPageContent() {
     setLoading(true);
     setResult(null);
     setPartialResults({});
-    setSectionContents([]);
+    setBatchesCompleted(0);
     setProgress(null);
     setCurrentValues(values);
     
@@ -180,11 +180,13 @@ function ResearchPageContent() {
                 });
               }
               
-              if (currentEventType === 'sectionComplete' && data.content) {
-                setSectionContents(prev => [...prev, data.content]);
+              if (currentEventType === 'batchComplete' && data.content) {
+                setBatchesCompleted(prev => prev + 1);
                 setPartialResults(prev => ({ 
                   ...prev, 
-                  deepTopicResearch: [...(prev.deepTopicResearch ? [prev.deepTopicResearch] : []), data.content].join('\n\n')
+                  deepTopicResearch: prev.deepTopicResearch 
+                    ? prev.deepTopicResearch + '\n\n' + data.content 
+                    : data.content
                 }));
               }
               
@@ -529,30 +531,30 @@ Research Summary: ${result.deepTopicResearch.substring(0, 1000)}${result.deepTop
                   )}
                   <span>Planning</span>
                 </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 2 && progress.step <= 9 ? 'text-primary' : progress && progress.step > 9 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step > 9 ? (
+                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 2 && progress.step <= 4 ? 'text-primary' : progress && progress.step > 4 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {progress && progress.step > 4 ? (
                     <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step >= 2 && progress.step <= 9 ? (
+                  ) : progress && progress.step >= 2 && progress.step <= 4 ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
                   )}
-                  <span>Research ({sectionContents.length}/8)</span>
+                  <span>Research ({batchesCompleted}/3)</span>
                 </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 10 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step > 10 ? (
+                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 5 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {progress && progress.step > 5 ? (
                     <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step === 10 ? (
+                  ) : progress && progress.step === 5 ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
                   )}
                   <span>Pain Points</span>
                 </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 11 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step > 11 ? (
+                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 6 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {progress && progress.step >= 6 && progress.done ? (
                     <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step === 11 ? (
+                  ) : progress && progress.step === 6 && !progress.done ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
