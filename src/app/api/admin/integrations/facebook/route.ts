@@ -46,8 +46,18 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Get Facebook settings error:', error);
+    
+    let errorMessage = 'Internal server error';
+    if (error.message?.includes('ENCRYPTION_KEY')) {
+      errorMessage = 'Encryption key not configured properly. Please check server environment.';
+    } else if (error.message?.includes('Firebase')) {
+      errorMessage = 'Database connection error. Please try again.';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -99,8 +109,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Save Facebook settings error:', error);
+    
+    let errorMessage = 'Internal server error';
+    if (error.message?.includes('ENCRYPTION_KEY')) {
+      errorMessage = 'Encryption key not configured properly. Please check server environment.';
+    } else if (error.message?.includes('Firebase')) {
+      errorMessage = 'Database connection error. Please try again.';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
