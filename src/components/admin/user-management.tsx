@@ -131,51 +131,100 @@ export function UserManagement() {
             {users.length === 0 ? (
               <p className="text-sm text-muted-foreground">No users found</p>
             ) : (
-              <div className="rounded-md border">
-                <div className="grid grid-cols-5 gap-4 border-b bg-muted/50 p-3 text-sm font-medium">
-                  <div>User</div>
-                  <div>Email</div>
-                  <div>Created</div>
-                  <div>Status</div>
-                  <div className="text-right">Actions</div>
+              <>
+                <div className="hidden md:block rounded-md border overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="text-left p-3 font-medium">User</th>
+                        <th className="text-left p-3 font-medium">Email</th>
+                        <th className="text-left p-3 font-medium">Created</th>
+                        <th className="text-left p-3 font-medium">Status</th>
+                        <th className="text-right p-3 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user) => (
+                        <tr key={user.id} className="border-b last:border-0">
+                          <td className="p-3 font-medium">{user.displayName}</td>
+                          <td className="p-3 text-muted-foreground">{user.email}</td>
+                          <td className="p-3 text-muted-foreground">
+                            {new Date(user.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={!user.isDisabled}
+                                onCheckedChange={(checked) =>
+                                  handleToggleUser(user.id, !checked)
+                                }
+                              />
+                              <span className="text-xs">
+                                {user.isDisabled ? (
+                                  <span className="text-destructive">Disabled</span>
+                                ) : (
+                                  <span className="text-green-600">Active</span>
+                                )}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeleteUserId(user.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                {users.map((user) => (
-                  <div
-                    key={user.id}
-                    className="grid grid-cols-5 gap-4 border-b p-3 text-sm last:border-0"
-                  >
-                    <div className="font-medium">{user.displayName}</div>
-                    <div className="text-muted-foreground">{user.email}</div>
-                    <div className="text-muted-foreground">
-                      {new Date(user.createdAt).toLocaleDateString()}
+
+                <div className="md:hidden space-y-3">
+                  {users.map((user) => (
+                    <div key={user.id} className="rounded-lg border p-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium">{user.displayName}</p>
+                          <p className="text-sm text-muted-foreground break-all">{user.email}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteUserId(user.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Joined {new Date(user.createdAt).toLocaleDateString()}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={!user.isDisabled}
+                            onCheckedChange={(checked) =>
+                              handleToggleUser(user.id, !checked)
+                            }
+                          />
+                          <span className="text-xs">
+                            {user.isDisabled ? (
+                              <span className="text-destructive">Disabled</span>
+                            ) : (
+                              <span className="text-green-600">Active</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={!user.isDisabled}
-                        onCheckedChange={(checked) =>
-                          handleToggleUser(user.id, !checked)
-                        }
-                      />
-                      <span className="text-xs">
-                        {user.isDisabled ? (
-                          <span className="text-destructive">Disabled</span>
-                        ) : (
-                          <span className="text-green-600">Active</span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteUserId(user.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </CardContent>

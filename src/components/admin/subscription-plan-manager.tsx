@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Edit, Trash2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -270,72 +271,86 @@ export function SubscriptionPlanManager() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {plans.length === 0 ? (
               <p className="text-sm text-muted-foreground">No subscription plans found</p>
             ) : (
-              <div className="rounded-md border overflow-x-auto">
-                <div className="grid grid-cols-7 gap-4 border-b bg-muted/50 p-3 text-sm font-medium min-w-[700px]">
-                  <div>Name</div>
-                  <div>Book Credits</div>
-                  <div>Word Credits</div>
-                  <div>Offer Credits</div>
-                  <div>Price</div>
-                  <div>Status</div>
-                  <div className="text-right">Actions</div>
-                </div>
+              <div className="space-y-4">
                 {plans.map((plan) => (
-                  <div
-                    key={plan.id}
-                    className="grid grid-cols-7 gap-4 border-b p-3 text-sm last:border-0 min-w-[700px]"
-                  >
-                    <div>
-                      <div className="font-medium">{plan.name}</div>
-                      {plan.description && (
-                        <div className="text-xs text-muted-foreground">{plan.description}</div>
-                      )}
-                      <div className="text-xs mt-1">
-                        {(plan.allowCreditRollover ?? true) ? (
-                          <span className="text-blue-600">✓ Credit rollover enabled</span>
-                        ) : (
-                          <span className="text-orange-600">✗ No credit rollover</span>
-                        )}
+                  <Card key={plan.id} className="border-2">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-lg">{plan.name}</h3>
+                            <Badge variant={plan.isActive ? 'default' : 'secondary'}>
+                              {plan.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                          {plan.description && (
+                            <p className="text-sm text-muted-foreground">{plan.description}</p>
+                          )}
+                          <div className="text-xs">
+                            {(plan.allowCreditRollover ?? true) ? (
+                              <span className="text-blue-600">✓ Credit rollover enabled</span>
+                            ) : (
+                              <span className="text-orange-600">✗ No credit rollover</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold">{plan.price.toFixed(2)} {plan.currency}</p>
+                          <p className="text-sm text-muted-foreground">/month</p>
+                        </div>
                       </div>
-                    </div>
-                    <div>{plan.bookCreditsPerMonth.toLocaleString()}</div>
-                    <div>{plan.wordCreditsPerMonth.toLocaleString()}</div>
-                    <div>{(plan.offerCreditsPerMonth || 0).toLocaleString()}</div>
-                    <div>{plan.price.toFixed(2)} {plan.currency}</div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={plan.isActive}
-                        onCheckedChange={() => handleToggleActive(plan)}
-                      />
-                      <span className="text-xs">
-                        {plan.isActive ? (
-                          <span className="text-green-600">Active</span>
-                        ) : (
-                          <span className="text-muted-foreground">Inactive</span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleOpenDialog(plan)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeletePlanId(plan.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
+
+                      <div className="grid grid-cols-3 gap-4 mt-4 p-3 bg-muted/50 rounded-lg text-center">
+                        <div>
+                          <p className="text-lg font-semibold">{plan.bookCreditsPerMonth.toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground">Book Credits</p>
+                        </div>
+                        <div>
+                          <p className="text-lg font-semibold">{plan.wordCreditsPerMonth.toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground">Word Credits</p>
+                        </div>
+                        <div>
+                          <p className="text-lg font-semibold">{(plan.offerCreditsPerMonth || 0).toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground">Offer Credits</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-4 mt-4 pt-4 border-t">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={plan.isActive}
+                            onCheckedChange={() => handleToggleActive(plan)}
+                          />
+                          <span className="text-sm">
+                            {plan.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenDialog(plan)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDeletePlanId(plan.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}

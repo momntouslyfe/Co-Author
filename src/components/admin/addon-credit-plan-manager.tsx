@@ -256,59 +256,60 @@ export function AddonCreditPlanManager() {
   }
 
   const renderPlanTable = (planList: AddonCreditPlan[], type: string) => (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {planList.length === 0 ? (
         <p className="text-sm text-muted-foreground">No {type} credit plans found</p>
       ) : (
-        <div className="rounded-md border">
-          <div className="grid grid-cols-5 gap-4 border-b bg-muted/50 p-3 text-sm font-medium">
-            <div>Name</div>
-            <div>Credit Amount</div>
-            <div>Price</div>
-            <div>Status</div>
-            <div className="text-right">Actions</div>
-          </div>
+        <div className="space-y-3">
           {planList.map((plan) => (
             <div
               key={plan.id}
-              className="grid grid-cols-5 gap-4 border-b p-3 text-sm last:border-0"
+              className="rounded-lg border p-4 space-y-3"
             >
-              <div>
-                <div className="font-medium">{plan.name}</div>
-                {plan.description && (
-                  <div className="text-xs text-muted-foreground">{plan.description}</div>
-                )}
-              </div>
-              <div>{plan.creditAmount.toLocaleString()}</div>
-              <div>{plan.price.toFixed(2)} {plan.currency}</div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={plan.isActive}
-                  onCheckedChange={() => handleToggleActive(plan)}
-                />
-                <span className="text-xs">
-                  {plan.isActive ? (
-                    <span className="text-green-600">Active</span>
-                  ) : (
-                    <span className="text-muted-foreground">Inactive</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">{plan.name}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${plan.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                      {plan.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  {plan.description && (
+                    <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
                   )}
-                </span>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold">{plan.price.toFixed(2)} {plan.currency}</p>
+                  <p className="text-sm text-muted-foreground">{plan.creditAmount.toLocaleString()} credits</p>
+                </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleOpenDialog(plan)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setDeletePlanId(plan.id)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={plan.isActive}
+                    onCheckedChange={() => handleToggleActive(plan)}
+                  />
+                  <span className="text-sm">{plan.isActive ? 'Active' : 'Inactive'}</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenDialog(plan)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDeletePlanId(plan.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
