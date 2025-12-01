@@ -6,13 +6,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import {
   BookOpen,
   Search,
@@ -27,7 +20,6 @@ import {
   Brain,
   Layers,
   FileText,
-  Users,
   CheckCircle2,
   ArrowRight,
   Loader2,
@@ -41,13 +33,13 @@ import {
   Shield,
   RefreshCw,
   Quote,
-  Star,
+  LogIn,
 } from 'lucide-react';
 import Logo from '@/components/logo';
 import { useAuthUser, useAuth } from '@/firebase/auth/use-user';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import type { SubscriptionPlan, AddonCreditPlan } from '@/types/subscription';
+import type { SubscriptionPlan } from '@/types/subscription';
 import { getCurrencySymbol } from '@/lib/currency-utils';
 
 const GoogleIcon = () => (
@@ -62,71 +54,71 @@ const GoogleIcon = () => (
 const painPoints = [
   {
     icon: <Clock className="h-6 w-6" />,
-    title: "Endless Hours of Research",
-    description: "Spending weeks gathering information, only to end up with scattered notes and no clear direction."
+    title: "Drowning in Research",
+    description: "You've spent weeks collecting notes, bookmarks, and ideas — but still can't see how they fit together into a book."
   },
   {
     icon: <Brain className="h-6 w-6" />,
-    title: "Writer's Block",
-    description: "Staring at a blank page, struggling to organize your brilliant ideas into a coherent book structure."
+    title: "The Blank Page Paralysis",
+    description: "You know what you want to say, but every time you sit down to write, the words just won't come out right."
   },
   {
     icon: <DollarSign className="h-6 w-6" />,
-    title: "Expensive Ghostwriters",
-    description: "Professional ghostwriters cost $15,000-$50,000+, putting your book dream out of reach."
+    title: "Ghostwriters Are Out of Reach",
+    description: "Quality ghostwriters charge $15,000 to $50,000+. Your message deserves to be heard, but the cost is impossible."
   },
   {
     icon: <Palette className="h-6 w-6" />,
-    title: "Inconsistent Writing Style",
-    description: "Your voice changes from chapter to chapter, making your book feel disjointed and unprofessional."
+    title: "Your Voice Keeps Changing",
+    description: "Chapter 1 sounds different from Chapter 5. Your manuscript feels like it was written by different people."
   },
   {
     icon: <Megaphone className="h-6 w-6" />,
-    title: "Marketing Overwhelm",
-    description: "Even if you finish writing, you have no idea how to create compelling sales copy and bonus materials."
+    title: "Marketing Feels Overwhelming",
+    description: "Even if you finish writing, how do you create sales pages, bonus materials, and promotional content?"
   },
   {
     icon: <TrendingUp className="h-6 w-6" />,
-    title: "No Sales Funnel Strategy",
-    description: "Published authors struggle to monetize their books beyond the initial sale."
+    title: "No Plan Beyond Publication",
+    description: "Most authors publish once and hope for the best. You want a strategy that turns readers into lifelong fans."
   }
 ];
 
 const features = [
   {
     icon: <Search className="h-8 w-8" />,
-    title: "AI Topic Research",
-    description: "Deep dive into any topic with AI-powered research that uncovers pain points, target audiences, market trends, and credible sources with reference links.",
+    title: "Deep Topic Research",
+    description: "Uncover your audience's deepest pain points, desires, and questions. Get market insights and credible sources — all in minutes, not weeks.",
     color: "bg-blue-500/10 text-blue-600"
   },
   {
     icon: <BookOpen className="h-8 w-8" />,
-    title: "AI Blueprint Generator",
-    description: "Transform your idea into 3 unique book outlines using proven storytelling frameworks. Choose from 11 frameworks including Hero's Journey, Three-Act Structure, and more.",
+    title: "Smart Blueprint Generator",
+    description: "Transform your rough idea into 3 complete book outlines. Each one uses proven narrative structures that keep readers turning pages.",
     color: "bg-purple-500/10 text-purple-600"
   },
   {
     icon: <PenTool className="h-8 w-8" />,
     title: "AI Co-Author Workspace",
-    description: "Write your book chapter by chapter with AI assistance. Expand paragraphs, rewrite sections, and maintain consistent quality throughout your manuscript.",
+    description: "Write chapter by chapter with intelligent assistance. Expand your ideas, refine your prose, and maintain quality from start to finish.",
     color: "bg-green-500/10 text-green-600"
   },
   {
     icon: <Sparkles className="h-8 w-8" />,
-    title: "Writing Style Cloning",
-    description: "Upload your writing samples and let AI analyze your unique voice. Every generated content matches your personal writing style perfectly.",
+    title: "Your Voice, Amplified",
+    description: "Upload your writing samples. Our AI learns your unique style — your rhythm, vocabulary, and tone — then writes exactly like you.",
     color: "bg-yellow-500/10 text-yellow-600"
   },
   {
     icon: <Lightbulb className="h-8 w-8" />,
-    title: "AI Title Generator",
-    description: "Generate high-converting book titles and subtitles that capture attention and communicate value to your target readers.",
+    title: "Title That Sells",
+    description: "Generate magnetic book titles and subtitles that capture attention and communicate the transformation readers will experience.",
     color: "bg-orange-500/10 text-orange-600"
   },
   {
     icon: <Globe className="h-8 w-8" />,
-    title: "Multi-Language Support",
-    description: "Write in English, Bangla, Hindi, Spanish, French, German, and more. Perfect code-mixing support for regional languages.",
+    title: "Write in Your Language",
+    description: "English, Bangla, Hindi, Spanish, French, German — and natural code-mixing. Write the way you actually speak and think.",
     color: "bg-pink-500/10 text-pink-600"
   }
 ];
@@ -134,38 +126,38 @@ const features = [
 const marketingFeatures = [
   {
     icon: <Gift className="h-8 w-8" />,
-    title: "Offer Creator",
-    description: "Generate bonus material ideas including workbooks, checklists, templates, and guides that complement your book and increase perceived value.",
+    title: "Bonus Material Creator",
+    description: "Generate high-value bonus ideas — workbooks, checklists, templates — that make your offer irresistible and increase your book's perceived value.",
     color: "bg-red-500/10 text-red-600"
   },
   {
     icon: <LayoutTemplate className="h-8 w-8" />,
     title: "Offer Workspace",
-    description: "Develop your bonus materials from idea to completion. Create detailed blueprints and write each section with AI assistance.",
+    description: "Build your bonus materials from scratch. Create detailed outlines and write each section with AI guidance.",
     color: "bg-indigo-500/10 text-indigo-600"
   },
   {
     icon: <TrendingUp className="h-8 w-8" />,
-    title: "Funnel Creator",
-    description: "Build a 7-step book funnel using the value ladder principle. Generate strategic follow-up book ideas to maximize lifetime reader value.",
+    title: "Book Funnel Builder",
+    description: "Design a strategic 7-step funnel using the value ladder principle. Turn one book into a complete product ecosystem.",
     color: "bg-teal-500/10 text-teal-600"
   },
   {
     icon: <FileText className="h-8 w-8" />,
-    title: "Co-Writer Studio",
-    description: "Generate content ideas and write marketing materials including blog posts, email newsletters, social media content, and video scripts.",
+    title: "Content Studio",
+    description: "Generate blog posts, email sequences, social media content, and video scripts — all aligned with your book's message.",
     color: "bg-cyan-500/10 text-cyan-600"
   },
   {
     icon: <Target className="h-8 w-8" />,
     title: "Landing Page Copy",
-    description: "Create high-converting landing page copy using the Value Equation framework. Include your bonus stack for maximum impact.",
+    description: "Create high-converting sales pages using the Value Equation framework. Stack your bonuses for maximum impact.",
     color: "bg-amber-500/10 text-amber-600"
   },
   {
     icon: <Layers className="h-8 w-8" />,
-    title: "13 Content Frameworks",
-    description: "Apply proven copywriting frameworks like AIDA, PAS, FAB, PASTOR, and more to create persuasive marketing content that converts.",
+    title: "Proven Frameworks",
+    description: "Apply battle-tested copywriting principles to create marketing content that resonates, persuades, and converts.",
     color: "bg-violet-500/10 text-violet-600"
   }
 ];
@@ -173,90 +165,28 @@ const marketingFeatures = [
 const howItWorks = [
   {
     step: "01",
-    title: "Research Your Topic",
-    description: "Start with AI-powered deep research. Get comprehensive insights, pain points, and target audience analysis in minutes."
+    title: "Discover Your Foundation",
+    description: "Start with AI-powered research. Understand your audience, uncover hidden angles, and find the unique perspective only you can offer."
   },
   {
     step: "02",
-    title: "Generate Your Blueprint",
-    description: "Transform your research into a structured book outline using proven storytelling frameworks. Get 3 unique versions to choose from."
+    title: "Map Your Book",
+    description: "Generate three unique book blueprints based on proven narrative structures. Choose the one that best fits your vision."
   },
   {
     step: "03",
-    title: "Write Your Chapters",
-    description: "Work through your book chapter by chapter with AI assistance. Expand, rewrite, and refine until your manuscript is complete."
+    title: "Write With Confidence",
+    description: "Move through your chapters with AI as your co-author. Expand ideas, overcome blocks, and polish your prose as you go."
   },
   {
     step: "04",
-    title: "Create Bonus Materials",
-    description: "Generate complementary offers like workbooks and templates. Build your value stack to increase book sales."
+    title: "Build Your Offer",
+    description: "Create compelling bonus materials that add value. Workbooks, templates, and resources that complement your book perfectly."
   },
   {
     step: "05",
-    title: "Launch & Market",
-    description: "Create landing page copy, marketing content, and build your book funnel to maximize revenue from every reader."
-  }
-];
-
-const frameworks = [
-  "Hero's Journey", "Mentor's Journey", "Three-Act Structure", "Fichtean Curve",
-  "Save the Cat", "Man In Hole", "Cinderella", "Boy Meets Girl", 
-  "Which Way is Up", "Creation Story", "Redemption"
-];
-
-const testimonials = [
-  {
-    name: "Sarah M.",
-    role: "Non-Fiction Author",
-    content: "I had been struggling with my business book for over a year. With Co-Author, I completed my first draft in just 6 weeks. The AI research saved me countless hours, and the style cloning kept my voice consistent throughout.",
-    rating: 5
-  },
-  {
-    name: "James K.",
-    role: "Life Coach",
-    content: "The blueprint generator is incredible. I got three completely different book structures from my initial idea, and the offer creator helped me build a complete bonus package. My book launch was a success!",
-    rating: 5
-  },
-  {
-    name: "Priya D.",
-    role: "Entrepreneur",
-    content: "Writing in Bangla with English technical terms was always a challenge. Co-Author's code-mixing support is perfect - it understands exactly how I naturally write and speak.",
-    rating: 5
-  }
-];
-
-const faqs = [
-  {
-    question: "How does the credit system work?",
-    answer: "Co-Author uses three types of credits: Book Credits (for creating new book projects), Word Credits (for AI content generation), and Offer Credits (for creating bonus materials). Your monthly subscription includes a set amount of each. If you need more, you can purchase addon credits anytime - they never expire."
-  },
-  {
-    question: "What happens after I complete my purchase?",
-    answer: "After successful payment, you'll be taken directly to your dashboard where you can start using all features immediately. Your credits will be available right away, and you can begin researching, outlining, or writing your book."
-  },
-  {
-    question: "Can I use my own writing style?",
-    answer: "Absolutely! Our Style Cloning feature analyzes your writing samples (upload .txt or .pdf files) and creates a style profile. The AI then mimics your unique voice, tone, sentence structure, and vocabulary in all generated content."
-  },
-  {
-    question: "What languages are supported?",
-    answer: "Co-Author supports English, Bangla, Hindi, Spanish, French, and German. We also support code-mixing - naturally blending languages as many bilingual speakers do in their writing."
-  },
-  {
-    question: "Do unused credits roll over?",
-    answer: "This depends on your subscription plan. Some plans include credit rollover, allowing unused monthly credits to carry over to the next billing cycle. Addon credits purchased separately never expire."
-  },
-  {
-    question: "What are the 11 storytelling frameworks?",
-    answer: "We offer Hero's Journey, Mentor's Journey, Three-Act Structure, Fichtean Curve, Save the Cat, Man In Hole, Cinderella/Rags to Riches, Boy Meets Girl, Which Way is Up, Creation Story, and Redemption. Each framework provides a proven narrative structure for your book."
-  },
-  {
-    question: "Can I create marketing materials for my book?",
-    answer: "Yes! Our Marketing Suite includes Co-Writer for blog posts and emails, Landing Page Copy generator, Offer Creator for bonus materials, and Funnel Creator for building a complete book sales funnel. We support 13 proven copywriting frameworks."
-  },
-  {
-    question: "Is there a refund policy?",
-    answer: "We want you to be completely satisfied. If you're not happy with the service within the first 7 days, contact our support team for a full refund."
+    title: "Launch Like a Pro",
+    description: "Generate landing pages, marketing content, and sales funnels. Turn your book into a complete business asset."
   }
 ];
 
@@ -267,27 +197,18 @@ export default function LandingPage() {
   const { toast } = useToast();
   
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
-  const [addonPlans, setAddonPlans] = useState<AddonCreditPlan[]>([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const [subResponse, addonResponse] = await Promise.all([
-          fetch('/api/user/subscription-plans'),
-          fetch('/api/user/addon-credit-plans')
-        ]);
-        
-        if (subResponse.ok) {
-          const subData = await subResponse.json();
-          setSubscriptionPlans(subData);
-        }
-        
-        if (addonResponse.ok) {
-          const addonData = await addonResponse.json();
-          setAddonPlans(addonData);
+        const response = await fetch('/api/user/subscription-plans');
+        if (response.ok) {
+          const data = await response.json();
+          setSubscriptionPlans(data);
         }
       } catch (error) {
         console.error('Error fetching plans:', error);
@@ -299,14 +220,36 @@ export default function LandingPage() {
     fetchPlans();
   }, []);
 
-  const handleSelectPlan = async (planId: string, isAddon: boolean = false) => {
+  const handleLogin = async () => {
+    setIsLoggingIn(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        router.push('/dashboard');
+      }
+    } catch (error: any) {
+      console.error('Error during sign-in:', error);
+      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+        toast({
+          title: 'Sign-in Error',
+          description: 'Could not sign in with Google. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleSelectPlan = async (planId: string) => {
     setSelectedPlanId(planId);
     setIsProcessing(true);
     
     if (user) {
       const params = new URLSearchParams({
-        [isAddon ? 'addonId' : 'planId']: planId,
-        type: isAddon ? 'addon' : 'subscription',
+        planId: planId,
+        type: 'subscription',
       });
       router.push(`/payment-overview?${params.toString()}`);
     } else {
@@ -316,8 +259,8 @@ export default function LandingPage() {
         
         if (result.user) {
           const params = new URLSearchParams({
-            [isAddon ? 'addonId' : 'planId']: planId,
-            type: isAddon ? 'addon' : 'subscription',
+            planId: planId,
+            type: 'subscription',
           });
           router.push(`/payment-overview?${params.toString()}`);
         }
@@ -336,35 +279,41 @@ export default function LandingPage() {
     }
   };
 
-  const groupedAddons = {
-    words: addonPlans.filter(p => p.type === 'words'),
-    books: addonPlans.filter(p => p.type === 'books'),
-    offers: addonPlans.filter(p => p.type === 'offers'),
-  };
-
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Logo />
-          <nav className="flex items-center gap-4">
+          <nav className="flex items-center gap-2 sm:gap-4">
             <Button variant="ghost" asChild className="hidden sm:inline-flex">
               <Link href="#features">Features</Link>
             </Button>
             <Button variant="ghost" asChild className="hidden sm:inline-flex">
               <Link href="#pricing">Pricing</Link>
             </Button>
-            <Button variant="ghost" asChild className="hidden md:inline-flex">
-              <Link href="#faq">FAQ</Link>
-            </Button>
             {user ? (
               <Button asChild>
                 <Link href="/dashboard">Go to Dashboard</Link>
               </Button>
             ) : (
-              <Button asChild>
-                <Link href="#pricing">Choose a Plan</Link>
-              </Button>
+              <>
+                <Button 
+                  variant="ghost" 
+                  onClick={handleLogin}
+                  disabled={isLoggingIn}
+                  className="gap-2"
+                >
+                  {isLoggingIn ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <LogIn className="h-4 w-4" />
+                  )}
+                  <span className="hidden sm:inline">Login</span>
+                </Button>
+                <Button asChild>
+                  <Link href="#pricing">Get Started</Link>
+                </Button>
+              </>
             )}
           </nav>
         </div>
@@ -377,21 +326,20 @@ export default function LandingPage() {
             <div className="max-w-4xl mx-auto text-center">
               <Badge variant="secondary" className="mb-6 px-4 py-2">
                 <Sparkles className="h-4 w-4 mr-2" />
-                AI-Powered Writing Partner
+                Your AI Writing Partner
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-headline tracking-tight mb-6">
-                Your Book is Already Inside You.
-                <span className="text-primary block mt-2">We Help You Bring It Out.</span>
+                The Book You've Been Dreaming About?
+                <span className="text-primary block mt-2">It's Closer Than You Think.</span>
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-                Co-Author is your AI-powered writing partner that guides you from a simple idea to a 
-                published book with complete marketing materials. No more writer's block. 
-                No more expensive ghostwriters. Just you and your trusted guide.
+                Stop staring at blank pages. Stop drowning in research. Stop wondering how to market your book. 
+                Co-Author handles the heavy lifting so you can focus on what matters — sharing your message with the world.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" asChild className="text-lg px-8">
                   <Link href="#pricing">
-                    Choose Your Plan
+                    Start Writing Today
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
@@ -400,22 +348,22 @@ export default function LandingPage() {
                 </Button>
               </div>
               
-              <div className="mt-12 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  <span>11 Storytelling Frameworks</span>
+              <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+                <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted/50">
+                  <Search className="h-6 w-6 text-primary" />
+                  <span className="text-sm font-medium">Deep Research</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  <span>13 Marketing Frameworks</span>
+                <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted/50">
+                  <BookOpen className="h-6 w-6 text-primary" />
+                  <span className="text-sm font-medium">Smart Outlines</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  <span>Style Cloning Technology</span>
+                <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted/50">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                  <span className="text-sm font-medium">Style Cloning</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  <span>Multi-Language Support</span>
+                <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted/50">
+                  <Target className="h-6 w-6 text-primary" />
+                  <span className="text-sm font-medium">Marketing Suite</span>
                 </div>
               </div>
             </div>
@@ -426,11 +374,11 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
-                Writing a Book Shouldn't Be This Hard
+                Sound Familiar?
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                If any of these challenges sound familiar, you're not alone. 
-                Most aspiring authors face the same obstacles.
+                These struggles have stopped countless talented people from sharing their knowledge. 
+                But they don't have to stop you.
               </p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -457,16 +405,15 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <Quote className="h-12 w-12 mx-auto mb-6 opacity-50" />
             <h2 className="text-3xl md:text-4xl font-bold font-headline mb-6">
-              What If You Had a Writing Partner Who Never Sleeps?
+              What If Writing a Book Actually Felt... Achievable?
             </h2>
             <p className="text-lg max-w-3xl mx-auto mb-4 opacity-90">
-              Imagine having a tireless co-author who understands your vision, 
-              researches your topic thoroughly, structures your ideas perfectly, 
-              and helps you write in your unique voice — all at a fraction of the 
-              cost of a traditional ghostwriter.
+              Picture this: You sit down with a clear roadmap. Research that would take weeks is done in minutes. 
+              Your ideas flow into structured chapters. Your unique voice stays consistent from page one to the final word. 
+              And when you're done writing? The marketing materials practically create themselves.
             </p>
             <p className="text-xl font-semibold">
-              That's exactly what Co-Author gives you.
+              That's not a fantasy. That's Co-Author.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-8 text-sm">
               <div className="flex items-center gap-2">
@@ -493,10 +440,10 @@ export default function LandingPage() {
                 Writing Suite
               </Badge>
               <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
-                Everything You Need to Write Your Book
+                From Blank Page to Finished Manuscript
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                From initial research to final manuscript, our AI-powered tools guide you through every step.
+                Every tool you need to research, plan, and write your book — working together seamlessly.
               </p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -525,10 +472,10 @@ export default function LandingPage() {
                 Marketing Suite
               </Badge>
               <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
-                Launch and Market Like a Pro
+                Turn Your Book Into a Business
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Don't just write a book — build a complete marketing ecosystem that generates revenue long after publication.
+                Writing the book is just the beginning. Build the complete marketing ecosystem that generates revenue long after publication.
               </p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -549,34 +496,14 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-16 md:py-24">
+        <section id="how-it-works" className="py-16 md:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
-                Choose Your Narrative Path
+                From Idea to Published Author in 5 Steps
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Select from 11 proven storytelling frameworks used by bestselling authors worldwide.
-              </p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-3">
-              {frameworks.map((framework, index) => (
-                <Badge key={index} variant="secondary" className="px-4 py-2 text-sm">
-                  {framework}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="how-it-works" className="py-16 md:py-24 bg-muted/50">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
-                Your Journey from Idea to Published Author
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                A simple, guided process that takes you from blank page to completed book with marketing materials.
+                A clear, guided journey that takes you from "I want to write a book" to "I'm a published author."
               </p>
             </div>
             <div className="max-w-4xl mx-auto">
@@ -597,41 +524,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-16 md:py-24">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <Badge variant="outline" className="mb-4">
-                <Star className="h-4 w-4 mr-2" />
-                Success Stories
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
-                Authors Who Brought Their Books to Life
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Real stories from real authors who used Co-Author to complete their writing journey.
-              </p>
-            </div>
-            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {testimonials.map((testimonial, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex gap-1 mb-4">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                    <p className="text-muted-foreground mb-4 italic">"{testimonial.content}"</p>
-                    <div className="border-t pt-4">
-                      <p className="font-semibold">{testimonial.name}</p>
-                      <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
         <section id="pricing" className="py-16 md:py-24 bg-muted/50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -640,11 +532,10 @@ export default function LandingPage() {
                 Simple Pricing
               </Badge>
               <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
-                Choose the Plan That Fits Your Goals
+                Invest in Your Author Journey
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                All plans include access to our complete writing and marketing suite. 
-                Select based on how many books you want to create each month.
+                Choose the plan that matches your ambition. All plans include the complete writing and marketing suite.
               </p>
             </div>
 
@@ -701,15 +592,15 @@ export default function LandingPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="h-5 w-5 text-primary flex-shrink-0" />
-                          <span>All Writing & Marketing Tools</span>
+                          <span>Complete Writing Suite</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="h-5 w-5 text-primary flex-shrink-0" />
-                          <span>11 Storytelling Frameworks</span>
+                          <span>Full Marketing Tools</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="h-5 w-5 text-primary flex-shrink-0" />
-                          <span>13 Marketing Frameworks</span>
+                          <span>Buy Additional Credits Anytime</span>
                         </div>
                         {plan.allowCreditRollover && (
                           <div className="flex items-center gap-2">
@@ -732,14 +623,7 @@ export default function LandingPage() {
                             Processing...
                           </>
                         ) : (
-                          <>
-                            {user ? 'Select Plan' : (
-                              <>
-                                <GoogleIcon />
-                                <span className="ml-2">Continue with Google</span>
-                              </>
-                            )}
-                          </>
+                          'Buy Now'
                         )}
                       </Button>
                       <p className="text-center text-xs text-muted-foreground mt-3">
@@ -754,168 +638,23 @@ export default function LandingPage() {
             <div className="text-center mt-8">
               <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted px-4 py-2 rounded-full">
                 <Shield className="h-4 w-4" />
-                <span>7-Day Money-Back Guarantee - No Questions Asked</span>
+                <span>7-Day Money-Back Guarantee — No Questions Asked</span>
               </div>
-            </div>
-
-            {(groupedAddons.words.length > 0 || groupedAddons.books.length > 0 || groupedAddons.offers.length > 0) && (
-              <div className="mt-16">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold font-headline mb-2">
-                    Need More Credits? Pay As You Go
-                  </h3>
-                  <p className="text-muted-foreground max-w-xl mx-auto">
-                    Running low on credits? Purchase additional credits anytime. 
-                    Addon credits never expire and can be used whenever you need them.
-                  </p>
-                </div>
-
-                <Tabs defaultValue="words" className="max-w-4xl mx-auto">
-                  <TabsList className="grid w-full grid-cols-3 mb-6">
-                    <TabsTrigger value="words" disabled={groupedAddons.words.length === 0}>
-                      AI Words
-                    </TabsTrigger>
-                    <TabsTrigger value="books" disabled={groupedAddons.books.length === 0}>
-                      Book Projects
-                    </TabsTrigger>
-                    <TabsTrigger value="offers" disabled={groupedAddons.offers.length === 0}>
-                      Offer Credits
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="words">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {groupedAddons.words.map((addon) => (
-                        <Card key={addon.id} className="hover:shadow-md transition-shadow">
-                          <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg">{addon.name}</CardTitle>
-                              <Badge variant="secondary">{addon.creditAmount.toLocaleString()} words</Badge>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex items-center justify-between mb-4">
-                              <span className="text-2xl font-bold">{getCurrencySymbol(addon.currency)}{addon.price.toLocaleString()}</span>
-                              <span className="text-sm text-muted-foreground">one-time</span>
-                            </div>
-                            <Button 
-                              className="w-full" 
-                              variant="outline"
-                              onClick={() => handleSelectPlan(addon.id, true)}
-                              disabled={isProcessing && selectedPlanId === addon.id}
-                            >
-                              {isProcessing && selectedPlanId === addon.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : 'Purchase'}
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="books">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {groupedAddons.books.map((addon) => (
-                        <Card key={addon.id} className="hover:shadow-md transition-shadow">
-                          <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg">{addon.name}</CardTitle>
-                              <Badge variant="secondary">{addon.creditAmount} project{addon.creditAmount > 1 ? 's' : ''}</Badge>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex items-center justify-between mb-4">
-                              <span className="text-2xl font-bold">{getCurrencySymbol(addon.currency)}{addon.price.toLocaleString()}</span>
-                              <span className="text-sm text-muted-foreground">one-time</span>
-                            </div>
-                            <Button 
-                              className="w-full" 
-                              variant="outline"
-                              onClick={() => handleSelectPlan(addon.id, true)}
-                              disabled={isProcessing && selectedPlanId === addon.id}
-                            >
-                              {isProcessing && selectedPlanId === addon.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : 'Purchase'}
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="offers">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {groupedAddons.offers.map((addon) => (
-                        <Card key={addon.id} className="hover:shadow-md transition-shadow">
-                          <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg">{addon.name}</CardTitle>
-                              <Badge variant="secondary">{addon.creditAmount} offer{addon.creditAmount > 1 ? 's' : ''}</Badge>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex items-center justify-between mb-4">
-                              <span className="text-2xl font-bold">{getCurrencySymbol(addon.currency)}{addon.price.toLocaleString()}</span>
-                              <span className="text-sm text-muted-foreground">one-time</span>
-                            </div>
-                            <Button 
-                              className="w-full" 
-                              variant="outline"
-                              onClick={() => handleSelectPlan(addon.id, true)}
-                              disabled={isProcessing && selectedPlanId === addon.id}
-                            >
-                              {isProcessing && selectedPlanId === addon.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : 'Purchase'}
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section id="faq" className="py-16 md:py-24">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
-                Frequently Asked Questions
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Everything you need to know about Co-Author.
-              </p>
-            </div>
-            <div className="max-w-3xl mx-auto">
-              <Accordion type="single" collapsible className="w-full">
-                {faqs.map((faq, index) => (
-                  <AccordionItem key={index} value={`item-${index}`}>
-                    <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      {faq.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
             </div>
           </div>
         </section>
 
-        <section className="py-16 md:py-24 bg-muted/50">
+        <section className="py-16 md:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <Card className="max-w-4xl mx-auto bg-primary text-primary-foreground">
               <CardContent className="py-12 px-8 text-center">
                 <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
-                  Ready to Write Your Book?
+                  Your Book is Waiting to Be Written
                 </h2>
                 <p className="text-lg mb-6 opacity-90 max-w-2xl mx-auto">
-                  Join authors who have discovered the power of AI-assisted writing. 
-                  Your book is waiting to be written. Let's bring it to life together.
+                  You have knowledge the world needs. Ideas that could change lives. 
+                  A story only you can tell. Stop waiting for the "perfect time." 
+                  Start today, and let Co-Author guide you to the finish line.
                 </p>
                 <div className="flex flex-wrap justify-center gap-4 mb-8 text-sm opacity-90">
                   <div className="flex items-center gap-2">
@@ -933,7 +672,7 @@ export default function LandingPage() {
                 </div>
                 <Button size="lg" variant="secondary" asChild className="text-lg px-8">
                   <Link href="#pricing">
-                    Choose Your Plan
+                    Start Your Author Journey
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
@@ -949,38 +688,36 @@ export default function LandingPage() {
             <div className="md:col-span-2">
               <Logo />
               <p className="mt-4 text-muted-foreground max-w-md">
-                Your AI-powered writing partner that guides you from idea to published book 
-                with complete marketing materials. Write faster, write better.
+                Co-Author is your AI-powered writing partner. From first idea to finished book 
+                with complete marketing materials — we help you share your message with the world.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Features</h4>
+              <h4 className="font-semibold mb-4">Writing Tools</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>AI Topic Research</li>
+                <li>Topic Research</li>
                 <li>Blueprint Generator</li>
                 <li>Co-Author Workspace</li>
                 <li>Style Cloning</li>
-                <li>Offer Creator</li>
-                <li>Landing Page Copy</li>
+                <li>Title Generator</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Resources</h4>
+              <h4 className="font-semibold mb-4">Marketing Tools</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/blog" className="hover:text-foreground transition-colors">Blog</Link></li>
-                <li><Link href="#pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
-                <li><Link href="#features" className="hover:text-foreground transition-colors">Features</Link></li>
-                <li><Link href="#faq" className="hover:text-foreground transition-colors">FAQ</Link></li>
+                <li>Offer Creator</li>
+                <li>Offer Workspace</li>
+                <li>Funnel Builder</li>
+                <li>Content Studio</li>
+                <li>Landing Page Copy</li>
               </ul>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-muted-foreground text-sm">
-              &copy; {new Date().getFullYear()} Co-Author. All rights reserved.
-            </p>
-            <div className="flex gap-4 text-sm text-muted-foreground">
-              <Link href="#" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-              <Link href="#" className="hover:text-foreground transition-colors">Terms of Service</Link>
+          <div className="border-t mt-8 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
+            <p>&copy; {new Date().getFullYear()} Co-Author. All rights reserved.</p>
+            <div className="flex gap-4 mt-4 md:mt-0">
+              <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             </div>
           </div>
         </div>
