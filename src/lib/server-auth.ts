@@ -40,3 +40,32 @@ export async function verifyUserId(providedUserId: string): Promise<void> {
     );
   }
 }
+
+export interface AuthenticatedUser {
+  uid: string;
+  email: string | null;
+  name: string | null;
+}
+
+export async function getAuthenticatedUser(): Promise<AuthenticatedUser> {
+  const headersList = await headers();
+  const authHeader = headersList.get('authorization');
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('Not authenticated: No authorization token found');
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  
+  try {
+    initializeFirebaseAdmin();
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    return {
+      uid: decodedToken.uid,
+      email: decodedToken.email || null,
+      name: decodedToken.name || null,
+    };
+  } catch (error: any) {
+    throw new Error(`Not authenticated: ${error.message || 'Invalid token'}`);
+  }
+}
