@@ -251,9 +251,18 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 
 4.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the text for the new section. Do not add the section title or any other formatting; return only the paragraphs.
 
-5.  **SUBSTANTIAL CONTENT (STRICT REQUIREMENT):** You MUST write at least 400 words for this section. This is a non-negotiable instruction. Generate multiple, well-developed, and insightful paragraphs to meet this word count.
+5.  **COMPLETE SECTION (CRITICAL - NON-NEGOTIABLE):**
+    - You MUST write a COMPLETE, FULL section with at least 400-500 words
+    - NEVER stop mid-paragraph or mid-thought
+    - NEVER generate partial content - this is considered a FAILURE
+    - Generate multiple well-developed paragraphs (typically 4-6 paragraphs minimum)
+    - Each paragraph should be complete with a clear beginning, middle, and conclusion
+    - If you feel like stopping early, you MUST continue writing until the section feels complete
+    - A proper section explores the topic thoroughly with examples, explanations, and insights
 
-Proceed to write the section content now.
+**FINAL CHECK BEFORE RESPONDING:** Ensure your response is a COMPLETE section with multiple full paragraphs. Partial or truncated output is unacceptable.
+
+Proceed to write the COMPLETE section content now.
 `,
     });
   }
