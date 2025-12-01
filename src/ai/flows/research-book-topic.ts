@@ -130,8 +130,10 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
       const {output} = await prompt(input, { 
         model: input.model || routedModel,
         config: {
-          maxOutputTokens: 16000,
-          temperature: 0.7,
+          generationConfig: {
+            maxOutputTokens: 16000,
+            temperature: 0.7,
+          }
         }
       });
       
