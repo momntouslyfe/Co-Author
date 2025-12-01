@@ -105,8 +105,10 @@ export function CouponManager() {
 
       if (subsResponse.ok) {
         const subsData = await subsResponse.json();
+        // API returns array directly, not wrapped in {plans: [...]}
+        const plansArray = Array.isArray(subsData) ? subsData : (subsData.plans || []);
         setSubscriptionPlans(
-          (subsData.plans || []).map((p: any) => ({
+          plansArray.map((p: any) => ({
             id: p.id,
             name: p.name,
             price: p.price,
@@ -117,8 +119,10 @@ export function CouponManager() {
 
       if (addonsResponse.ok) {
         const addonsData = await addonsResponse.json();
+        // API returns array directly, not wrapped in {plans: [...]}
+        const plansArray = Array.isArray(addonsData) ? addonsData : (addonsData.plans || []);
         setAddonPlans(
-          (addonsData.plans || []).map((p: any) => ({
+          plansArray.map((p: any) => ({
             id: p.id,
             name: `${p.name} (${p.type})`,
             price: p.price,
