@@ -54,57 +54,39 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
           maxOutputTokens: 8000,
           temperature: 0.7,
         },
-        prompt: `You are an expert writing analyst. Extract text from the file and analyze its WRITING STYLE.
+        prompt: `You are a writing analyst. Extract text from the file and analyze its WRITING STYLE.
 
 File: {{media url=fileDataUri}}
 
-Generate a COMPLETE style analysis (1200-1500 words minimum) covering ALL 8 sections below.
+Generate a style analysis (1000-1200 words total) with ALL 8 sections below.
 
----
+## SECTION 1: Tone & Mood (120-150 words)
+Emotional quality and atmosphere. Include 2 quotes from the text.
 
-## SECTION 1: Tone & Mood (150-200 words)
-Describe the emotional quality and atmosphere. Include 2-3 specific quotes from the text that exemplify the tone. Explain why these quotes create this particular mood.
+## SECTION 2: Voice (120-150 words)
+Narrator's personality and point of view. Include 2 example phrases.
 
----
+## SECTION 3: Sentence Structure & Rhythm (120-150 words)
+Sentence patterns and flow. Provide 2 example sentences.
 
-## SECTION 2: Voice (150-200 words)
-Describe the narrator's personality and point of view. Include 2-3 phrases demonstrating the author's voice (first-person pronouns, direct address, etc.). For non-English text, provide original and translation.
+## SECTION 4: Vocabulary & Diction (120-150 words)
+Word choice patterns with examples. Quote specific words or phrases.
 
----
+## SECTION 5: Pacing (80-100 words)
+Information delivery style with a passage reference.
 
-## SECTION 3: Sentence Structure & Rhythm (150-200 words)
-Examine sentence patterns and flow. Provide 2-3 example sentences showing typical structure. Note: short vs. long sentences, simple vs. complex constructions, rhythmic qualities.
+## SECTION 6: Code-Mixing (80-100 words)
+If multiple languages present, list examples. If single language: "Not applicable."
 
----
+## SECTION 7: Distinctive Elements (120-150 words)
+Unique characteristics: rhetorical questions, metaphors, repeated phrases.
 
-## SECTION 4: Vocabulary & Diction (150-200 words)
-Assess word choice with concrete examples. Quote specific words, phrases, colloquialisms, or specialized terms. Categorize vocabulary level and explain what makes it distinctive.
+## SECTION 8: Overall Summary (80-100 words)
+Author's unique writing identity summary.
 
----
+Format: Use ## for headings, **bold** for terms, bullets for lists.
 
-## SECTION 5: Pacing (100-150 words)
-Describe information delivery style. Reference specific passages showing pacing. Quote phrases demonstrating whether writing moves quickly or deliberately.
-
----
-
-## SECTION 6: Code-Mixing Analysis (100-150 words)
-Include ONLY if text contains multiple languages. List examples with translations and explain purpose of each code-mixed element. If single language only, write: "Not applicable - single language text."
-
----
-
-## SECTION 7: Distinctive Stylistic Elements (150-200 words)
-Note unique characteristics with examples. Quote rhetorical questions, repeated phrases, metaphors, or other distinctive techniques from the text.
-
----
-
-## SECTION 8: Overall Summary (100-150 words)
-Summarize the author's unique writing identity. Reference key stylistic elements identified above with brief examples.
-
----
-
-Use Markdown: ## for section headings, **bold** for key terms, bullet points for lists, > for quoted text.
-
-Generate ALL 8 sections completely. Do not stop mid-analysis.`,
+IMPORTANT: You MUST complete ALL 8 sections. End your response with "--- END OF ANALYSIS ---" to confirm completion.`,
       });
       
       const {output} = await prompt(
@@ -116,7 +98,26 @@ Generate ALL 8 sections completely. Do not stop mid-analysis.`,
         throw new Error('AI failed to generate style analysis.');
       }
       
-      if (output.styleAnalysis.length < 1200) {
+      const analysis = output.styleAnalysis;
+      
+      const requiredSections = [
+        /##\s*(SECTION\s*1|Tone\s*&?\s*Mood)/i,
+        /##\s*(SECTION\s*2|Voice)/i,
+        /##\s*(SECTION\s*3|Sentence\s*Structure)/i,
+        /##\s*(SECTION\s*4|Vocabulary)/i,
+        /##\s*(SECTION\s*5|Pacing)/i,
+        /##\s*(SECTION\s*6|Code[-\s]?Mixing)/i,
+        /##\s*(SECTION\s*7|Distinctive)/i,
+        /##\s*(SECTION\s*8|Overall\s*Summary|Summary)/i,
+      ];
+      
+      const missingSections = requiredSections.filter(regex => !regex.test(analysis));
+      
+      if (missingSections.length > 0) {
+        throw new Error(`AI failed to generate complete style analysis. Missing ${missingSections.length} section(s). Retrying...`);
+      }
+      
+      if (analysis.length < 800) {
         throw new Error('AI failed to generate complete style analysis. Output was too short.');
       }
       
