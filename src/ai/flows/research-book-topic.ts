@@ -127,22 +127,14 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
   You must provide the entire response in the specified **{{{language}}}**, organized into the three requested output fields. Proceed with generating the COMPLETE research now.`,
       });
       
-      const {output} = await prompt(input, { 
-        model: input.model || routedModel,
-        config: {
-          generationConfig: {
-            maxOutputTokens: 16000,
-            temperature: 0.7,
-          }
-        }
-      });
+      const {output} = await prompt(input, { model: input.model || routedModel });
       
       if (!output) {
         throw new Error('AI failed to generate research data.');
       }
       
-      if (!output.deepTopicResearch || output.deepTopicResearch.length < 1000) {
-        throw new Error('AI failed to generate complete research. Output was too short. Please try again.');
+      if (!output.deepTopicResearch || output.deepTopicResearch.length < 500) {
+        throw new Error('AI failed to generate complete research. Output was too short.');
       }
       
       if (!output.painPointAnalysis || output.painPointAnalysis.length < 100) {
