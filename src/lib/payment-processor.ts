@@ -36,8 +36,36 @@ export async function processSuccessfulPayment(
 
     const paymentData = paymentDoc.data();
 
-    // Check if already completed
+    // Check if already completed - but first ensure coupon usage is tracked
     if (paymentData?.status === 'completed' && paymentData?.approvalStatus === 'approved') {
+      // For completed payments (especially free orders), ensure coupon usage is tracked
+      // Check if coupon usage was already recorded to avoid double-counting
+      if (paymentData?.couponId && paymentData?.couponCode) {
+        const couponUsageRef = admin.firestore().collection('couponUsage');
+        const existingUsage = await couponUsageRef
+          .where('userId', '==', paymentData.userId)
+          .where('couponId', '==', paymentData.couponId)
+          .where('orderId', '==', orderId)
+          .get();
+        
+        if (existingUsage.empty) {
+          // Record coupon usage if not already tracked for this order
+          await couponUsageRef.add({
+            userId: paymentData.userId,
+            couponId: paymentData.couponId,
+            couponCode: paymentData.couponCode,
+            orderId,
+            usedAt: admin.firestore.FieldValue.serverTimestamp(),
+            discountAmount: parseFloat(paymentData.discountAmount || '0'),
+            originalAmount: parseFloat(paymentData.originalAmount || '0'),
+            finalAmount: parseFloat(paymentData.amount || '0'),
+            subscriptionPlanId: paymentData.planId || null,
+            addonPlanId: paymentData.addonId || null,
+          });
+          console.log(`Coupon usage tracked for already-completed order: ${paymentData.couponCode} used by user ${paymentData.userId}`);
+        }
+      }
+      
       return {
         success: true,
         message: 'Payment already processed',
@@ -334,18 +362,31 @@ export async function processSuccessfulPayment(
     if (paymentData?.couponId && paymentData?.couponCode) {
       try {
         const couponUsageRef = admin.firestore().collection('couponUsage');
-        await couponUsageRef.add({
-          userId: paymentData.userId,
-          couponId: paymentData.couponId,
-          couponCode: paymentData.couponCode,
-          usedAt: admin.firestore.FieldValue.serverTimestamp(),
-          discountAmount: parseFloat(paymentData.discountAmount || '0'),
-          originalAmount: parseFloat(paymentData.originalAmount || '0'),
-          finalAmount: parseFloat(paymentData.amount || '0'),
-          subscriptionPlanId: paymentData.planId || null,
-          addonPlanId: paymentData.addonId || null,
-        });
-        console.log(`Coupon usage tracked: ${paymentData.couponCode} used by user ${paymentData.userId}`);
+        
+        // Check if usage already exists for this order to prevent double-counting
+        const existingUsage = await couponUsageRef
+          .where('userId', '==', paymentData.userId)
+          .where('couponId', '==', paymentData.couponId)
+          .where('orderId', '==', orderId)
+          .get();
+        
+        if (existingUsage.empty) {
+          await couponUsageRef.add({
+            userId: paymentData.userId,
+            couponId: paymentData.couponId,
+            couponCode: paymentData.couponCode,
+            orderId,
+            usedAt: admin.firestore.FieldValue.serverTimestamp(),
+            discountAmount: parseFloat(paymentData.discountAmount || '0'),
+            originalAmount: parseFloat(paymentData.originalAmount || '0'),
+            finalAmount: parseFloat(paymentData.amount || '0'),
+            subscriptionPlanId: paymentData.planId || null,
+            addonPlanId: paymentData.addonId || null,
+          });
+          console.log(`Coupon usage tracked: ${paymentData.couponCode} used by user ${paymentData.userId} for order ${orderId}`);
+        } else {
+          console.log(`Coupon usage already tracked for order ${orderId}, skipping`);
+        }
       } catch (error) {
         console.error('Error tracking coupon usage:', error);
         // Don't fail the payment if coupon tracking fails

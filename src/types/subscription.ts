@@ -208,6 +208,8 @@ export interface Coupon {
   affiliateId?: string;
   isActive: boolean;
   description?: string;
+  allowedSubscriptionPlanIds?: string[];
+  allowedAddonPlanIds?: string[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -238,6 +240,8 @@ export interface CreateCouponInput {
   affiliateId?: string;
   isActive: boolean;
   description?: string;
+  allowedSubscriptionPlanIds?: string[];
+  allowedAddonPlanIds?: string[];
 }
 
 export interface UpdateCouponInput {
@@ -253,6 +257,8 @@ export interface UpdateCouponInput {
   affiliateId?: string;
   isActive?: boolean;
   description?: string;
+  allowedSubscriptionPlanIds?: string[];
+  allowedAddonPlanIds?: string[];
 }
 
 export interface ValidateCouponInput {

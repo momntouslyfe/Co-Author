@@ -15,6 +15,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Pencil, Trash2, Loader2, Tag } from 'lucide-react';
 import type { Coupon, CreateCouponInput, UpdateCouponInput, CouponCategory, CouponDiscountType } from '@/types/subscription';
 
+interface PlanOption {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+}
+
 interface CouponFormData {
   code: string;
   category: CouponCategory;
@@ -27,6 +34,8 @@ interface CouponFormData {
   affiliateId: string;
   isActive: boolean;
   description: string;
+  allowedSubscriptionPlanIds: string[];
+  allowedAddonPlanIds: string[];
 }
 
 const initialFormData: CouponFormData = {
@@ -41,6 +50,8 @@ const initialFormData: CouponFormData = {
   affiliateId: '',
   isActive: true,
   description: '',
+  allowedSubscriptionPlanIds: [],
+  allowedAddonPlanIds: [],
 };
 
 export function CouponManager() {
@@ -51,11 +62,14 @@ export function CouponManager() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [defaultCurrency, setDefaultCurrency] = useState<string>('USD');
+  const [subscriptionPlans, setSubscriptionPlans] = useState<PlanOption[]>([]);
+  const [addonPlans, setAddonPlans] = useState<PlanOption[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     loadCoupons();
     loadDefaultCurrency();
+    loadPlans();
   }, []);
 
   const loadDefaultCurrency = async () => {
@@ -73,6 +87,47 @@ export function CouponManager() {
       }
     } catch (error) {
       console.error('Failed to load default currency:', error);
+    }
+  };
+
+  const loadPlans = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      
+      const [subsResponse, addonsResponse] = await Promise.all([
+        fetch('/api/admin/subscription-plans', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch('/api/admin/addon-credit-plans', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      if (subsResponse.ok) {
+        const subsData = await subsResponse.json();
+        setSubscriptionPlans(
+          (subsData.plans || []).map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            currency: p.currency,
+          }))
+        );
+      }
+
+      if (addonsResponse.ok) {
+        const addonsData = await addonsResponse.json();
+        setAddonPlans(
+          (addonsData.plans || []).map((p: any) => ({
+            id: p.id,
+            name: `${p.name} (${p.type})`,
+            price: p.price,
+            currency: p.currency,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Failed to load plans:', error);
     }
   };
 
@@ -129,6 +184,8 @@ export function CouponManager() {
         affiliateId: formData.affiliateId || undefined,
         isActive: formData.isActive,
         description: formData.description,
+        allowedSubscriptionPlanIds: formData.allowedSubscriptionPlanIds.length > 0 ? formData.allowedSubscriptionPlanIds : undefined,
+        allowedAddonPlanIds: formData.allowedAddonPlanIds.length > 0 ? formData.allowedAddonPlanIds : undefined,
       };
 
       const url = editingCoupon 
@@ -185,6 +242,8 @@ export function CouponManager() {
       affiliateId: coupon.affiliateId || '',
       isActive: coupon.isActive,
       description: coupon.description || '',
+      allowedSubscriptionPlanIds: coupon.allowedSubscriptionPlanIds || [],
+      allowedAddonPlanIds: coupon.allowedAddonPlanIds || [],
     });
     setDialogOpen(true);
   };
@@ -409,6 +468,83 @@ export function CouponManager() {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
                   />
+                </div>
+
+                <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+                  <div>
+                    <Label className="text-base font-semibold">Plan Restrictions (Optional)</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Leave empty to allow coupon for all plans. Select specific plans to restrict usage.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Allowed Subscription Plans</Label>
+                    {subscriptionPlans.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No subscription plans available</p>
+                    ) : (
+                      <div className="grid gap-2 max-h-32 overflow-y-auto border rounded p-2 bg-background">
+                        {subscriptionPlans.map((plan) => (
+                          <label key={plan.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted p-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={formData.allowedSubscriptionPlanIds.includes(plan.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormData({
+                                    ...formData,
+                                    allowedSubscriptionPlanIds: [...formData.allowedSubscriptionPlanIds, plan.id],
+                                  });
+                                } else {
+                                  setFormData({
+                                    ...formData,
+                                    allowedSubscriptionPlanIds: formData.allowedSubscriptionPlanIds.filter((id) => id !== plan.id),
+                                  });
+                                }
+                              }}
+                              className="rounded border-gray-300"
+                            />
+                            <span>{plan.name}</span>
+                            <span className="text-muted-foreground">({plan.price} {plan.currency})</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Allowed Addon Credit Plans</Label>
+                    {addonPlans.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No addon credit plans available</p>
+                    ) : (
+                      <div className="grid gap-2 max-h-32 overflow-y-auto border rounded p-2 bg-background">
+                        {addonPlans.map((plan) => (
+                          <label key={plan.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted p-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={formData.allowedAddonPlanIds.includes(plan.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormData({
+                                    ...formData,
+                                    allowedAddonPlanIds: [...formData.allowedAddonPlanIds, plan.id],
+                                  });
+                                } else {
+                                  setFormData({
+                                    ...formData,
+                                    allowedAddonPlanIds: formData.allowedAddonPlanIds.filter((id) => id !== plan.id),
+                                  });
+                                }
+                              }}
+                              className="rounded border-gray-300"
+                            />
+                            <span>{plan.name}</span>
+                            <span className="text-muted-foreground">({plan.price} {plan.currency})</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-2">

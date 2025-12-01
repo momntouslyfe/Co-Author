@@ -259,18 +259,9 @@ export async function POST(request: NextRequest) {
       if (validatedCoupon) {
         paymentData.couponId = validatedCoupon.id;
         paymentData.couponCode = validatedCoupon.code;
-        
-        // Record coupon usage for analytics and tracking
-        await admin.firestore().collection('couponUsage').add({
-          userId,
-          couponId: validatedCoupon.id,
-          couponCode: validatedCoupon.code,
-          orderId,
-          originalAmount: originalAmount.toString(),
-          discountAmount: discountAmount.toString(),
-          finalAmount: '0',
-          usedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+        paymentData.discountAmount = discountAmount.toString();
+        paymentData.originalAmount = originalAmount.toString();
+        // Note: Coupon usage is tracked in processSuccessfulPayment() to avoid double-counting
       }
       
       await paymentRef.set(paymentData);

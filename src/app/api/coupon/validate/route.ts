@@ -187,6 +187,40 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Check plan restrictions
+    const hasSubscriptionRestriction = coupon.allowedSubscriptionPlanIds && coupon.allowedSubscriptionPlanIds.length > 0;
+    const hasAddonRestriction = coupon.allowedAddonPlanIds && coupon.allowedAddonPlanIds.length > 0;
+
+    if (hasSubscriptionRestriction || hasAddonRestriction) {
+      if (subscriptionPlanId) {
+        if (hasSubscriptionRestriction && !coupon.allowedSubscriptionPlanIds!.includes(subscriptionPlanId)) {
+          return NextResponse.json({
+            valid: false,
+            error: 'This coupon is not valid for the selected subscription plan',
+          });
+        }
+        if (hasAddonRestriction && !hasSubscriptionRestriction) {
+          return NextResponse.json({
+            valid: false,
+            error: 'This coupon is only valid for addon credit purchases',
+          });
+        }
+      } else if (addonPlanId) {
+        if (hasAddonRestriction && !coupon.allowedAddonPlanIds!.includes(addonPlanId)) {
+          return NextResponse.json({
+            valid: false,
+            error: 'This coupon is not valid for the selected addon credit plan',
+          });
+        }
+        if (hasSubscriptionRestriction && !hasAddonRestriction) {
+          return NextResponse.json({
+            valid: false,
+            error: 'This coupon is only valid for subscription purchases',
+          });
+        }
+      }
+    }
+
     // Check usage limit per user
     const usageRef = db.collection('couponUsage');
     const usageSnapshot = await usageRef
@@ -195,6 +229,8 @@ export async function POST(request: NextRequest) {
       .get();
 
     const usageCount = usageSnapshot.size;
+    console.log(`Coupon ${coupon.code} usage count for user ${userId}: ${usageCount}/${coupon.maxUsesPerUser}`);
+    
     if (usageCount >= coupon.maxUsesPerUser) {
       return NextResponse.json({
         valid: false,
