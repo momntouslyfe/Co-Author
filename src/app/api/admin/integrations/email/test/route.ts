@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminToken, getAuthToken } from '@/lib/admin-auth';
-import { testSMTPConnection, sendTestEmail } from '@/lib/email/smtp-mailer';
+import { testEmailConnection, sendTestEmail } from '@/lib/email/smtp-mailer';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const { action, email } = body;
     
     if (action === 'test_connection') {
-      const result = await testSMTPConnection();
+      const result = await testEmailConnection();
       return NextResponse.json(result);
     }
     

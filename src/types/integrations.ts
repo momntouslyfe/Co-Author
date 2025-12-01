@@ -74,6 +74,31 @@ export interface FacebookAPIResponse {
   };
 }
 
+export type EmailProvider = 'smtp' | 'sendgrid' | 'resend';
+
+export interface EmailSettings {
+  enabled: boolean;
+  provider: EmailProvider;
+  fromEmail: string;
+  fromName: string;
+  replyToEmail?: string;
+  smtp?: {
+    host: string;
+    port: number;
+    secure: boolean;
+    username: string;
+    password: string;
+  };
+  sendgrid?: {
+    apiKey: string;
+  };
+  resend?: {
+    apiKey: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SMTPSettings {
   enabled: boolean;
   host: string;
