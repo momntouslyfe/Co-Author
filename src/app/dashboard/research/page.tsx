@@ -178,6 +178,15 @@ function ResearchPageContent() {
                 });
               }
               
+              if (currentEventType === 'researchPart' && data.content) {
+                setPartialResults(prev => ({ 
+                  ...prev, 
+                  deepTopicResearch: prev.deepTopicResearch 
+                    ? prev.deepTopicResearch + '\n\n' + data.content 
+                    : data.content
+                }));
+              }
+              
               if (currentEventType === 'deepResearch' && data.content) {
                 setPartialResults(prev => ({ ...prev, deepTopicResearch: data.content }));
               }
@@ -527,7 +536,7 @@ Research Summary: ${result.deepTopicResearch.substring(0, 1000)}${result.deepTop
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
                   )}
-                  <span>Deep Research</span>
+                  <span>Research 1-4</span>
                 </div>
                 <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>
                   {progress && progress.step > 3 ? (
@@ -537,7 +546,7 @@ Research Summary: ${result.deepTopicResearch.substring(0, 1000)}${result.deepTop
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
                   )}
-                  <span>Pain Points</span>
+                  <span>Research 5-8</span>
                 </div>
                 <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 4 ? 'text-primary' : 'text-muted-foreground'}`}>
                   {progress && progress.step >= 4 && progress.done ? (
@@ -547,7 +556,7 @@ Research Summary: ${result.deepTopicResearch.substring(0, 1000)}${result.deepTop
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
                   )}
-                  <span>Audiences</span>
+                  <span>Analysis</span>
                 </div>
               </div>
             </div>

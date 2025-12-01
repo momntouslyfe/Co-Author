@@ -18,16 +18,13 @@ const ResearchPlanSchema = z.object({
   focusAreas: z.array(z.string()),
 });
 
-const DeepResearchSchema = z.object({
-  content: z.string().describe('Complete deep research content with all 8 sections in Markdown format, 2000-2500 words total'),
+const ResearchPartSchema = z.object({
+  content: z.string().describe('Research content for the specified sections in Markdown format, 1000-1200 words total'),
 });
 
-const PainPointSchema = z.object({
-  content: z.string().describe('Pain point analysis in Markdown format, 500-700 words with 8-10 pain points'),
-});
-
-const AudienceSchema = z.object({
-  content: z.string().describe('Target audience suggestions in Markdown format, 500-700 words with 5-7 audience groups'),
+const PainPointsAndAudiencesSchema = z.object({
+  painPoints: z.string().describe('Pain point analysis in Markdown format with 8-10 pain points'),
+  audiences: z.string().describe('Target audience suggestions in Markdown format with 5-7 audience groups'),
 });
 
 const CODE_MIXING_INSTRUCTIONS = `
@@ -126,10 +123,10 @@ Keep this concise - just the structural plan with exactly 8 sections.`,
 
         await delay(getRandomDelay(300, 500));
 
-        sendEvent('progress', { step: 2, message: 'Conducting deep research...', total: totalSteps });
+        sendEvent('progress', { step: 2, message: 'Researching sections 1-4...', total: totalSteps });
 
-        const deepResearchPrompt = ai.definePrompt({
-          name: 'deepResearchPrompt',
+        const researchPartPrompt = ai.definePrompt({
+          name: 'researchPartPrompt',
           input: { schema: z.object({
             topic: z.string(),
             language: z.string(),
@@ -138,9 +135,11 @@ Keep this concise - just the structural plan with exactly 8 sections.`,
               title: z.string(),
               keyPoints: z.array(z.string()),
             })),
+            partNumber: z.number(),
+            includeReferences: z.boolean(),
           })},
-          output: { schema: DeepResearchSchema },
-          prompt: `You are a world-class research analyst. Generate comprehensive research content covering ALL 8 sections for a topic research document.
+          output: { schema: ResearchPartSchema },
+          prompt: `You are a world-class research analyst. Generate comprehensive research content for the specified sections.
 
 Topic: {{{topic}}}
 Language: {{{language}}}
@@ -148,9 +147,9 @@ Language: {{{language}}}
 
 ${CODE_MIXING_INSTRUCTIONS}
 
-**Sections to Cover (ALL 8 are MANDATORY):**
+**Sections to Write (Part {{{partNumber}}}):**
 {{#each sections}}
-### Section {{@index}}: {{{title}}}
+### {{{title}}}
 Key Points:
 {{#each keyPoints}}
 - {{{this}}}
@@ -159,8 +158,8 @@ Key Points:
 {{/each}}
 
 **CRITICAL INSTRUCTIONS:**
-1. Generate **2000-2500 words TOTAL** covering all 8 sections
-2. Each section should be **250-350 words**
+1. Generate **1000-1200 words TOTAL** covering all {{sections.length}} sections in this part
+2. Each section should be **250-300 words**
 3. Start each section with its heading: ## [Section Title]
 4. Use Markdown formatting with bullet points, **bold** for key terms
 5. Include statistics and data points where available
@@ -168,39 +167,67 @@ Key Points:
 7. Include > blockquotes for expert quotes when relevant
 8. Write entirely in {{{language}}}
 9. Separate each section with a blank line
+{{#if includeReferences}}
 10. End with a "## References & Further Reading" section with 8-12 real, verifiable links formatted as:
     - [Source Name](URL) - Brief description
+{{/if}}
 
-Generate ALL 8 section content now, one after another. This is CRITICAL - do not skip any section.`,
+Generate ALL {{sections.length}} sections completely. Do not truncate or skip any section.`,
         });
 
-        const { output: deepResearch } = await deepResearchPrompt({
+        const sectionsPartOne = plan.sections.slice(0, 4);
+        const { output: researchPart1 } = await researchPartPrompt({
           topic,
           language,
           targetMarket,
-          sections: plan.sections,
+          sections: sectionsPartOne,
+          partNumber: 1,
+          includeReferences: false,
         }, { model: routedModel });
 
-        if (!deepResearch?.content) {
-          throw new Error('Failed to generate deep research content');
+        if (!researchPart1?.content) {
+          throw new Error('Failed to generate research part 1');
         }
 
-        sendEvent('deepResearch', { content: deepResearch.content });
-        
+        sendEvent('researchPart', { part: 1, content: researchPart1.content });
+
+        await delay(getRandomDelay(300, 500));
+
+        sendEvent('progress', { step: 3, message: 'Researching sections 5-8...', total: totalSteps });
+
+        const sectionsPartTwo = plan.sections.slice(4, 8);
+        const { output: researchPart2 } = await researchPartPrompt({
+          topic,
+          language,
+          targetMarket,
+          sections: sectionsPartTwo,
+          partNumber: 2,
+          includeReferences: true,
+        }, { model: routedModel });
+
+        if (!researchPart2?.content) {
+          throw new Error('Failed to generate research part 2');
+        }
+
+        sendEvent('researchPart', { part: 2, content: researchPart2.content });
+
+        const fullDeepResearch = researchPart1.content + '\n\n' + researchPart2.content;
+        sendEvent('deepResearch', { content: fullDeepResearch });
+
         await delay(getRandomDelay(300, 500));
         
-        sendEvent('progress', { step: 3, message: 'Analyzing pain points...', total: totalSteps });
+        sendEvent('progress', { step: 4, message: 'Analyzing pain points & audiences...', total: totalSteps });
 
-        const painPointPrompt = ai.definePrompt({
-          name: 'painPointPrompt',
+        const painPointsAndAudiencesPrompt = ai.definePrompt({
+          name: 'painPointsAndAudiencesPrompt',
           input: { schema: z.object({
             topic: z.string(),
             language: z.string(),
             targetMarket: z.string().optional(),
             researchSummary: z.string(),
           })},
-          output: { schema: PainPointSchema },
-          prompt: `You are a market analyst. Based on the research below, identify pain points.
+          output: { schema: PainPointsAndAudiencesSchema },
+          prompt: `You are a market analyst. Based on the research below, identify pain points and target audiences.
 
 Topic: {{{topic}}}
 Language: {{{language}}}
@@ -211,55 +238,15 @@ ${CODE_MIXING_INSTRUCTIONS}
 Research Summary:
 {{{researchSummary}}}
 
-**INSTRUCTIONS:**
+**PAIN POINTS INSTRUCTIONS:**
 1. Identify 8-10 distinct pain points, challenges, and frustrations
-2. For each pain point, provide a detailed explanation (3-4 sentences)
+2. For each pain point, provide a detailed explanation (2-3 sentences)
 3. Use Markdown formatting with ## Pain Points heading
 4. Each pain point should be a ### subheading with clear title
 5. Be specific, actionable, and emotionally resonant
-6. Write entirely in {{{language}}}
-7. Target 500-700 words total
+6. Target 500-600 words for pain points
 
-Generate the pain point analysis now.`,
-        });
-
-        const researchSummary = deepResearch.content.substring(0, 3000);
-        const { output: painPoints } = await painPointPrompt(
-          { topic, language, targetMarket, researchSummary },
-          { model: routedModel }
-        );
-
-        if (!painPoints?.content) {
-          throw new Error('Failed to generate pain point analysis');
-        }
-
-        sendEvent('painPoints', { content: painPoints.content });
-        
-        await delay(getRandomDelay(300, 500));
-        
-        sendEvent('progress', { step: 4, message: 'Identifying target audiences...', total: totalSteps });
-
-        const audiencePrompt = ai.definePrompt({
-          name: 'audiencePrompt',
-          input: { schema: z.object({
-            topic: z.string(),
-            language: z.string(),
-            targetMarket: z.string().optional(),
-            painPointsSummary: z.string(),
-          })},
-          output: { schema: AudienceSchema },
-          prompt: `You are a market analyst. Based on the pain points below, identify target audiences.
-
-Topic: {{{topic}}}
-Language: {{{language}}}
-{{#if targetMarket}}Target Market: {{{targetMarket}}}{{/if}}
-
-${CODE_MIXING_INSTRUCTIONS}
-
-Pain Points Summary:
-{{{painPointsSummary}}}
-
-**INSTRUCTIONS:**
+**TARGET AUDIENCES INSTRUCTIONS:**
 1. Identify 5-7 distinct audience groups who would benefit from a book on this topic
 2. For each group, provide:
    - A clear description (NOT a named persona with a name)
@@ -267,33 +254,34 @@ Pain Points Summary:
    - 3-4 bullet points of their specific **Frustrations** related to the topic
 3. Use Markdown formatting with ## Target Audiences heading
 4. Each audience group should be a ### subheading with descriptive title
-5. Write entirely in {{{language}}}
-6. Target 500-700 words total
+5. Target 500-600 words for audiences
 
-Generate the target audience suggestions now.`,
+Write entirely in {{{language}}}. Generate BOTH pain points AND audiences completely.`,
         });
 
-        const { output: audiences } = await audiencePrompt(
-          { topic, language, targetMarket, painPointsSummary: painPoints.content },
+        const researchSummary = fullDeepResearch.substring(0, 3000);
+        const { output: painPointsAndAudiences } = await painPointsAndAudiencesPrompt(
+          { topic, language, targetMarket, researchSummary },
           { model: routedModel }
         );
 
-        if (!audiences?.content) {
-          throw new Error('Failed to generate audience suggestions');
+        if (!painPointsAndAudiences?.painPoints || !painPointsAndAudiences?.audiences) {
+          throw new Error('Failed to generate pain points and audiences');
         }
 
-        sendEvent('audiences', { content: audiences.content });
+        sendEvent('painPoints', { content: painPointsAndAudiences.painPoints });
+        sendEvent('audiences', { content: painPointsAndAudiences.audiences });
 
         sendEvent('complete', {
-          deepTopicResearch: deepResearch.content,
-          painPointAnalysis: painPoints.content,
-          targetAudienceSuggestion: audiences.content,
+          deepTopicResearch: fullDeepResearch,
+          painPointAnalysis: painPointsAndAudiences.painPoints,
+          targetAudienceSuggestion: painPointsAndAudiences.audiences,
         });
 
         sendEvent('progress', { step: 4, message: 'Research complete!', total: totalSteps, done: true });
 
         try {
-          const totalContent = deepResearch.content + '\n' + painPoints.content + '\n' + audiences.content;
+          const totalContent = fullDeepResearch + '\n' + painPointsAndAudiences.painPoints + '\n' + painPointsAndAudiences.audiences;
           await trackAIUsage(userId, totalContent, 'researchBookTopic', { topic });
         } catch (trackingError) {
           console.error('Failed to track AI usage (non-critical):', trackingError);
