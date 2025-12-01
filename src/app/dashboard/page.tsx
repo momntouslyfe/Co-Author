@@ -35,7 +35,7 @@ export default function Dashboard() {
     return query(
       collection(firestore, 'users', user.uid, 'projects'),
       orderBy('lastUpdated', 'desc'),
-      limit(3)
+      limit(6)
     );
   }, [user, firestore]);
 
@@ -168,9 +168,6 @@ export default function Dashboard() {
                   <TableRow key={project.id}>
                     <TableCell>
                       <div className="font-medium">{project.title || 'Untitled Project'}</div>
-                      <div className="text-sm text-muted-foreground md:inline">
-                        {project.description || 'No description'}
-                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge 
