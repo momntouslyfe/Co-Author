@@ -57,6 +57,7 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
   const selectedModel = input.model || routedModel;
   
   // Step 1: Generate Deep Topic Research (main research content)
+  // Using high maxOutputTokens to prevent truncation
   const deepResearchContext = `Deep Research: "${input.topic}"`;
   const deepResearchResult = await retryWithBackoff(
     async () => {
@@ -64,7 +65,11 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
         name: 'deepTopicResearchPrompt',
         input: {schema: ResearchBookTopicInputSchema},
         output: {schema: DeepResearchOutputSchema},
-        prompt: `You are a world-class research analyst. Your task is to produce a comprehensive topic research document.
+        config: {
+          maxOutputTokens: 8000,
+          temperature: 0.7,
+        },
+        prompt: `You are a world-class research analyst. Produce a comprehensive topic research document.
 
 **Topic:** {{{topic}}}
 **Language:** {{{language}}}
@@ -72,56 +77,49 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
 
 ---
 
-## CRITICAL - COMPLETE OUTPUT REQUIRED:
-- You MUST generate a COMPLETE, FULL research document
-- NEVER stop mid-section or mid-thought
-- NEVER generate partial content - this is considered a FAILURE
-- Each section must be thoroughly developed with multiple paragraphs
-- Minimum 2000-2500 words for the research output
+## CRITICAL REQUIREMENTS:
+- Generate a COMPLETE research document (2000-2500 words minimum)
+- NEVER stop mid-section - complete every section fully
+- Each section must have 3-4 substantial paragraphs
 
-## RESEARCH INSTRUCTIONS:
+## REQUIRED SECTIONS (Complete ALL):
 
-### 1. Go Deep and Be Data-Driven (When Available):
-Your research should be exceptionally thorough and evidence-based. Include:
-- **Statistics & Data:** Specific numbers, percentages, growth rates, market sizes
-- **Research Findings:** Studies, surveys, and research results
-- **Case Studies:** Real-world examples of success/failure with outcomes
-- **Expert Insights:** Perspectives from recognized authorities
-- **Trends & Projections:** Current trends and future forecasts
-- **Comparative Data:** Comparisons between approaches, methods, or timeframes
+### 1. Historical Context (300-400 words)
+Key milestones, evolution, and important dates in this field.
 
-**IMPORTANT - Accuracy Over Fabrication:** If you don't have specific statistics, provide conceptual information instead of inventing data. Use qualifiers like "Studies suggest...", "Research indicates..." rather than fabricating numbers.
+### 2. Current Landscape (300-400 words)
+Present state, market size, current trends, and recent developments.
 
-### 2. Structure Your Research:
-Organize information under these clear sections:
-- **Historical Context:** Key milestones with dates and impact
-- **Current Landscape:** Present state with current statistics
-- **Core Concepts:** Essential principles backed by research
-- **Key Data & Statistics:** A dedicated section with important numbers
-- **Expert Perspectives:** Insights from thought leaders
-- **Trends & Future Outlook:** Emerging developments
-- **Success Stories & Case Studies:** Real examples with results
+### 3. Core Concepts & Principles (300-400 words)
+Fundamental ideas, key theories, and essential knowledge.
 
-### 3. Formatting (NON-NEGOTIABLE):
-- Use clear headings (##) and subheadings (###)
+### 4. Key Data & Statistics (200-300 words)
+Important numbers, percentages, research findings. Use qualifiers if uncertain.
+
+### 5. Expert Perspectives (200-300 words)
+Insights from thought leaders and recognized authorities.
+
+### 6. Trends & Future Outlook (300-400 words)
+Emerging developments, predictions, and future directions.
+
+### 7. Success Stories & Case Studies (200-300 words)
+Real examples with outcomes and lessons learned.
+
+### 8. References & Source Links
+5-10 real, authoritative URLs formatted as: [Source Name](URL) - Brief description
+
+## FORMATTING:
+- Use ## for main headings, ### for subheadings
 - Use bullet points for lists
-- Use **bold** for key terms and statistics
-- Use > blockquotes for expert quotes
-- Use tables for comparative data when appropriate
+- Use **bold** for key terms
+- Use > blockquotes for quotes
 
-### 4. References & Source Links (REQUIRED):
-At the end, include a "References & Source Links" heading with:
-- 5-10 relevant, real URLs to authoritative sources
-- Format: [Source Name](URL) - Brief description
-- Only include REAL, VERIFIABLE URLs
-- Never fabricate URLs
-
-Provide the complete response in **{{{language}}}**. Generate the COMPLETE research now.`,
+Write in **{{{language}}}**. Generate ALL sections completely.`,
       });
       
       const {output} = await deepResearchPrompt(input, { model: selectedModel });
       
-      if (!output || !output.deepTopicResearch || output.deepTopicResearch.length < 800) {
+      if (!output || !output.deepTopicResearch || output.deepTopicResearch.length < 1500) {
         throw new Error('AI failed to generate complete deep research. Output was too short.');
       }
       
@@ -131,7 +129,7 @@ Provide the complete response in **{{{language}}}**. Generate the COMPLETE resea
     deepResearchContext
   );
 
-  // Step 2: Generate Pain Point Analysis
+  // Step 2: Generate Pain Point Analysis (concise)
   const painPointContext = `Pain Points: "${input.topic}"`;
   const painPointResult = await retryWithBackoff(
     async () => {
@@ -139,35 +137,33 @@ Provide the complete response in **{{{language}}}**. Generate the COMPLETE resea
         name: 'painPointAnalysisPrompt',
         input: {schema: ResearchBookTopicInputSchema},
         output: {schema: PainPointOutputSchema},
-        prompt: `You are a market research expert. Analyze pain points for the following topic.
+        config: {
+          maxOutputTokens: 1000,
+          temperature: 0.7,
+        },
+        prompt: `Identify key pain points for this topic. Be CONCISE (300-400 words max).
 
 **Topic:** {{{topic}}}
 **Language:** {{{language}}}
 {{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
 
----
+List exactly **4 pain points** in this format:
 
-## PAIN POINT ANALYSIS
+### 1. [Pain Point Title]
+**Problem:** 1-2 sentences describing the issue.
+**Impact:** High/Medium/Low - one sentence explaining why.
 
-Identify **6-8 key pain points** that people face regarding this topic. For each pain point:
+### 2. [Pain Point Title]
+...
 
-1. **Pain Point Title** - A clear, descriptive title
-2. **Description** - 3-4 sentences explaining:
-   - What the problem is
-   - Why it matters
-   - How it affects people
-   - Common manifestations
+Keep each pain point brief (50-75 words). No lengthy explanations.
 
-3. **Impact Level** - Rate as High/Medium/Low with brief explanation
-
-Format using Markdown with clear headings for each pain point. Be specific and actionable.
-
-Provide the complete analysis in **{{{language}}}**.`,
+Write in **{{{language}}}**.`,
       });
       
       const {output} = await painPointPrompt(input, { model: selectedModel });
       
-      if (!output || !output.painPointAnalysis || output.painPointAnalysis.length < 200) {
+      if (!output || !output.painPointAnalysis || output.painPointAnalysis.length < 150) {
         throw new Error('AI failed to generate pain point analysis.');
       }
       
@@ -177,7 +173,7 @@ Provide the complete analysis in **{{{language}}}**.`,
     painPointContext
   );
 
-  // Step 3: Generate Target Audience Suggestions
+  // Step 3: Generate Target Audience Suggestions (concise)
   const audienceContext = `Audience: "${input.topic}"`;
   const audienceResult = await retryWithBackoff(
     async () => {
@@ -185,44 +181,34 @@ Provide the complete analysis in **{{{language}}}**.`,
         name: 'targetAudiencePrompt',
         input: {schema: ResearchBookTopicInputSchema},
         output: {schema: AudienceOutputSchema},
-        prompt: `You are a market research expert. Identify target audiences for the following topic.
+        config: {
+          maxOutputTokens: 1000,
+          temperature: 0.7,
+        },
+        prompt: `Identify target audiences for this topic. Be CONCISE (300-400 words max).
 
 **Topic:** {{{topic}}}
 **Language:** {{{language}}}
 {{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
 
----
+List exactly **4 audience groups** in this format:
 
-## TARGET AUDIENCE ANALYSIS
+### 1. [Audience Name]
+**Who:** Age, profession, experience (1 line)
+**Goals:** 2 bullet points
+**Frustrations:** 2 bullet points
 
-Identify **5-6 distinct audience groups** who would benefit from content about this topic. For each audience:
+### 2. [Audience Name]
+...
 
-### [Audience Name]
-**Demographics:**
-- Age range, profession, experience level
+Keep each audience brief (60-80 words). No lengthy descriptions.
 
-**Profile:**
-- 2-3 sentences describing who they are
-
-**Goals (3-4 points):**
-- What they want to achieve
-- Their aspirations related to this topic
-
-**Frustrations (3-4 points):**
-- Current challenges they face
-- What's holding them back
-
-**Why This Topic Matters to Them:**
-- 1-2 sentences on relevance
-
-Format using Markdown with clear sections for each audience group. Be specific and detailed.
-
-Provide the complete analysis in **{{{language}}}**.`,
+Write in **{{{language}}}**.`,
       });
       
       const {output} = await audiencePrompt(input, { model: selectedModel });
       
-      if (!output || !output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 200) {
+      if (!output || !output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 150) {
         throw new Error('AI failed to generate audience suggestions.');
       }
       
