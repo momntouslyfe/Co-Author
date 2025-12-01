@@ -69,52 +69,49 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
           maxOutputTokens: 8000,
           temperature: 0.7,
         },
-        prompt: `You are a world-class research analyst. Produce a comprehensive topic research document.
+        prompt: `You are a world-class research analyst. Your task is to produce a comprehensive topic research document.
 
-**Topic:** {{{topic}}}
-**Language:** {{{language}}}
+**Research Topic:** {{{topic}}}
+**Output Language:** {{{language}}}
 {{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
 
----
+## INSTRUCTIONS:
+Generate a complete research document with 1800-2200 words total. Write all content in {{{language}}}.
 
-## CRITICAL REQUIREMENTS:
-- Generate a COMPLETE research document (2000-2500 words minimum)
-- NEVER stop mid-section - complete every section fully
-- Each section must have 3-4 substantial paragraphs
+You MUST include ALL of these sections with the specified word counts:
 
-## REQUIRED SECTIONS (Complete ALL):
+## Historical Context (200-250 words)
+Write about key milestones, evolution, and important dates in this field. Include how the topic has developed over time.
 
-### 1. Historical Context (300-400 words)
-Key milestones, evolution, and important dates in this field.
+## Current Landscape (250-300 words)
+Describe the present state, market conditions, current trends, and recent developments. Include relevant statistics where possible.
 
-### 2. Current Landscape (300-400 words)
-Present state, market size, current trends, and recent developments.
+## Core Concepts & Principles (350-400 words)
+Explain fundamental ideas, key theories, essential knowledge, and important principles. This section should be comprehensive and educational.
 
-### 3. Core Concepts & Principles (300-400 words)
-Fundamental ideas, key theories, and essential knowledge.
+## Key Data & Statistics (300-350 words)
+Present important numbers, percentages, research findings, and quantitative insights. Use qualifiers like "studies suggest" or "research indicates" if exact data is uncertain.
 
-### 4. Key Data & Statistics (200-300 words)
-Important numbers, percentages, research findings. Use qualifiers if uncertain.
+## Expert Perspectives (150-200 words)
+Share insights from thought leaders and recognized authorities in the field.
 
-### 5. Expert Perspectives (200-300 words)
-Insights from thought leaders and recognized authorities.
+## Trends & Future Outlook (250-300 words)
+Discuss emerging developments, predictions, and future directions for this topic.
 
-### 6. Trends & Future Outlook (300-400 words)
-Emerging developments, predictions, and future directions.
+## Success Stories & Case Studies (150-200 words)
+Provide real examples with outcomes and lessons learned.
 
-### 7. Success Stories & Case Studies (200-300 words)
-Real examples with outcomes and lessons learned.
+## References & Source Links
+List 5-10 real, authoritative URLs. Format each as: [Source Name](URL) - Brief description. Only include URLs you are confident exist.
 
-### 8. References & Source Links
-5-10 real, authoritative URLs formatted as: [Source Name](URL) - Brief description
-
-## FORMATTING:
-- Use ## for main headings, ### for subheadings
+## FORMATTING RULES:
+- Use ## for section headings
+- Use ### for subsections
 - Use bullet points for lists
-- Use **bold** for key terms
-- Use > blockquotes for quotes
+- Use **bold** for key terms and statistics
+- Use > blockquotes for expert quotes
 
-Write in **{{{language}}}**. Generate ALL sections completely.`,
+Generate the complete research document now in {{{language}}}.`,
       });
       
       const {output} = await deepResearchPrompt(input, { model: selectedModel });
@@ -129,7 +126,7 @@ Write in **{{{language}}}**. Generate ALL sections completely.`,
     deepResearchContext
   );
 
-  // Step 2: Generate Pain Point Analysis (concise)
+  // Step 2: Generate Pain Point Analysis
   const painPointContext = `Pain Points: "${input.topic}"`;
   const painPointResult = await retryWithBackoff(
     async () => {
@@ -138,32 +135,43 @@ Write in **{{{language}}}**. Generate ALL sections completely.`,
         input: {schema: ResearchBookTopicInputSchema},
         output: {schema: PainPointOutputSchema},
         config: {
-          maxOutputTokens: 1000,
+          maxOutputTokens: 1500,
           temperature: 0.7,
         },
-        prompt: `Identify key pain points for this topic. Be CONCISE (300-400 words max).
+        prompt: `You are a market research expert. Analyze pain points for the following topic.
 
 **Topic:** {{{topic}}}
 **Language:** {{{language}}}
 {{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
 
-List exactly **4 pain points** in this format:
+## YOUR TASK:
+Generate a pain point analysis document (400-500 words total) in {{{language}}}.
 
-### 1. [Pain Point Title]
-**Problem:** 1-2 sentences describing the issue.
-**Impact:** High/Medium/Low - one sentence explaining why.
+Identify exactly 5 key pain points that people face regarding this topic. For each pain point, provide:
 
-### 2. [Pain Point Title]
-...
+### Pain Point 1: [Title]
+**The Problem:** Describe what the issue is in 2-3 sentences.
+**Why It Matters:** Explain the impact in 1-2 sentences.
+**Common Signs:** List 2-3 indicators that someone is experiencing this.
 
-Keep each pain point brief (50-75 words). No lengthy explanations.
+### Pain Point 2: [Title]
+(Follow the same format)
 
-Write in **{{{language}}}**.`,
+### Pain Point 3: [Title]
+(Follow the same format)
+
+### Pain Point 4: [Title]
+(Follow the same format)
+
+### Pain Point 5: [Title]
+(Follow the same format)
+
+Use Markdown formatting with headers, bold text, and bullet points. Write the complete analysis in {{{language}}}.`,
       });
       
       const {output} = await painPointPrompt(input, { model: selectedModel });
       
-      if (!output || !output.painPointAnalysis || output.painPointAnalysis.length < 150) {
+      if (!output || !output.painPointAnalysis || output.painPointAnalysis.length < 200) {
         throw new Error('AI failed to generate pain point analysis.');
       }
       
@@ -173,7 +181,7 @@ Write in **{{{language}}}**.`,
     painPointContext
   );
 
-  // Step 3: Generate Target Audience Suggestions (concise)
+  // Step 3: Generate Target Audience Suggestions
   const audienceContext = `Audience: "${input.topic}"`;
   const audienceResult = await retryWithBackoff(
     async () => {
@@ -182,33 +190,50 @@ Write in **{{{language}}}**.`,
         input: {schema: ResearchBookTopicInputSchema},
         output: {schema: AudienceOutputSchema},
         config: {
-          maxOutputTokens: 1000,
+          maxOutputTokens: 1500,
           temperature: 0.7,
         },
-        prompt: `Identify target audiences for this topic. Be CONCISE (300-400 words max).
+        prompt: `You are a market research expert. Identify target audiences for the following topic.
 
 **Topic:** {{{topic}}}
 **Language:** {{{language}}}
 {{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
 
-List exactly **4 audience groups** in this format:
+## YOUR TASK:
+Generate a target audience analysis document (400-500 words total) in {{{language}}}.
 
-### 1. [Audience Name]
-**Who:** Age, profession, experience (1 line)
-**Goals:** 2 bullet points
-**Frustrations:** 2 bullet points
+Identify exactly 5 distinct audience groups who would benefit from content about this topic. For each audience:
 
-### 2. [Audience Name]
-...
+### Audience 1: [Audience Name]
+**Demographics:** Age range, profession, experience level (1-2 sentences)
+**Goals:** 
+- Goal 1
+- Goal 2
+- Goal 3
+**Frustrations:**
+- Frustration 1
+- Frustration 2
+- Frustration 3
+**Why This Topic Matters:** 1-2 sentences on relevance
 
-Keep each audience brief (60-80 words). No lengthy descriptions.
+### Audience 2: [Audience Name]
+(Follow the same format)
 
-Write in **{{{language}}}**.`,
+### Audience 3: [Audience Name]
+(Follow the same format)
+
+### Audience 4: [Audience Name]
+(Follow the same format)
+
+### Audience 5: [Audience Name]
+(Follow the same format)
+
+Use Markdown formatting with headers and bullet points. Write the complete analysis in {{{language}}}.`,
       });
       
       const {output} = await audiencePrompt(input, { model: selectedModel });
       
-      if (!output || !output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 150) {
+      if (!output || !output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 200) {
         throw new Error('AI failed to generate audience suggestions.');
       }
       
