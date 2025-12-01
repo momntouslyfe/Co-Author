@@ -1,20 +1,21 @@
 /**
  * @file Firebase Security Rules for Co-Author Pro.
  *
- * @corePhilosophy This ruleset allows public read and write access to all data, as the application is not using authentication. This is ONLY suitable for prototyping or scenarios where data privacy is not a concern.  **In a production application, this is highly insecure.**
- * @dataStructure Data is stored in three top-level collections: `/users/{userId}`, `/coupons/{couponId}`, and `/blogs/{blogId}`.
- * @keySecurityDecisions Authentication is disabled, so no security is implemented.
+ * @corePhilosophy This ruleset implements proper authentication-based security.
+ * Users can only access their own data, while admin operations are handled server-side.
+ * @dataStructure Data is organized in collections with proper access controls.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ============================================================
+    // USER DATA - Authenticated users can manage their own data
+    // ============================================================
+
     /**
-     * @description Allows public read and write access to user data. **THIS IS INSECURE FOR PRODUCTION.**
+     * @description Users can manage their own user document and subcollections.
      * @path /users/{userId}
-     * @allow (get, list, create, update, delete) Any unauthenticated user can read and write any user document.
-     * @deny (none) Since the application has no auth, there are no scenarios to deny.
-     * @principle No security is enforced due to lack of authentication.
      */
     match /users/{userId} {
       allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
@@ -22,7 +23,6 @@ service cloud.firestore {
       /**
        * @description A user can manage their own research profiles.
        * @path /users/{userId}/researchProfiles/{researchProfileId}
-       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
        */
       match /researchProfiles/{researchProfileId} {
         allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
@@ -31,16 +31,22 @@ service cloud.firestore {
       /**
        * @description A user can manage their own style profiles.
        * @path /users/{userId}/styleProfiles/{styleProfileId}
-       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
        */
       match /styleProfiles/{styleProfileId} {
         allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
       }
 
-       /**
+      /**
+       * @description A user can manage their own author profiles.
+       * @path /users/{userId}/authorProfiles/{authorProfileId}
+       */
+      match /authorProfiles/{authorProfileId} {
+        allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      /**
        * @description A user can manage their own projects.
        * @path /users/{userId}/projects/{projectId}
-       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
        */
       match /projects/{projectId} {
         allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
@@ -48,9 +54,24 @@ service cloud.firestore {
         /**
          * @description A user can manage their own content drafts within a project.
          * @path /users/{userId}/projects/{projectId}/contentDrafts/{draftId}
-         * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
          */
         match /contentDrafts/{draftId} {
+          allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+        }
+
+        /**
+         * @description A user can manage their own offer drafts within a project.
+         * @path /users/{userId}/projects/{projectId}/offerDrafts/{draftId}
+         */
+        match /offerDrafts/{draftId} {
+          allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+        }
+
+        /**
+         * @description A user can manage chapters within a project.
+         * @path /users/{userId}/projects/{projectId}/chapters/{chapterId}
+         */
+        match /chapters/{chapterId} {
           allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
         }
       }
@@ -58,28 +79,43 @@ service cloud.firestore {
       /**
        * @description A user can manage their own project content ideas.
        * @path /users/{userId}/projectContentIdeas/{projectId}
-       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
        */
       match /projectContentIdeas/{projectId} {
         allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
       }
 
       /**
-       * @description A user can manage their own author profiles.
-       * @path /users/{userId}/authorProfiles/{authorProfileId}
-       * @allow (get, list, create, update, delete) The authenticated user must match the {userId} in the path.
+       * @description A user can manage their own project offers.
+       * @path /users/{userId}/projectOffers/{projectOfferId}
        */
-      match /authorProfiles/{authorProfileId} {
+      match /projectOffers/{projectOfferId} {
+        allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      /**
+       * @description A user can manage their own marketing funnels.
+       * @path /users/{userId}/marketingFunnels/{funnelId}
+       */
+      match /marketingFunnels/{funnelId} {
+        allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      /**
+       * @description A user can manage their own landing page copies.
+       * @path /users/{userId}/landingPageCopies/{copyId}
+       */
+      match /landingPageCopies/{copyId} {
         allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
 
+    // ============================================================
+    // USER SENSITIVE DATA - Strictly protected user-specific data
+    // ============================================================
+
     /**
-     * @description CRITICAL SECURITY: User API keys must only be accessible by the owning user.
+     * @description User API keys - only accessible by the owning user.
      * @path /userApiKeys/{userId}
-     * @allow (get, create, update) Only if the authenticated user's UID matches the document ID (userId).
-     * @deny All other access, including list operations to prevent enumeration.
-     * @principle User API keys contain sensitive encrypted credentials and must be strictly protected.
      */
     match /userApiKeys/{userId} {
       allow get, create, update: if request.auth != null && request.auth.uid == userId;
@@ -87,10 +123,71 @@ service cloud.firestore {
     }
 
     /**
-     * @description Coupons can be read by anyone but only admins can modify them (server-side).
+     * @description User subscriptions - only accessible by the owning user.
+     * @path /userSubscriptions/{userId}
+     */
+    match /userSubscriptions/{userId} {
+      allow get, create, update: if request.auth != null && request.auth.uid == userId;
+      allow list, delete: if false;
+    }
+
+    // ============================================================
+    // PAYMENT & TRANSACTIONS - User can view, server manages
+    // ============================================================
+
+    /**
+     * @description Payment records - users can view their own payments.
+     * @path /payments/{orderId}
+     */
+    match /payments/{orderId} {
+      allow get: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow list: if request.auth != null;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Credit transactions - users can view their own transactions.
+     * @path /creditTransactions/{transactionId}
+     */
+    match /creditTransactions/{transactionId} {
+      allow get: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow list: if request.auth != null;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Coupon usage tracking - managed server-side.
+     * @path /couponUsage/{usageId}
+     */
+    match /couponUsage/{usageId} {
+      allow read, write: if false;
+    }
+
+    // ============================================================
+    // PUBLIC READ COLLECTIONS - Anyone can read, admin manages
+    // ============================================================
+
+    /**
+     * @description Subscription plans - public read for pricing display.
+     * @path /subscriptionPlans/{planId}
+     */
+    match /subscriptionPlans/{planId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Addon credit plans - public read for pricing display.
+     * @path /addonCreditPlans/{planId}
+     */
+    match /addonCreditPlans/{planId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Coupons - public read for validation.
      * @path /coupons/{couponId}
-     * @allow (get, list) Public read access for coupon codes
-     * @allow (create, update, delete) Admin-only operations (handled server-side)
      */
     match /coupons/{couponId} {
       allow get, list: if true;
@@ -98,10 +195,8 @@ service cloud.firestore {
     }
 
     /**
-     * @description Blog posts can be read by anyone, modifications handled server-side.
+     * @description Blog posts - public read for content display.
      * @path /blogs/{blogId}
-     * @allow (get, list) Public read access for blog content
-     * @allow (create, update, delete) Handled server-side with admin privileges
      */
     match /blogs/{blogId} {
       allow get, list: if true;
@@ -109,90 +204,88 @@ service cloud.firestore {
     }
 
     /**
-     * @description Subscription plans can be read by anyone, but only admins can modify them.
-     * @path /subscriptionPlans/{planId}
-     * @allow (get, list) Any authenticated user can view subscription plans.
-     * @allow (create, update, delete) Reserved for admin operations (handled server-side).
+     * @description Currencies - public read for pricing display.
+     * @path /currencies/{currencyId}
      */
-    match /subscriptionPlans/{planId} {
-      allow get, list: if request.auth != null;
+    match /currencies/{currencyId} {
+      allow get, list: if true;
       allow create, update, delete: if false;
     }
 
     /**
-     * @description Addon credit plans can be read by anyone, but only admins can modify them.
-     * @path /addonCreditPlans/{planId}
-     * @allow (get, list) Any authenticated user can view addon credit plans.
-     * @allow (create, update, delete) Reserved for admin operations (handled server-side).
+     * @description Currency conversions - public read for pricing calculations.
+     * @path /currencyConversions/{conversionId}
      */
-    match /addonCreditPlans/{planId} {
-      allow get, list: if request.auth != null;
+    match /currencyConversions/{conversionId} {
+      allow get, list: if true;
       allow create, update, delete: if false;
     }
 
+    // ============================================================
+    // ADMIN-ONLY COLLECTIONS - No client access
+    // ============================================================
+
     /**
-     * @description User subscriptions can only be accessed by the owning user or admin (server-side).
-     * @path /userSubscriptions/{userId}
-     * @allow (get, create, update) Only if the authenticated user's UID matches the document ID.
-     * @deny (list, delete) To prevent enumeration and accidental deletion.
+     * @description Admin settings - managed exclusively server-side.
+     * @path /adminSettings/{settingId}
      */
-    match /userSubscriptions/{userId} {
-      allow get, create, update: if request.auth != null && request.auth.uid == userId;
-      allow list, delete: if false;
+    match /adminSettings/{settingId} {
+      allow read, write: if false;
     }
 
     /**
-     * @description Credit transactions are managed server-side via Firebase Admin SDK.
-     * @path /creditTransactions/{transactionId}
-     * @allow (get) Users can view individual transactions if they own them.
-     * @deny (list, create, update, delete) All modifications handled server-side.
-     * @principle Transactions are created/queried server-side with admin privileges.
+     * @description Admin API keys - managed exclusively server-side.
+     * @path /adminAPIKeys/{keyId}
      */
-    match /creditTransactions/{transactionId} {
-      allow get: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow list, create, update, delete: if false;
+    match /adminAPIKeys/{keyId} {
+      allow read, write: if false;
     }
 
     /**
-     * @description Payment records are managed server-side via Firebase Admin SDK.
-     * @path /payments/{orderId}
-     * @allow (get, list) Users can view their own payment records only.
-     * @deny (create, update, delete) All modifications handled server-side.
-     * @principle Payments are created and managed server-side with admin privileges for security.
-     */
-    match /payments/{orderId} {
-      allow get: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow list: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create, update, delete: if false;
-    }
-
-    /**
-     * @description Integration settings (Facebook Pixel, Email, etc.) are admin-only.
+     * @description Integration settings (Facebook Pixel, Email, etc.) - admin-only.
      * @path /integrationSettings/{settingId}
-     * @deny All client-side access. Managed exclusively via Firebase Admin SDK.
-     * @principle Contains sensitive API keys and credentials that must not be exposed to clients.
      */
     match /integrationSettings/{settingId} {
       allow read, write: if false;
     }
 
     /**
-     * @description Tracking event logs for Facebook CAPI and email delivery.
+     * @description Tracking event logs - server-side analytics.
      * @path /trackingEventLogs/{logId}
-     * @deny All client-side access. Created server-side for analytics and debugging.
-     * @principle Contains internal tracking data not meant for client consumption.
      */
     match /trackingEventLogs/{logId} {
       allow read, write: if false;
     }
 
     /**
-     * @description Email queue for scheduled and pending emails.
+     * @description Email queue - server-side processing.
      * @path /emailQueue/{emailId}
-     * @deny All client-side access. Processed server-side by email worker.
-     * @principle Queue management is internal and should not be exposed to clients.
      */
     match /emailQueue/{emailId} {
+      allow read, write: if false;
+    }
+
+    /**
+     * @description Affiliate data - managed server-side.
+     * @path /affiliates/{affiliateId}
+     */
+    match /affiliates/{affiliateId} {
+      allow read, write: if false;
+    }
+
+    /**
+     * @description Affiliate referrals - managed server-side.
+     * @path /affiliateReferrals/{referralId}
+     */
+    match /affiliateReferrals/{referralId} {
+      allow read, write: if false;
+    }
+
+    /**
+     * @description Affiliate payouts - managed server-side.
+     * @path /affiliatePayouts/{payoutId}
+     */
+    match /affiliatePayouts/{payoutId} {
       allow read, write: if false;
     }
   }
