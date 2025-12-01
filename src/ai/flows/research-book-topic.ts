@@ -3,7 +3,7 @@
 /**
  * @fileOverview AI topic research assistant to perform deep topic research, pain point analysis, and get target audience suggestions, tailored to a specific language and market.
  *
- * - researchBookTopic - A function that handles the book topic research process.
+ * - researchBookTopic - A function that handles the book topic research process using multi-step generation for completeness.
  * - ResearchBookTopicInput - The input type for the researchBookTopic function.
  * - ResearchBookTopicOutput - The return type for the researchBooktopic function.
  */
@@ -31,6 +31,18 @@ const ResearchBookTopicOutputSchema = z.object({
 });
 export type ResearchBookTopicOutput = z.infer<typeof ResearchBookTopicOutputSchema>;
 
+const DeepResearchOutputSchema = z.object({
+  deepTopicResearch: z.string().describe('Comprehensive research on the topic in Markdown format.'),
+});
+
+const PainPointOutputSchema = z.object({
+  painPointAnalysis: z.string().describe('Pain point analysis in Markdown format.'),
+});
+
+const AudienceOutputSchema = z.object({
+  targetAudienceSuggestion: z.string().describe('Target audience suggestions in Markdown format.'),
+});
+
 const RESEARCH_RETRY_CONFIG = {
   maxRetries: 4,
   initialDelayMs: 3000,
@@ -41,115 +53,191 @@ const RESEARCH_RETRY_CONFIG = {
 export async function researchBookTopic(input: ResearchBookTopicInput): Promise<ResearchBookTopicOutput> {
   await preflightCheckWordCredits(input.userId, 2000);
   
-  const context = `Research Topic: "${input.topic}"`;
+  const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
+  const selectedModel = input.model || routedModel;
   
-  const result = await retryWithBackoff(
+  // Step 1: Generate Deep Topic Research (main research content)
+  const deepResearchContext = `Deep Research: "${input.topic}"`;
+  const deepResearchResult = await retryWithBackoff(
     async () => {
-      const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
-      
-      const prompt = ai.definePrompt({
-        name: 'researchBookTopicPrompt',
+      const deepResearchPrompt = ai.definePrompt({
+        name: 'deepTopicResearchPrompt',
         input: {schema: ResearchBookTopicInputSchema},
-        output: {schema: ResearchBookTopicOutputSchema},
-        prompt: `You are a world-class research analyst. Your task is to produce a "Comprehensive Topic Library" and a "Topic Market Analysis" that is exceptionally deep, comprehensive, and well-sourced.
+        output: {schema: DeepResearchOutputSchema},
+        prompt: `You are a world-class research analyst. Your task is to produce a comprehensive topic research document.
 
-  **Topic:** {{{topic}}}
-  **Language:** {{{language}}}
-  {{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
+**Topic:** {{{topic}}}
+**Language:** {{{language}}}
+{{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
 
-  ---
+---
 
-  ### Part 1: Comprehensive Topic Library
+## CRITICAL - COMPLETE OUTPUT REQUIRED:
+- You MUST generate a COMPLETE, FULL research document
+- NEVER stop mid-section or mid-thought
+- NEVER generate partial content - this is considered a FAILURE
+- Each section must be thoroughly developed with multiple paragraphs
+- Minimum 2000-2500 words for the research output
 
-  **CRITICAL - COMPLETE OUTPUT REQUIRED:**
-  - You MUST generate a COMPLETE, FULL research document
-  - NEVER stop mid-section or mid-thought
-  - NEVER generate partial content - this is considered a FAILURE
-  - Each section must be thoroughly developed with multiple paragraphs
-  - Minimum 1500-2000 words for the entire research output
+## RESEARCH INSTRUCTIONS:
 
-  **CRITICAL INSTRUCTIONS:**
-  1.  **Go Deep and Be Data-Driven (When Available):** Your research should be exceptionally thorough and evidence-based. For each major section, include as much of the following as you have reliable knowledge about:
-      - **Statistics & Data:** Specific numbers, percentages, growth rates, market sizes (include approximate timeframes when citing data)
-      - **Research Findings:** Studies, surveys, and research results (note: if you don't have specific study names or dates, provide general insights)
-      - **Case Studies:** Real-world examples of success/failure with outcomes (can be well-known examples even if you don't have exact metrics)
-      - **Expert Insights:** Perspectives from recognized authorities or common expert consensus
-      - **Trends & Projections:** Current trends with supporting observations and future forecasts
-      - **Comparative Data:** Comparisons between approaches, methods, or timeframes
-      
-      **IMPORTANT - Accuracy Over Fabrication:** If you don't have specific statistics or cannot recall exact numbers, provide conceptual information instead of inventing data. Use qualifiers like "Studies suggest...", "Research indicates...", "According to industry analysis..." rather than citing non-existent specific studies with fabricated numbers.
-      
-  2.  **Structure Your Research:** Organize information under clear sections:
-      - **Historical Context:** Key milestones with dates and impact metrics
-      - **Current Landscape:** Present state with current statistics (within last 2-3 years)
-      - **Core Concepts:** Essential principles backed by research
-      - **Key Data & Statistics:** A dedicated section with the most important numbers
-      - **Expert Perspectives:** Insights from thought leaders and researchers
-      - **Trends & Future Outlook:** Emerging developments with supporting evidence
-      - **Success Stories & Case Studies:** Real examples with measurable results
-      
-  3.  **Formatting (NON-NEGOTIABLE):** Present all information in a highly structured, readable format using Markdown:
-      - Use clear headings (##) and subheadings (###)
-      - Use bullet points for lists
-      - Use **bold** for key terms and statistics
-      - Use > blockquotes for expert quotes
-      - Use tables for comparative data when appropriate
-      
-  4.  **References & Source Links (REQUIRED):** At the end of this section, you MUST include a "References & Source Links" heading with:
-      - **Authoritative Source Links:** Include 5-10 relevant, real URLs to authoritative sources like:
-        - Official organization websites (WHO, government sites, academic institutions)
-        - Reputable publications (Harvard Business Review, Forbes, industry journals)
-        - Research databases (PubMed, Google Scholar links when applicable)
-        - Well-known expert blogs or official company resources
-      - **Format each link as:** [Source Name](URL) - Brief description of what this source covers
-      - **IMPORTANT:** Only include REAL, VERIFIABLE URLs that you are confident exist. If you cannot recall a specific URL, provide the organization name and suggest the reader search for their official site.
-      - **Never fabricate URLs** - only include links you are confident are real and accessible
+### 1. Go Deep and Be Data-Driven (When Available):
+Your research should be exceptionally thorough and evidence-based. Include:
+- **Statistics & Data:** Specific numbers, percentages, growth rates, market sizes
+- **Research Findings:** Studies, surveys, and research results
+- **Case Studies:** Real-world examples of success/failure with outcomes
+- **Expert Insights:** Perspectives from recognized authorities
+- **Trends & Projections:** Current trends and future forecasts
+- **Comparative Data:** Comparisons between approaches, methods, or timeframes
 
-  ---
+**IMPORTANT - Accuracy Over Fabrication:** If you don't have specific statistics, provide conceptual information instead of inventing data. Use qualifiers like "Studies suggest...", "Research indicates..." rather than fabricating numbers.
 
-  ### Part 2: Topic Market Analysis (KEEP CONCISE)
+### 2. Structure Your Research:
+Organize information under these clear sections:
+- **Historical Context:** Key milestones with dates and impact
+- **Current Landscape:** Present state with current statistics
+- **Core Concepts:** Essential principles backed by research
+- **Key Data & Statistics:** A dedicated section with important numbers
+- **Expert Perspectives:** Insights from thought leaders
+- **Trends & Future Outlook:** Emerging developments
+- **Success Stories & Case Studies:** Real examples with results
 
-  **INSTRUCTIONS:**
-  1.  **Pain Point Analysis:** Identify 4-5 key pain points related to this topic. Keep each pain point description brief (2-3 sentences each). Format as a simple bulleted list.
-  2.  **Target Audience Suggestions:** Identify **4-5 distinct audience groups**. For each group, provide a brief description (1-2 sentences) with a short bulleted list of their main Goals and Frustrations (2-3 bullets each).
+### 3. Formatting (NON-NEGOTIABLE):
+- Use clear headings (##) and subheadings (###)
+- Use bullet points for lists
+- Use **bold** for key terms and statistics
+- Use > blockquotes for expert quotes
+- Use tables for comparative data when appropriate
 
-  **NOTE:** Part 2 should be concise to allow more space for the comprehensive research in Part 1.
+### 4. References & Source Links (REQUIRED):
+At the end, include a "References & Source Links" heading with:
+- 5-10 relevant, real URLs to authoritative sources
+- Format: [Source Name](URL) - Brief description
+- Only include REAL, VERIFIABLE URLs
+- Never fabricate URLs
 
-  ---
-
-  **PRIORITY ORDER:**
-  1. **HIGHEST PRIORITY:** \`deepTopicResearch\` - This MUST be complete with all sections, data, and source links (minimum 1500 words)
-  2. **SECONDARY:** \`painPointAnalysis\` - Keep concise (300-400 words max)
-  3. **SECONDARY:** \`targetAudienceSuggestion\` - Keep concise (300-400 words max)
-
-  Focus your output capacity on making the deep research comprehensive. The market analysis sections should be brief summaries.
-
-  You must provide the entire response in the specified **{{{language}}}**, organized into the three requested output fields. Proceed with generating the COMPLETE research now.`,
+Provide the complete response in **{{{language}}}**. Generate the COMPLETE research now.`,
       });
       
-      const {output} = await prompt(input, { model: input.model || routedModel });
+      const {output} = await deepResearchPrompt(input, { model: selectedModel });
       
-      if (!output) {
-        throw new Error('AI failed to generate research data.');
+      if (!output || !output.deepTopicResearch || output.deepTopicResearch.length < 800) {
+        throw new Error('AI failed to generate complete deep research. Output was too short.');
       }
       
-      if (!output.deepTopicResearch || output.deepTopicResearch.length < 500) {
-        throw new Error('AI failed to generate complete research. Output was too short.');
-      }
+      return output;
+    },
+    RESEARCH_RETRY_CONFIG,
+    deepResearchContext
+  );
+
+  // Step 2: Generate Pain Point Analysis
+  const painPointContext = `Pain Points: "${input.topic}"`;
+  const painPointResult = await retryWithBackoff(
+    async () => {
+      const painPointPrompt = ai.definePrompt({
+        name: 'painPointAnalysisPrompt',
+        input: {schema: ResearchBookTopicInputSchema},
+        output: {schema: PainPointOutputSchema},
+        prompt: `You are a market research expert. Analyze pain points for the following topic.
+
+**Topic:** {{{topic}}}
+**Language:** {{{language}}}
+{{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
+
+---
+
+## PAIN POINT ANALYSIS
+
+Identify **6-8 key pain points** that people face regarding this topic. For each pain point:
+
+1. **Pain Point Title** - A clear, descriptive title
+2. **Description** - 3-4 sentences explaining:
+   - What the problem is
+   - Why it matters
+   - How it affects people
+   - Common manifestations
+
+3. **Impact Level** - Rate as High/Medium/Low with brief explanation
+
+Format using Markdown with clear headings for each pain point. Be specific and actionable.
+
+Provide the complete analysis in **{{{language}}}**.`,
+      });
       
-      if (!output.painPointAnalysis || output.painPointAnalysis.length < 100) {
+      const {output} = await painPointPrompt(input, { model: selectedModel });
+      
+      if (!output || !output.painPointAnalysis || output.painPointAnalysis.length < 200) {
         throw new Error('AI failed to generate pain point analysis.');
       }
       
-      if (!output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 100) {
+      return output;
+    },
+    RESEARCH_RETRY_CONFIG,
+    painPointContext
+  );
+
+  // Step 3: Generate Target Audience Suggestions
+  const audienceContext = `Audience: "${input.topic}"`;
+  const audienceResult = await retryWithBackoff(
+    async () => {
+      const audiencePrompt = ai.definePrompt({
+        name: 'targetAudiencePrompt',
+        input: {schema: ResearchBookTopicInputSchema},
+        output: {schema: AudienceOutputSchema},
+        prompt: `You are a market research expert. Identify target audiences for the following topic.
+
+**Topic:** {{{topic}}}
+**Language:** {{{language}}}
+{{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
+
+---
+
+## TARGET AUDIENCE ANALYSIS
+
+Identify **5-6 distinct audience groups** who would benefit from content about this topic. For each audience:
+
+### [Audience Name]
+**Demographics:**
+- Age range, profession, experience level
+
+**Profile:**
+- 2-3 sentences describing who they are
+
+**Goals (3-4 points):**
+- What they want to achieve
+- Their aspirations related to this topic
+
+**Frustrations (3-4 points):**
+- Current challenges they face
+- What's holding them back
+
+**Why This Topic Matters to Them:**
+- 1-2 sentences on relevance
+
+Format using Markdown with clear sections for each audience group. Be specific and detailed.
+
+Provide the complete analysis in **{{{language}}}**.`,
+      });
+      
+      const {output} = await audiencePrompt(input, { model: selectedModel });
+      
+      if (!output || !output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 200) {
         throw new Error('AI failed to generate audience suggestions.');
       }
       
       return output;
     },
     RESEARCH_RETRY_CONFIG,
-    context
+    audienceContext
   );
+
+  // Combine results
+  const result: ResearchBookTopicOutput = {
+    deepTopicResearch: deepResearchResult.deepTopicResearch,
+    painPointAnalysis: painPointResult.painPointAnalysis,
+    targetAudienceSuggestion: audienceResult.targetAudienceSuggestion,
+  };
   
   await trackAIUsage(
     input.userId,
