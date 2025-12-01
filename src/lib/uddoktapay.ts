@@ -33,6 +33,12 @@ export async function createPayment(
   try {
     const config = getUddoktapayConfig();
     
+    console.log('Uddoktapay config:', { 
+      baseUrl: config.baseUrl, 
+      endpoint: config.checkoutEndpoint,
+      hasApiKey: !!config.apiKey 
+    });
+    
     const response = await fetch(config.checkoutEndpoint, {
       method: 'POST',
       headers: {
@@ -43,7 +49,28 @@ export async function createPayment(
       body: JSON.stringify(data),
     });
     
-    const result = await response.json();
+    const responseText = await response.text();
+    
+    // Check if response is HTML (error page)
+    if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
+      console.error('Uddoktapay returned HTML instead of JSON. Status:', response.status);
+      console.error('Response preview:', responseText.substring(0, 500));
+      return {
+        status: false,
+        message: `Payment gateway configuration error. Please check UDDOKTAPAY_BASE_URL (current: ${config.baseUrl}) and API key settings.`,
+      };
+    }
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse Uddoktapay response:', responseText.substring(0, 500));
+      return {
+        status: false,
+        message: 'Invalid response from payment gateway. Please contact support.',
+      };
+    }
     
     if (!response.ok) {
       return {
