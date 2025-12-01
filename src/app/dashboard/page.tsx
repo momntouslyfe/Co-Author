@@ -144,7 +144,7 @@ export default function Dashboard() {
               <TableRow>
                 <TableHead>Title</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden sm:table-cell">Last Updated</TableHead>
+                <TableHead>Last Updated</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -166,9 +166,9 @@ export default function Dashboard() {
               ) : (
                 recentProjects.map((project) => (
                   <TableRow key={project.id}>
-                    <TableCell className="max-w-[150px] sm:max-w-[200px] md:max-w-none">
-                      <div className="font-medium truncate">{project.title || 'Untitled Project'}</div>
-                      <div className="hidden md:block text-sm text-muted-foreground truncate">
+                    <TableCell>
+                      <div className="font-medium">{project.title || 'Untitled Project'}</div>
+                      <div className="text-sm text-muted-foreground md:inline">
                         {project.description || 'No description'}
                       </div>
                     </TableCell>
@@ -180,7 +180,7 @@ export default function Dashboard() {
                         {project.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell whitespace-nowrap">{formatLastUpdated(project.lastUpdated)}</TableCell>
+                    <TableCell>{formatLastUpdated(project.lastUpdated)}</TableCell>
                     <TableCell>
                       <Button asChild variant="ghost" size="icon">
                         <Link href={getProjectLink(project)}>
