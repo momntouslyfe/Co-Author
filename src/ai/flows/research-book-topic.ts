@@ -107,20 +107,22 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
 
   ---
 
-  ### Part 2: Topic Market Analysis
+  ### Part 2: Topic Market Analysis (KEEP CONCISE)
 
-  **CRITICAL INSTRUCTIONS:**
-  1.  **Pain Point Analysis:** Based on your research, identify and analyze the most significant pain points, challenges, and frustrations people in the target market have regarding this topic. Format this as a well-structured Markdown document with at least 5-7 distinct pain points, each thoroughly explained.
-  2.  **Target Audience Suggestions:** Based on the pain points, identify **5 to 7 distinct audience groups** who would benefit from a book on this topic. For each group, do not create a persona with a name. Instead, provide a clear description of the audience group, followed by a bulleted list of their specific **Goals** and **Frustrations** related to the topic. Format this as a well-structured Markdown document with clear headings for each audience group.
+  **INSTRUCTIONS:**
+  1.  **Pain Point Analysis:** Identify 4-5 key pain points related to this topic. Keep each pain point description brief (2-3 sentences each). Format as a simple bulleted list.
+  2.  **Target Audience Suggestions:** Identify **4-5 distinct audience groups**. For each group, provide a brief description (1-2 sentences) with a short bulleted list of their main Goals and Frustrations (2-3 bullets each).
+
+  **NOTE:** Part 2 should be concise to allow more space for the comprehensive research in Part 1.
 
   ---
 
-  **FINAL CHECK BEFORE RESPONDING:** Ensure ALL THREE output fields are COMPLETE and FULLY DEVELOPED:
-  - \`deepTopicResearch\`: Complete research with all sections, data, and source links
-  - \`painPointAnalysis\`: Complete pain point analysis with 5-7 pain points
-  - \`targetAudienceSuggestion\`: Complete audience suggestions with 5-7 audience groups
+  **PRIORITY ORDER:**
+  1. **HIGHEST PRIORITY:** \`deepTopicResearch\` - This MUST be complete with all sections, data, and source links (minimum 1500 words)
+  2. **SECONDARY:** \`painPointAnalysis\` - Keep concise (300-400 words max)
+  3. **SECONDARY:** \`targetAudienceSuggestion\` - Keep concise (300-400 words max)
 
-  Partial or truncated output in any field is unacceptable.
+  Focus your output capacity on making the deep research comprehensive. The market analysis sections should be brief summaries.
 
   You must provide the entire response in the specified **{{{language}}}**, organized into the three requested output fields. Proceed with generating the COMPLETE research now.`,
       });
@@ -135,12 +137,12 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
         throw new Error('AI failed to generate complete research. Output was too short.');
       }
       
-      if (!output.painPointAnalysis || output.painPointAnalysis.length < 200) {
-        throw new Error('AI failed to generate complete pain point analysis.');
+      if (!output.painPointAnalysis || output.painPointAnalysis.length < 100) {
+        throw new Error('AI failed to generate pain point analysis.');
       }
       
-      if (!output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 200) {
-        throw new Error('AI failed to generate complete audience suggestions.');
+      if (!output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 100) {
+        throw new Error('AI failed to generate audience suggestions.');
       }
       
       return output;
