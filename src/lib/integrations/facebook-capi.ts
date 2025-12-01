@@ -203,9 +203,11 @@ export async function sendFacebookEvent(
     contentName?: string;
     contentCategory?: string;
     contentIds?: string[];
+    contentType?: string;
     orderId?: string;
     numItems?: number;
     status?: string;
+    predictedLtv?: number;
   }
 ): Promise<{ success: boolean; error?: string }> {
   try {
@@ -235,9 +237,11 @@ export async function sendFacebookEvent(
     if (params.contentName) customData.content_name = params.contentName;
     if (params.contentCategory) customData.content_category = params.contentCategory;
     if (params.contentIds) customData.content_ids = params.contentIds;
+    if (params.contentType) customData.content_type = params.contentType;
     if (params.orderId) customData.order_id = params.orderId;
     if (params.numItems !== undefined) customData.num_items = params.numItems;
     if (params.status) customData.status = params.status;
+    if (params.predictedLtv !== undefined) customData.predicted_ltv = params.predictedLtv;
     
     const eventData: FacebookEventData = {
       event_name: eventName,
@@ -374,11 +378,17 @@ export async function trackPurchase(params: {
   value: number;
   currency: string;
   contentName?: string;
+  contentCategory?: string;
   contentIds?: string[];
+  contentType?: string;
   orderId?: string;
   numItems?: number;
+  predictedLtv?: number;
 }): Promise<{ success: boolean; error?: string }> {
-  return sendFacebookEvent('Purchase', params);
+  return sendFacebookEvent('Purchase', {
+    ...params,
+    contentType: params.contentType || 'product',
+  });
 }
 
 export async function trackCompleteRegistration(params: {

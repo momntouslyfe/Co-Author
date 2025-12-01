@@ -59,6 +59,7 @@ export interface FacebookCustomData {
   predicted_ltv?: number;
   num_items?: number;
   status?: string;
+  subscription_id?: string;
 }
 
 export interface FacebookAPIResponse {

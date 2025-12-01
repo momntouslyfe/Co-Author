@@ -165,5 +165,35 @@ service cloud.firestore {
       allow list: if request.auth != null && resource.data.userId == request.auth.uid;
       allow create, update, delete: if false;
     }
+
+    /**
+     * @description Integration settings (Facebook Pixel, Email, etc.) are admin-only.
+     * @path /integrationSettings/{settingId}
+     * @deny All client-side access. Managed exclusively via Firebase Admin SDK.
+     * @principle Contains sensitive API keys and credentials that must not be exposed to clients.
+     */
+    match /integrationSettings/{settingId} {
+      allow read, write: if false;
+    }
+
+    /**
+     * @description Tracking event logs for Facebook CAPI and email delivery.
+     * @path /trackingEventLogs/{logId}
+     * @deny All client-side access. Created server-side for analytics and debugging.
+     * @principle Contains internal tracking data not meant for client consumption.
+     */
+    match /trackingEventLogs/{logId} {
+      allow read, write: if false;
+    }
+
+    /**
+     * @description Email queue for scheduled and pending emails.
+     * @path /emailQueue/{emailId}
+     * @deny All client-side access. Processed server-side by email worker.
+     * @principle Queue management is internal and should not be exposed to clients.
+     */
+    match /emailQueue/{emailId} {
+      allow read, write: if false;
+    }
   }
 }
