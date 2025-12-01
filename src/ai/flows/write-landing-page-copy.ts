@@ -132,21 +132,35 @@ You MUST apply this framework throughout the copy:
 {{/if}}
 
 {{#if styleProfile}}
-**Style Profile (Writing Style to Match - CRITICAL):**
+**Writing Style Analysis (MIMIC THE PATTERN ONLY - DO NOT COPY CONTENT):**
+
+CRITICAL INSTRUCTION: The following is a writing style analysis. You must:
+1. ONLY analyze and mimic the WRITING PATTERNS described (tone, voice, sentence structure, vocabulary choices, pacing, etc.)
+2. DO NOT copy, reference, or use ANY actual content, examples, phrases, or sentences from this analysis
+3. Create 100% ORIGINAL content that FOLLOWS THE SAME WRITING STYLE
+
 {{{styleProfile}}}
 
-**CODE-MIXING INTEGRITY (MANDATORY):**
-If the style profile demonstrates code-mixing (mixing words/phrases from multiple languages):
+**HOW TO USE THIS STYLE ANALYSIS:**
+- Study the Tone & Mood described → Write with the same emotional approach
+- Study the Voice characteristics → Match the narrative perspective and personality
+- Study the Sentence Structure & Rhythm → Use similar sentence lengths and patterns
+- Study the Vocabulary & Diction → Use the same level of formality and word choices
+- Study the Pacing → Match the flow and tempo
+- Study Code-Mixing patterns (if any) → Replicate the same language blending approach
+
+**CODE-MIXING INTEGRITY (IF APPLICABLE):**
+If the style analysis shows code-mixing (mixing words/phrases from multiple languages):
 1. Use mixed-language words NATURALLY without any explanation
 2. NEVER add parenthetical translations like "প্রমোশন (promotion)" - just write "প্রমোশন"
 3. NEVER add brackets, glosses, or English explanations after non-English words
 4. Blend languages seamlessly as a native speaker would
-5. Match the exact frequency and pattern of language mixing from the profile
+5. Match the exact frequency and pattern of language mixing from the analysis
 
 WRONG: "আপনার বিজনেস (business) এর জন্য মার্কেটিং (marketing) স্ট্রাটেজি (strategy)"
 CORRECT: "আপনার বিজনেস এর জন্য মার্কেটিং স্ট্রাটেজি"
 
-CRITICAL: If the style profile shows code-mixing (e.g., English with Bengali/Hindi words), you MUST incorporate the same language mixing pattern throughout your entire landing page copy.
+REMEMBER: Mimic the STYLE, not the CONTENT. All landing page content must be original and relevant to THIS book.
 {{/if}}
 
 {{#if authorProfile}}

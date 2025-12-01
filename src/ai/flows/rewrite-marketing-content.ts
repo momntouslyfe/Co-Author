@@ -46,16 +46,26 @@ export async function rewriteMarketingContent(
 **Language:** {{{language}}}
 
 {{#if styleProfile}}
-**Style Profile (Writing Style to Match - CRITICAL):**
+**Writing Style Analysis (MIMIC THE PATTERN ONLY - DO NOT COPY CONTENT):**
+
+CRITICAL: You must ONLY mimic the WRITING PATTERNS described below (tone, voice, sentence structure, vocabulary, pacing). DO NOT copy any content, examples, or phrases from this analysis.
+
 {{{styleProfile}}}
 
-**CODE-MIXING INTEGRITY (MANDATORY):**
-If the style profile demonstrates code-mixing (mixing words/phrases from multiple languages):
-1. Use mixed-language words NATURALLY without any explanation
+**HOW TO USE THIS STYLE ANALYSIS:**
+- Study the Tone & Mood → Write with the same emotional approach
+- Study the Voice → Match the narrative perspective and personality
+- Study Sentence Structure → Use similar sentence lengths and patterns
+- Study Vocabulary & Diction → Use the same level of formality
+- Study Code-Mixing patterns (if any) → Replicate the same language blending approach
+
+**CODE-MIXING INTEGRITY (IF APPLICABLE):**
+If the style analysis shows code-mixing (mixing languages):
+1. Use mixed-language words NATURALLY without explanation
 2. NEVER add parenthetical translations like "প্রমোশন (promotion)" - just write "প্রমোশন"
-3. NEVER add brackets, glosses, or English explanations after non-English words
+3. NEVER add brackets or English explanations after non-English words
 4. Blend languages seamlessly as a native speaker would
-5. Match the exact frequency and pattern of language mixing from the profile
+5. Match the exact frequency and pattern of language mixing
 
 WRONG: "আপনার বিজনেস (business) এর জন্য মার্কেটিং (marketing) স্ট্রাটেজি (strategy)"
 CORRECT: "আপনার বিজনেস এর জন্য মার্কেটিং স্ট্রাটেজি"
