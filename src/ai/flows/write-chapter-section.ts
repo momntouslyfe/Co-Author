@@ -162,10 +162,19 @@ Proceed to write the "Coming Up Next" section now.
 - Full Book Outline: {{{fullOutline}}}
 {{#if storytellingFramework}}- Storytelling Framework: {{{storytellingFramework}}}{{/if}}
 {{#if previousContent}}
-- **Previous Chapter Content (for context):** Use the following text to ensure your new section connects seamlessly and logically with what has come before. Do not repeat this content.
+- **Previous Chapter Content (for context):** The following is content already written in this chapter. Use it ONLY to understand context and avoid repetition.
   ---
   {{{previousContent}}}
   ---
+  
+  **CRITICAL - LEARNING REFERENCES POLICY:**
+  - DO NOT explicitly reference previous sections in every section (e.g., "আগের অংশে আমরা দেখেছি...", "যেমনটা আগে বলেছিলাম...")
+  - Readers just read the previous section - they don't need constant reminders
+  - ONLY reference previous content when there's a GENUINE logical dependency that would confuse readers otherwise
+  - Most sections should stand INDEPENDENTLY without backward references
+  - At most 1-2 backward references per entire chapter, not per section
+  - Maintain conceptual continuity through natural narrative flow, NOT through explicit "as I mentioned earlier" phrases
+  - Let each section feel fresh while naturally building on previous ideas
 {{/if}}
 {{#if styleProfile}}
 - **WRITING STYLE GUIDE (CRITICAL - MUST FOLLOW):** Below is a detailed analysis of the author's unique writing style, including concrete examples that demonstrate each characteristic. Your task is to MIMIC these stylistic patterns while writing about the current book topic.
