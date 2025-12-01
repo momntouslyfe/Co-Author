@@ -3,7 +3,7 @@
 /**
  * @fileOverview AI topic research assistant to perform deep topic research, pain point analysis, and get target audience suggestions, tailored to a specific language and market.
  *
- * - researchBookTopic - A function that handles the book topic research process using multi-step generation for completeness.
+ * - researchBookTopic - A function that handles the book topic research process.
  * - ResearchBookTopicInput - The input type for the researchBookTopic function.
  * - ResearchBookTopicOutput - The return type for the researchBooktopic function.
  */
@@ -31,18 +31,6 @@ const ResearchBookTopicOutputSchema = z.object({
 });
 export type ResearchBookTopicOutput = z.infer<typeof ResearchBookTopicOutputSchema>;
 
-const DeepResearchOutputSchema = z.object({
-  deepTopicResearch: z.string().describe('Comprehensive research on the topic in Markdown format.'),
-});
-
-const PainPointOutputSchema = z.object({
-  painPointAnalysis: z.string().describe('Pain point analysis in Markdown format.'),
-});
-
-const AudienceOutputSchema = z.object({
-  targetAudienceSuggestion: z.string().describe('Target audience suggestions in Markdown format.'),
-});
-
 const RESEARCH_RETRY_CONFIG = {
   maxRetries: 4,
   initialDelayMs: 3000,
@@ -53,202 +41,115 @@ const RESEARCH_RETRY_CONFIG = {
 export async function researchBookTopic(input: ResearchBookTopicInput): Promise<ResearchBookTopicOutput> {
   await preflightCheckWordCredits(input.userId, 2000);
   
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
-  const selectedModel = input.model || routedModel;
+  const context = `Research Topic: "${input.topic}"`;
   
-  // Step 1: Generate Deep Topic Research (main research content)
-  // Using high maxOutputTokens to prevent truncation
-  const deepResearchContext = `Deep Research: "${input.topic}"`;
-  const deepResearchResult = await retryWithBackoff(
+  const result = await retryWithBackoff(
     async () => {
-      const deepResearchPrompt = ai.definePrompt({
-        name: 'deepTopicResearchPrompt',
+      const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
+      
+      const prompt = ai.definePrompt({
+        name: 'researchBookTopicPrompt',
         input: {schema: ResearchBookTopicInputSchema},
-        output: {schema: DeepResearchOutputSchema},
+        output: {schema: ResearchBookTopicOutputSchema},
         config: {
           maxOutputTokens: 8000,
           temperature: 0.7,
         },
-        prompt: `You are a world-class research analyst. Your task is to produce a comprehensive topic research document.
+        prompt: `You are a world-class research analyst. Your task is to produce comprehensive research for a book topic.
 
 **Research Topic:** {{{topic}}}
 **Output Language:** {{{language}}}
 {{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
 
-## INSTRUCTIONS:
-Generate a complete research document with 1800-2200 words total. Write all content in {{{language}}}.
+You must generate THREE separate outputs. Write everything in {{{language}}}.
 
-You MUST include ALL of these sections with the specified word counts:
+---
 
-## Historical Context (200-250 words)
-Write about key milestones, evolution, and important dates in this field. Include how the topic has developed over time.
+## OUTPUT 1: deepTopicResearch (2000-2200 words total)
 
-## Current Landscape (250-300 words)
-Describe the present state, market conditions, current trends, and recent developments. Include relevant statistics where possible.
+Generate a complete, comprehensive research document with ALL of these sections:
 
-## Core Concepts & Principles (350-400 words)
-Explain fundamental ideas, key theories, essential knowledge, and important principles. This section should be comprehensive and educational.
+### Historical Context (200-250 words)
+Key milestones, evolution, and important dates in this field.
 
-## Key Data & Statistics (300-350 words)
-Present important numbers, percentages, research findings, and quantitative insights. Use qualifiers like "studies suggest" or "research indicates" if exact data is uncertain.
+### Current Landscape (250-300 words)
+Present state, market conditions, current trends, and recent developments with statistics.
 
-## Expert Perspectives (150-200 words)
-Share insights from thought leaders and recognized authorities in the field.
+### Core Concepts & Principles (400-450 words)
+Fundamental ideas, key theories, essential knowledge, and important principles. Be comprehensive and educational.
 
-## Trends & Future Outlook (250-300 words)
-Discuss emerging developments, predictions, and future directions for this topic.
+### Key Data & Statistics (350-400 words)
+Important numbers, percentages, research findings, and quantitative insights. Use qualifiers like "studies suggest" if uncertain.
 
-## Success Stories & Case Studies (150-200 words)
-Provide real examples with outcomes and lessons learned.
+### Expert Perspectives (150-200 words)
+Insights from thought leaders and recognized authorities.
 
-## References & Source Links
-List 5-10 real, authoritative URLs. Format each as: [Source Name](URL) - Brief description. Only include URLs you are confident exist.
+### Trends & Future Outlook (250-300 words)
+Emerging developments, predictions, and future directions.
 
-## FORMATTING RULES:
-- Use ## for section headings
-- Use ### for subsections
-- Use bullet points for lists
-- Use **bold** for key terms and statistics
-- Use > blockquotes for expert quotes
+### Success Stories & Case Studies (150-200 words)
+Real examples with outcomes and lessons learned.
 
-Generate the complete research document now in {{{language}}}.`,
-      });
-      
-      const {output} = await deepResearchPrompt(input, { model: selectedModel });
-      
-      if (!output || !output.deepTopicResearch || output.deepTopicResearch.length < 1500) {
-        throw new Error('AI failed to generate complete deep research. Output was too short.');
-      }
-      
-      return output;
-    },
-    RESEARCH_RETRY_CONFIG,
-    deepResearchContext
-  );
+### References & Source Links
+5-10 real, authoritative URLs formatted as: [Source Name](URL) - Brief description.
 
-  // Step 2: Generate Pain Point Analysis
-  const painPointContext = `Pain Points: "${input.topic}"`;
-  const painPointResult = await retryWithBackoff(
-    async () => {
-      const painPointPrompt = ai.definePrompt({
-        name: 'painPointAnalysisPrompt',
-        input: {schema: ResearchBookTopicInputSchema},
-        output: {schema: PainPointOutputSchema},
-        config: {
-          maxOutputTokens: 1500,
-          temperature: 0.7,
-        },
-        prompt: `You are a market research expert. Analyze pain points for the following topic.
+Use Markdown formatting: ## for headings, ### for subheadings, **bold** for key terms, bullet points for lists.
 
-**Topic:** {{{topic}}}
-**Language:** {{{language}}}
-{{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
+---
 
-## YOUR TASK:
-Generate a pain point analysis document (400-500 words total) in {{{language}}}.
+## OUTPUT 2: painPointAnalysis (400-500 words)
 
-Identify exactly 5 key pain points that people face regarding this topic. For each pain point, provide:
+Identify 5 key pain points people face with this topic:
 
 ### Pain Point 1: [Title]
-**The Problem:** Describe what the issue is in 2-3 sentences.
-**Why It Matters:** Explain the impact in 1-2 sentences.
-**Common Signs:** List 2-3 indicators that someone is experiencing this.
+**Problem:** 2-3 sentences describing the issue.
+**Impact:** 1-2 sentences on why it matters.
+**Signs:** 2-3 common indicators.
 
-### Pain Point 2: [Title]
-(Follow the same format)
+(Repeat for all 5 pain points)
 
-### Pain Point 3: [Title]
-(Follow the same format)
+---
 
-### Pain Point 4: [Title]
-(Follow the same format)
+## OUTPUT 3: targetAudienceSuggestion (400-500 words)
 
-### Pain Point 5: [Title]
-(Follow the same format)
+Identify 5 distinct audience groups:
 
-Use Markdown formatting with headers, bold text, and bullet points. Write the complete analysis in {{{language}}}.`,
+### Audience 1: [Name]
+**Demographics:** Age, profession, experience (1-2 sentences)
+**Goals:** 3 bullet points
+**Frustrations:** 3 bullet points
+**Relevance:** 1-2 sentences
+
+(Repeat for all 5 audiences)
+
+---
+
+Generate all three outputs completely in {{{language}}}. Do not stop mid-section.`,
       });
       
-      const {output} = await painPointPrompt(input, { model: selectedModel });
+      const {output} = await prompt(input, { model: input.model || routedModel });
       
-      if (!output || !output.painPointAnalysis || output.painPointAnalysis.length < 200) {
+      if (!output) {
+        throw new Error('AI failed to generate research data.');
+      }
+      
+      if (!output.deepTopicResearch || output.deepTopicResearch.length < 1500) {
+        throw new Error('AI failed to generate complete research. Output was too short.');
+      }
+      
+      if (!output.painPointAnalysis || output.painPointAnalysis.length < 200) {
         throw new Error('AI failed to generate pain point analysis.');
       }
       
-      return output;
-    },
-    RESEARCH_RETRY_CONFIG,
-    painPointContext
-  );
-
-  // Step 3: Generate Target Audience Suggestions
-  const audienceContext = `Audience: "${input.topic}"`;
-  const audienceResult = await retryWithBackoff(
-    async () => {
-      const audiencePrompt = ai.definePrompt({
-        name: 'targetAudiencePrompt',
-        input: {schema: ResearchBookTopicInputSchema},
-        output: {schema: AudienceOutputSchema},
-        config: {
-          maxOutputTokens: 1500,
-          temperature: 0.7,
-        },
-        prompt: `You are a market research expert. Identify target audiences for the following topic.
-
-**Topic:** {{{topic}}}
-**Language:** {{{language}}}
-{{#if targetMarket}}**Target Market:** {{{targetMarket}}}{{/if}}
-
-## YOUR TASK:
-Generate a target audience analysis document (400-500 words total) in {{{language}}}.
-
-Identify exactly 5 distinct audience groups who would benefit from content about this topic. For each audience:
-
-### Audience 1: [Audience Name]
-**Demographics:** Age range, profession, experience level (1-2 sentences)
-**Goals:** 
-- Goal 1
-- Goal 2
-- Goal 3
-**Frustrations:**
-- Frustration 1
-- Frustration 2
-- Frustration 3
-**Why This Topic Matters:** 1-2 sentences on relevance
-
-### Audience 2: [Audience Name]
-(Follow the same format)
-
-### Audience 3: [Audience Name]
-(Follow the same format)
-
-### Audience 4: [Audience Name]
-(Follow the same format)
-
-### Audience 5: [Audience Name]
-(Follow the same format)
-
-Use Markdown formatting with headers and bullet points. Write the complete analysis in {{{language}}}.`,
-      });
-      
-      const {output} = await audiencePrompt(input, { model: selectedModel });
-      
-      if (!output || !output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 200) {
+      if (!output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 200) {
         throw new Error('AI failed to generate audience suggestions.');
       }
       
       return output;
     },
     RESEARCH_RETRY_CONFIG,
-    audienceContext
+    context
   );
-
-  // Combine results
-  const result: ResearchBookTopicOutput = {
-    deepTopicResearch: deepResearchResult.deepTopicResearch,
-    painPointAnalysis: painPointResult.painPointAnalysis,
-    targetAudienceSuggestion: audienceResult.targetAudienceSuggestion,
-  };
   
   await trackAIUsage(
     input.userId,
