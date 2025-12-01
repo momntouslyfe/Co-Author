@@ -75,6 +75,7 @@ function ResearchPageContent() {
     painPointAnalysis?: string;
     targetAudienceSuggestion?: string;
   }>({});
+  const [sectionContents, setSectionContents] = useState<string[]>([]);
 
   const [funnelSource] = useState({
     projectId: searchParams.get('sourceFunnelProjectId') || '',
@@ -115,6 +116,7 @@ function ResearchPageContent() {
     setLoading(true);
     setResult(null);
     setPartialResults({});
+    setSectionContents([]);
     setProgress(null);
     setCurrentValues(values);
     
@@ -176,6 +178,14 @@ function ResearchPageContent() {
                   message: data.message,
                   done: data.done,
                 });
+              }
+              
+              if (currentEventType === 'sectionComplete' && data.content) {
+                setSectionContents(prev => [...prev, data.content]);
+                setPartialResults(prev => ({ 
+                  ...prev, 
+                  deepTopicResearch: [...(prev.deepTopicResearch ? [prev.deepTopicResearch] : []), data.content].join('\n\n')
+                }));
               }
               
               if (currentEventType === 'deepResearch' && data.content) {
@@ -519,30 +529,30 @@ Research Summary: ${result.deepTopicResearch.substring(0, 1000)}${result.deepTop
                   )}
                   <span>Planning</span>
                 </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step > 2 ? (
+                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 2 && progress.step <= 9 ? 'text-primary' : progress && progress.step > 9 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {progress && progress.step > 9 ? (
                     <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step === 2 ? (
+                  ) : progress && progress.step >= 2 && progress.step <= 9 ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
                   )}
-                  <span>Deep Research</span>
+                  <span>Research ({sectionContents.length}/8)</span>
                 </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step > 3 ? (
+                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 10 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {progress && progress.step > 10 ? (
                     <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step === 3 ? (
+                  ) : progress && progress.step === 10 ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
                   )}
                   <span>Pain Points</span>
                 </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 4 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step > 4 ? (
+                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 11 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {progress && progress.step > 11 ? (
                     <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step === 4 ? (
+                  ) : progress && progress.step === 11 ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />

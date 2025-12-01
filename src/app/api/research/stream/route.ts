@@ -18,8 +18,8 @@ const ResearchPlanSchema = z.object({
   focusAreas: z.array(z.string()),
 });
 
-const DeepResearchSchema = z.object({
-  content: z.string().describe('The complete deep topic research in Markdown format, 2000-2500 words with all 8 mandatory sections'),
+const SectionContentSchema = z.object({
+  content: z.string().describe('The section content in Markdown format, 250-350 words'),
 });
 
 const PainPointSchema = z.object({
@@ -71,13 +71,15 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        sendEvent('progress', { step: 0, message: 'Starting research...', total: 4 });
+        const totalSteps = 12;
+        sendEvent('progress', { step: 0, message: 'Starting research...', total: totalSteps });
 
-        await preflightCheckWordCredits(userId, 2000);
+        await preflightCheckWordCredits(userId, 2500);
 
         const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', userId, idToken);
 
-        sendEvent('progress', { step: 1, message: 'Planning research structure...', total: 4 });
+        sendEvent('progress', { step: 1, message: 'Planning research structure...', total: totalSteps });
+        
         const planPrompt = ai.definePrompt({
           name: 'researchPlanPrompt',
           input: { schema: ResearchInputSchema },
@@ -108,26 +110,25 @@ Keep this concise - just the structural plan with exactly 8 sections.`,
 
         const { output: plan } = await planPrompt({ topic, language, targetMarket }, { model: routedModel });
         
-        if (!plan) {
-          throw new Error('Failed to generate research plan');
+        if (!plan || !plan.sections || plan.sections.length < 8) {
+          throw new Error('Failed to generate research plan with 8 sections');
         }
         
         sendEvent('plan', { plan });
-        sendEvent('progress', { step: 2, message: 'Generating deep topic research...', total: 4 });
 
-        const deepResearchPrompt = ai.definePrompt({
-          name: 'deepResearchPrompt',
+        const sectionPrompt = ai.definePrompt({
+          name: 'sectionResearchPrompt',
           input: { schema: z.object({
             topic: z.string(),
             language: z.string(),
             targetMarket: z.string().optional(),
-            sections: z.array(z.object({
-              title: z.string(),
-              keyPoints: z.array(z.string()),
-            })),
+            sectionTitle: z.string(),
+            keyPoints: z.array(z.string()),
+            sectionNumber: z.number(),
+            isLastSection: z.boolean(),
           })},
-          output: { schema: DeepResearchSchema },
-          prompt: `You are a world-class research analyst. Generate comprehensive topic research.
+          output: { schema: SectionContentSchema },
+          prompt: `You are a world-class research analyst. Generate comprehensive content for ONE section of a topic research document.
 
 Topic: {{{topic}}}
 Language: {{{language}}}
@@ -135,46 +136,67 @@ Language: {{{language}}}
 
 ${CODE_MIXING_INSTRUCTIONS}
 
-Research Structure (ALL 8 SECTIONS MANDATORY):
-{{#each sections}}
-## {{{this.title}}}
-{{#each this.keyPoints}}
+**Section to Write:** ## {{{sectionTitle}}}
+
+**Key Points to Cover:**
+{{#each keyPoints}}
 - {{{this}}}
-{{/each}}
 {{/each}}
 
 **CRITICAL INSTRUCTIONS:**
-1. Generate **2000-2500 words** of comprehensive research - this is NON-NEGOTIABLE
-2. Cover ALL 8 sections with substantial content (250-300 words per section minimum)
-3. Use Markdown formatting with ## headings, bullet points, **bold** for key terms
+1. Generate **250-350 words** of comprehensive, in-depth content for this section
+2. Start with the section heading: ## {{{sectionTitle}}}
+3. Use Markdown formatting with bullet points, **bold** for key terms
 4. Include statistics and data points where available
 5. Be accurate - if you don't know specific numbers, use qualifiers like "Studies suggest..."
-6. Include > blockquotes for expert quotes
-7. Use tables for comparative data when appropriate
-8. End with a "References & Further Reading" section with 8-12 real, verifiable links
-9. Write entirely in {{{language}}}
+6. Include > blockquotes for expert quotes when relevant
+7. Write entirely in {{{language}}}
+{{#if isLastSection}}
+8. Since this is the last section, end with a "## References & Further Reading" section with 8-12 real, verifiable links formatted as:
+   - [Source Name](URL) - Brief description
+{{/if}}
 
-**COMPLETION CHECK:**
-Before submitting, verify your response has:
-- [ ] All 8 sections covered with substantial content
-- [ ] At least 2000 words total
-- [ ] 8-12 reference links at the end
-- [ ] Proper Markdown formatting
-
-Generate the complete deep topic research now.`,
+Generate the complete section content now.`,
         });
 
-        const { output: deepResearch } = await deepResearchPrompt(
-          { topic, language, targetMarket, sections: plan.sections },
-          { model: routedModel }
-        );
+        let deepResearchContent = '';
 
-        if (!deepResearch?.content) {
-          throw new Error('Failed to generate deep research');
+        for (let i = 0; i < plan.sections.length; i++) {
+          const section = plan.sections[i];
+          const stepNum = i + 2;
+          const isLastSection = i === plan.sections.length - 1;
+          
+          sendEvent('progress', { 
+            step: stepNum, 
+            message: `Researching: ${section.title}...`, 
+            total: totalSteps 
+          });
+
+          const { output: sectionContent } = await sectionPrompt({
+            topic,
+            language,
+            targetMarket,
+            sectionTitle: section.title,
+            keyPoints: section.keyPoints,
+            sectionNumber: i + 1,
+            isLastSection,
+          }, { model: routedModel });
+
+          if (!sectionContent?.content) {
+            throw new Error(`Failed to generate content for section: ${section.title}`);
+          }
+
+          deepResearchContent += sectionContent.content + '\n\n';
+          
+          sendEvent('sectionComplete', { 
+            sectionIndex: i,
+            sectionTitle: section.title,
+            content: sectionContent.content 
+          });
         }
 
-        sendEvent('deepResearch', { content: deepResearch.content });
-        sendEvent('progress', { step: 3, message: 'Analyzing pain points...', total: 4 });
+        sendEvent('deepResearch', { content: deepResearchContent.trim() });
+        sendEvent('progress', { step: 10, message: 'Analyzing pain points...', total: totalSteps });
 
         const painPointPrompt = ai.definePrompt({
           name: 'painPointPrompt',
@@ -208,7 +230,7 @@ Research Summary:
 Generate the pain point analysis now.`,
         });
 
-        const researchSummary = deepResearch.content.substring(0, 2000);
+        const researchSummary = deepResearchContent.substring(0, 3000);
         const { output: painPoints } = await painPointPrompt(
           { topic, language, targetMarket, researchSummary },
           { model: routedModel }
@@ -219,7 +241,7 @@ Generate the pain point analysis now.`,
         }
 
         sendEvent('painPoints', { content: painPoints.content });
-        sendEvent('progress', { step: 4, message: 'Identifying target audiences...', total: 4 });
+        sendEvent('progress', { step: 11, message: 'Identifying target audiences...', total: totalSteps });
 
         const audiencePrompt = ai.definePrompt({
           name: 'audiencePrompt',
@@ -267,15 +289,15 @@ Generate the target audience suggestions now.`,
         sendEvent('audiences', { content: audiences.content });
 
         sendEvent('complete', {
-          deepTopicResearch: deepResearch.content,
+          deepTopicResearch: deepResearchContent.trim(),
           painPointAnalysis: painPoints.content,
           targetAudienceSuggestion: audiences.content,
         });
 
-        sendEvent('progress', { step: 4, message: 'Research complete!', total: 4, done: true });
+        sendEvent('progress', { step: 12, message: 'Research complete!', total: totalSteps, done: true });
 
         try {
-          const totalContent = deepResearch.content + '\n' + painPoints.content + '\n' + audiences.content;
+          const totalContent = deepResearchContent + '\n' + painPoints.content + '\n' + audiences.content;
           await trackAIUsage(userId, totalContent, 'researchBookTopic', { topic });
         } catch (trackingError) {
           console.error('Failed to track AI usage (non-critical):', trackingError);
