@@ -58,14 +58,20 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### Landing Page (December 2025)
-- Rebuilt landing page using "The Mentor's Journey" storytelling framework
-- Sections: Hero, Pain Points, Transformation, Features (Writing Suite + Marketing Suite), Storytelling Frameworks, How It Works, Testimonials, Pricing, FAQ, CTA
-- Dynamic pricing fetched from `/api/user/subscription-plans` and `/api/user/addon-credit-plans`
-- Addon credits support 'words', 'books', and 'offers' types
+- Refined landing page with emotional, curiosity-driven copywriting
+- Sections: Hero (with key feature icons), Pain Points, Transformation, Features (Writing Suite + Marketing Suite), How It Works, Pricing, Final CTA
+- Removed: Storytelling frameworks section, Testimonials, FAQ, Addon credit plans display
+- Hero headline: "The Book You've Been Dreaming About? It's Closer Than You Think."
+- Pricing cards show "Buy Now" button with "Buy Additional Credits Anytime" benefit
+- Added Login button in navigation for existing users
+- Confidential framework details are no longer exposed
 
 ### User Flow
 - Plan selection → Google login popup → `/payment-overview` → Payment gateway → `/payment/success` → Dashboard
+- Login button for returning users → Google login → Dashboard
 - No free trial option - all CTAs lead to plan selection
 
-### Navigation Icons
-- Updated: BookOpen for Co-Author, Sparkles for Style Profile
+### Navigation
+- Features, Pricing links
+- Login button (Google auth) for existing users
+- "Get Started" CTA button
