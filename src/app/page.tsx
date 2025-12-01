@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -366,6 +367,20 @@ export default function LandingPage() {
                   <span className="text-sm font-medium">Marketing Suite</span>
                 </div>
               </div>
+              
+              <div className="mt-16 relative">
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl border">
+                  <Image
+                    src="/images/author_writer_workin_15bbbfd6.jpg"
+                    alt="Author writing with AI assistance"
+                    width={1200}
+                    height={675}
+                    className="w-full h-auto object-cover"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -434,17 +449,28 @@ export default function LandingPage() {
 
         <section id="features" className="py-16 md:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <Badge variant="outline" className="mb-4">
-                <BookMarked className="h-4 w-4 mr-2" />
-                Writing Suite
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
-                From Blank Page to Finished Manuscript
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Every tool you need to research, plan, and write your book — working together seamlessly.
-              </p>
+            <div className="grid lg:grid-cols-2 gap-12 items-center mb-12">
+              <div>
+                <Badge variant="outline" className="mb-4">
+                  <BookMarked className="h-4 w-4 mr-2" />
+                  Writing Suite
+                </Badge>
+                <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
+                  From Blank Page to Finished Manuscript
+                </h2>
+                <p className="text-muted-foreground">
+                  Every tool you need to research, plan, and write your book — working together seamlessly.
+                </p>
+              </div>
+              <div className="relative rounded-2xl overflow-hidden shadow-xl border">
+                <Image
+                  src="/images/person_typing_on_lap_233e17fa.jpg"
+                  alt="Writer working on their book"
+                  width={600}
+                  height={400}
+                  className="w-full h-auto object-cover"
+                />
+              </div>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {features.map((feature, index) => (
@@ -466,17 +492,28 @@ export default function LandingPage() {
 
         <section className="py-16 md:py-24 bg-muted/50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <Badge variant="outline" className="mb-4">
-                <Megaphone className="h-4 w-4 mr-2" />
-                Marketing Suite
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
-                Turn Your Book Into a Business
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Writing the book is just the beginning. Build the complete marketing ecosystem that generates revenue long after publication.
-              </p>
+            <div className="grid lg:grid-cols-2 gap-12 items-center mb-12">
+              <div className="relative rounded-2xl overflow-hidden shadow-xl border order-2 lg:order-1">
+                <Image
+                  src="/images/business_marketing_s_b22c87f8.jpg"
+                  alt="Marketing strategy and planning"
+                  width={600}
+                  height={400}
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+              <div className="order-1 lg:order-2">
+                <Badge variant="outline" className="mb-4">
+                  <Megaphone className="h-4 w-4 mr-2" />
+                  Marketing Suite
+                </Badge>
+                <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">
+                  Turn Your Book Into a Business
+                </h2>
+                <p className="text-muted-foreground">
+                  Writing the book is just the beginning. Build the complete marketing ecosystem that generates revenue long after publication.
+                </p>
+              </div>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {marketingFeatures.map((feature, index) => (
@@ -506,7 +543,7 @@ export default function LandingPage() {
                 A clear, guided journey that takes you from "I want to write a book" to "I'm a published author."
               </p>
             </div>
-            <div className="max-w-4xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
               <div className="space-y-8">
                 {howItWorks.map((item, index) => (
                   <div key={index} className="flex gap-6 items-start">
@@ -519,6 +556,15 @@ export default function LandingPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="relative rounded-2xl overflow-hidden shadow-xl border hidden lg:block">
+                <Image
+                  src="/images/success_achievement__0285a940.jpg"
+                  alt="Author achieving success"
+                  width={600}
+                  height={500}
+                  className="w-full h-auto object-cover"
+                />
               </div>
             </div>
           </div>
