@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
@@ -37,8 +36,7 @@ export async function POST(request: NextRequest) {
     const idToken = authHeader.split('Bearer ')[1];
 
     const admin = getFirebaseAdmin();
-    const auth = getAuth(admin);
-    const decodedToken = await auth.verifyIdToken(idToken);
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
     const userId = decodedToken.uid;
 
     const body = await request.json();
