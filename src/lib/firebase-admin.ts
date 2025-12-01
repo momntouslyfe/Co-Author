@@ -93,7 +93,14 @@ export function initializeFirebaseAdmin(): any {
 
 export function getFirebaseAdmin(): any {
   if (!adminApp) {
-    return initializeFirebaseAdmin();
+    initializeFirebaseAdmin();
+  }
+  return getAdmin();
+}
+
+export function getFirebaseAdminApp(): any {
+  if (!adminApp) {
+    initializeFirebaseAdmin();
   }
   return adminApp;
 }
