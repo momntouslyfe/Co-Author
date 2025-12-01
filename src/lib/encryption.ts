@@ -8,14 +8,23 @@ const KEY_LENGTH = 32;
 function getEncryptionKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
   if (!key) {
+    console.error('ENCRYPTION_KEY is missing from environment');
     throw new Error('ENCRYPTION_KEY environment variable is not set');
   }
   
-  const keyBuffer = Buffer.from(key, 'hex');
+  const trimmedKey = key.trim();
   
-  if (keyBuffer.length !== KEY_LENGTH) {
-    throw new Error(`ENCRYPTION_KEY must be ${KEY_LENGTH} bytes (${KEY_LENGTH * 2} hex characters)`);
+  if (!/^[a-fA-F0-9]+$/.test(trimmedKey)) {
+    console.error('ENCRYPTION_KEY contains invalid characters. Must be hex only.');
+    throw new Error('ENCRYPTION_KEY must contain only hexadecimal characters (0-9, a-f)');
   }
+  
+  if (trimmedKey.length !== KEY_LENGTH * 2) {
+    console.error(`ENCRYPTION_KEY length: ${trimmedKey.length}, expected: ${KEY_LENGTH * 2}`);
+    throw new Error(`ENCRYPTION_KEY must be ${KEY_LENGTH * 2} hex characters (got ${trimmedKey.length})`);
+  }
+  
+  const keyBuffer = Buffer.from(trimmedKey, 'hex');
   
   return keyBuffer;
 }

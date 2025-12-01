@@ -108,15 +108,17 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Save Facebook settings error:', error);
+    console.error('Save Facebook settings error:', error?.message || error);
     
     let errorMessage = 'Internal server error';
     if (error.message?.includes('ENCRYPTION_KEY')) {
-      errorMessage = 'Encryption key not configured properly. Please check server environment.';
-    } else if (error.message?.includes('Firebase')) {
+      errorMessage = `Encryption error: ${error.message}`;
+    } else if (error.message?.includes('Firebase') || error.message?.includes('firestore')) {
       errorMessage = 'Database connection error. Please try again.';
+    } else if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      errorMessage = 'Network error. Please check your connection.';
     } else if (error.message) {
-      errorMessage = error.message;
+      errorMessage = `Error: ${error.message}`;
     }
     
     return NextResponse.json(
