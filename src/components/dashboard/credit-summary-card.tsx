@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, BookOpen, FileText, Plus, Gift } from 'lucide-react';
+import { Loader2, BookOpen, FileText, Plus, Gift, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuthUser } from '@/firebase';
 import type { CreditSummary } from '@/types/subscription';
 import Link from 'next/link';
@@ -12,6 +13,7 @@ import Link from 'next/link';
 export function CreditSummaryCard() {
   const [creditSummary, setCreditSummary] = useState<CreditSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { user } = useAuthUser();
   const { toast } = useToast();
 
@@ -121,14 +123,111 @@ export function CreditSummaryCard() {
               </span>
             </div>
             
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/dashboard/credits/purchase">
-                <Plus className="mr-1 h-3 w-3" />
-                Buy Credits
-              </Link>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="ml-auto"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  More
+                </>
+              )}
             </Button>
           </div>
         </div>
+
+        {isExpanded && (
+          <div className="mt-4 pt-4 border-t space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Book Creation Credits</span>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/dashboard/credits/purchase?type=books">
+                    <Plus className="mr-1 h-3 w-3" />
+                    Buy More
+                  </Link>
+                </Button>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {creditSummary.bookCreditsAvailable.toLocaleString()} remaining of{' '}
+                    {creditSummary.bookCreditsTotal.toLocaleString()} total
+                  </span>
+                  <span className="font-medium">
+                    {creditSummary.bookCreditsUsed.toLocaleString()} used
+                  </span>
+                </div>
+                <Progress value={bookUsagePercent} className="h-2" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">AI Words Credit</span>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/dashboard/credits/purchase?type=words">
+                    <Plus className="mr-1 h-3 w-3" />
+                    Buy More
+                  </Link>
+                </Button>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {creditSummary.wordCreditsAvailable.toLocaleString()} remaining of{' '}
+                    {creditSummary.wordCreditsTotal.toLocaleString()} total
+                  </span>
+                  <span className="font-medium">
+                    {creditSummary.wordCreditsUsed.toLocaleString()} used
+                  </span>
+                </div>
+                <Progress value={wordUsagePercent} className="h-2" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Offer Creation Credits</span>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/dashboard/credits/purchase?type=offers">
+                    <Plus className="mr-1 h-3 w-3" />
+                    Buy More
+                  </Link>
+                </Button>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {creditSummary.offerCreditsAvailable.toLocaleString()} remaining of{' '}
+                    {creditSummary.offerCreditsTotal.toLocaleString()} total
+                  </span>
+                  <span className="font-medium">
+                    {creditSummary.offerCreditsUsed.toLocaleString()} used
+                  </span>
+                </div>
+                <Progress value={offerUsagePercent} className="h-2" />
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
