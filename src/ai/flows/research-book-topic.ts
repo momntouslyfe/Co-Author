@@ -97,34 +97,33 @@ Use Markdown formatting: ## for headings, ### for subheadings, **bold** for key 
 
 ---
 
-## OUTPUT 2: painPointAnalysis (400-500 words)
+## OUTPUT 2: painPointAnalysis (150-200 words - BE CONCISE)
 
-Identify 5 key pain points people face with this topic:
+List 4 pain points in a simple bullet format:
 
-### Pain Point 1: [Title]
-**Problem:** 2-3 sentences describing the issue.
-**Impact:** 1-2 sentences on why it matters.
-**Signs:** 2-3 common indicators.
+- **[Pain Point 1]:** One sentence description.
+- **[Pain Point 2]:** One sentence description.
+- **[Pain Point 3]:** One sentence description.
+- **[Pain Point 4]:** One sentence description.
 
-(Repeat for all 5 pain points)
-
----
-
-## OUTPUT 3: targetAudienceSuggestion (400-500 words)
-
-Identify 5 distinct audience groups:
-
-### Audience 1: [Name]
-**Demographics:** Age, profession, experience (1-2 sentences)
-**Goals:** 3 bullet points
-**Frustrations:** 3 bullet points
-**Relevance:** 1-2 sentences
-
-(Repeat for all 5 audiences)
+Keep it brief and to the point. No lengthy explanations.
 
 ---
 
-Generate all three outputs completely in {{{language}}}. Do not stop mid-section.`,
+## OUTPUT 3: targetAudienceSuggestion (150-200 words - BE CONCISE)
+
+List 4 target audiences in a simple format:
+
+- **[Audience 1]:** One sentence describing who they are and why this topic matters to them.
+- **[Audience 2]:** One sentence describing who they are and why this topic matters to them.
+- **[Audience 3]:** One sentence describing who they are and why this topic matters to them.
+- **[Audience 4]:** One sentence describing who they are and why this topic matters to them.
+
+Keep it brief and to the point. No lengthy explanations.
+
+---
+
+Generate all three outputs in {{{language}}}. Focus most content on deepTopicResearch. Keep painPointAnalysis and targetAudienceSuggestion very concise.`,
       });
       
       const {output} = await prompt(input, { model: input.model || routedModel });
@@ -137,11 +136,11 @@ Generate all three outputs completely in {{{language}}}. Do not stop mid-section
         throw new Error('AI failed to generate complete research. Output was too short.');
       }
       
-      if (!output.painPointAnalysis || output.painPointAnalysis.length < 200) {
+      if (!output.painPointAnalysis || output.painPointAnalysis.length < 100) {
         throw new Error('AI failed to generate pain point analysis.');
       }
       
-      if (!output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 200) {
+      if (!output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 100) {
         throw new Error('AI failed to generate audience suggestions.');
       }
       
