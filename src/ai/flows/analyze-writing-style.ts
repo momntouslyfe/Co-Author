@@ -54,39 +54,55 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
           maxOutputTokens: 8000,
           temperature: 0.7,
         },
-        prompt: `You are a writing analyst. Extract text from the file and analyze its WRITING STYLE.
+        prompt: `You are an expert writing analyst. Extract text from the file and analyze its WRITING STYLE.
 
 File: {{media url=fileDataUri}}
 
-Generate a style analysis (1000-1200 words total) with ALL 8 sections below.
+Generate a comprehensive style analysis (1000-1200 words) following this EXACT format:
 
-## SECTION 1: Tone & Mood (120-150 words)
-Emotional quality and atmosphere. Include 2 quotes from the text.
+Start with 2-3 sentences summarizing the overall writing style, tone, and approach.
 
-## SECTION 2: Voice (120-150 words)
-Narrator's personality and point of view. Include 2 example phrases.
+**1. Tone & Mood:**
+Describe the emotional quality and atmosphere. Then provide:
+*   **Illustrative Phrases:**
+    *   "quote from text" (translation if non-English) - Explain what this phrase conveys.
+    *   "another quote" (translation) - Explain its effect on mood.
 
-## SECTION 3: Sentence Structure & Rhythm (120-150 words)
-Sentence patterns and flow. Provide 2 example sentences.
+**2. Voice:**
+Describe the narrator's personality and point of view. Then provide:
+*   **Illustrative Phrases:**
+    *   "quote from text" (translation) - Explain how it shows the author's voice.
+    *   "another quote" (translation) - Explain its significance.
 
-## SECTION 4: Vocabulary & Diction (120-150 words)
-Word choice patterns with examples. Quote specific words or phrases.
+**3. Sentence Structure & Rhythm:**
+Describe sentence patterns and flow. Then provide:
+*   **Illustrative Sentences:**
+    *   "example sentence" (translation) - Explain the structure.
+    *   "another sentence" (translation) - Note the rhythm.
 
-## SECTION 5: Pacing (80-100 words)
-Information delivery style with a passage reference.
+**4. Vocabulary & Diction:**
+Describe word choice patterns. Then provide:
+*   **Illustrative Examples:**
+    *   List specific words/phrases with translations showing vocabulary level.
+    *   Note any technical terms, colloquialisms, or distinctive word choices.
 
-## SECTION 6: Code-Mixing (80-100 words)
-If multiple languages present, list examples. If single language: "Not applicable."
+**5. Pacing:**
+Describe how information is delivered. Then provide:
+*   **Illustrative Passages:**
+    *   Reference specific passages showing pacing style.
 
-## SECTION 7: Distinctive Elements (120-150 words)
-Unique characteristics: rhetorical questions, metaphors, repeated phrases.
+**6. Code-Mixing Analysis:**
+If multiple languages are present, analyze with examples. If single language, write "The text is written in a single language without code-mixing."
+*   **Concrete Examples:** (if applicable)
+    *   "mixed phrase" (translation) - Explain purpose.
 
-## SECTION 8: Overall Summary (80-100 words)
-Author's unique writing identity summary.
+**7. Distinctive Stylistic Elements:**
+Note unique characteristics with examples:
+*   **Rhetorical Questions:** Quote examples if present.
+*   **Metaphors/Analogies:** Quote examples if present.
+*   **Other Techniques:** Note any other distinctive elements.
 
-Format: Use ## for headings, **bold** for terms, bullets for lists.
-
-IMPORTANT: You MUST complete ALL 8 sections. End your response with "--- END OF ANALYSIS ---" to confirm completion.`,
+Complete ALL 7 sections with specific examples from the text.`,
       });
       
       const {output} = await prompt(
@@ -101,14 +117,13 @@ IMPORTANT: You MUST complete ALL 8 sections. End your response with "--- END OF 
       const analysis = output.styleAnalysis;
       
       const requiredSections = [
-        /##\s*(SECTION\s*1|Tone\s*&?\s*Mood)/i,
-        /##\s*(SECTION\s*2|Voice)/i,
-        /##\s*(SECTION\s*3|Sentence\s*Structure)/i,
-        /##\s*(SECTION\s*4|Vocabulary)/i,
-        /##\s*(SECTION\s*5|Pacing)/i,
-        /##\s*(SECTION\s*6|Code[-\s]?Mixing)/i,
-        /##\s*(SECTION\s*7|Distinctive)/i,
-        /##\s*(SECTION\s*8|Overall\s*Summary|Summary)/i,
+        /\*\*1\.\s*Tone\s*&?\s*Mood/i,
+        /\*\*2\.\s*Voice/i,
+        /\*\*3\.\s*Sentence\s*Structure/i,
+        /\*\*4\.\s*Vocabulary/i,
+        /\*\*5\.\s*Pacing/i,
+        /\*\*6\.\s*Code[-\s]?Mixing/i,
+        /\*\*7\.\s*Distinctive/i,
       ];
       
       const missingSections = requiredSections.filter(regex => !regex.test(analysis));
