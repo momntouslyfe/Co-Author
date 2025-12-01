@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, BookOpen, FileText, Plus, Gift } from 'lucide-react';
@@ -84,107 +83,50 @@ export function CreditSummaryCard() {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="font-headline">Your Credits</CardTitle>
-            <CardDescription>
+      <CardContent className="p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
               {creditSummary.subscriptionPlan
                 ? `${creditSummary.subscriptionPlan.name} Plan`
                 : 'No active subscription'}
-            </CardDescription>
+            </span>
+            <span className="text-xs text-muted-foreground">
+              ({formatDate(creditSummary.currentPeriodStart)} - {formatDate(creditSummary.currentPeriodEnd)})
+            </span>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Book Creation Credits</span>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/dashboard/credits/purchase?type=books">
-                <Plus className="mr-1 h-3 w-3" />
-                Buy More
-              </Link>
-            </Button>
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {creditSummary.bookCreditsAvailable.toLocaleString()} remaining of{' '}
-                {creditSummary.bookCreditsTotal.toLocaleString()} total
-              </span>
-              <span className="font-medium">
-                {creditSummary.bookCreditsUsed.toLocaleString()} used
+              <span className="text-sm">
+                <span className="font-semibold">{creditSummary.bookCreditsAvailable}</span>
+                <span className="text-muted-foreground">/{creditSummary.bookCreditsTotal} Books</span>
               </span>
             </div>
-            <Progress value={bookUsagePercent} className="h-2" />
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
+            
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">AI Words Credit</span>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/dashboard/credits/purchase?type=words">
-                <Plus className="mr-1 h-3 w-3" />
-                Buy More
-              </Link>
-            </Button>
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {creditSummary.wordCreditsAvailable.toLocaleString()} remaining of{' '}
-                {creditSummary.wordCreditsTotal.toLocaleString()} total
-              </span>
-              <span className="font-medium">
-                {creditSummary.wordCreditsUsed.toLocaleString()} used
+              <span className="text-sm">
+                <span className="font-semibold">{creditSummary.wordCreditsAvailable.toLocaleString()}</span>
+                <span className="text-muted-foreground">/{creditSummary.wordCreditsTotal.toLocaleString()} Words</span>
               </span>
             </div>
-            <Progress value={wordUsagePercent} className="h-2" />
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
+            
             <div className="flex items-center gap-2">
               <Gift className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Offer Creation Credits</span>
+              <span className="text-sm">
+                <span className="font-semibold">{creditSummary.offerCreditsAvailable}</span>
+                <span className="text-muted-foreground">/{creditSummary.offerCreditsTotal} Offers</span>
+              </span>
             </div>
+            
             <Button variant="outline" size="sm" asChild>
-              <Link href="/dashboard/credits/purchase?type=offers">
+              <Link href="/dashboard/credits/purchase">
                 <Plus className="mr-1 h-3 w-3" />
-                Buy More
+                Buy Credits
               </Link>
             </Button>
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {creditSummary.offerCreditsAvailable.toLocaleString()} remaining of{' '}
-                {creditSummary.offerCreditsTotal.toLocaleString()} total
-              </span>
-              <span className="font-medium">
-                {creditSummary.offerCreditsUsed.toLocaleString()} used
-              </span>
-            </div>
-            <Progress value={offerUsagePercent} className="h-2" />
-          </div>
-        </div>
-
-        <div className="pt-4 border-t">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Billing period</span>
-            <span>
-              {formatDate(creditSummary.currentPeriodStart)} -{' '}
-              {formatDate(creditSummary.currentPeriodEnd)}
-            </span>
           </div>
         </div>
       </CardContent>

@@ -45,7 +45,7 @@ export default function DashboardLayout({
     <CreditSummaryProvider>
       <SidebarProvider>
         <Sidebar>
-          <SidebarHeader>
+          <SidebarHeader className="pt-4">
             <Logo />
           </SidebarHeader>
           <SidebarContent>
@@ -56,9 +56,8 @@ export default function DashboardLayout({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 sm:pt-4">
               <SidebarTrigger className="sm:hidden" />
-              {/* We can add breadcrumbs here if needed */}
               <div className="ml-auto flex items-center gap-2">
                   <Button variant="outline" size="icon" className="h-8 w-8">
                       <Bell className="h-4 w-4" />
