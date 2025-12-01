@@ -249,7 +249,7 @@ export default function SavedOffersPage() {
                           size="sm"
                           asChild
                         >
-                          <Link href={`/dashboard/offer-workspace/blueprints?projectId=${selectedProjectId}&offerId=${offer.id}`}>
+                          <Link href={`/dashboard/offer-workspace/${selectedProjectId}/${offer.id}`}>
                             <PenLine className="mr-2 h-4 w-4" />
                             Develop
                           </Link>
