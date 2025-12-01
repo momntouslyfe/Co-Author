@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, Suspense, useCallback } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -20,8 +20,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { researchBookTopic } from '@/ai/flows/research-book-topic';
 import type { ResearchBookTopicOutput } from '@/ai/flows/research-book-topic';
-import { Loader2, Save, Search, PenTool, CheckCircle2 } from 'lucide-react';
+import { Loader2, Save, Search, PenTool } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthUser } from '@/firebase/auth/use-user';
 import { useFirestore } from '@/firebase';
@@ -29,7 +30,6 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { getIdToken } from '@/lib/client-auth';
 import { useCreditSummary } from '@/contexts/credit-summary-context';
 import { FloatingCreditWidget } from '@/components/credits/floating-credit-widget';
-import { Progress } from '@/components/ui/progress';
 
 const formSchema = z.object({
   topic: z.string().min(3, 'Topic must be at least 3 characters.'),
@@ -49,13 +49,6 @@ const languages = [
     { value: 'Hindi', label: 'Hindi' },
 ];
 
-interface ResearchProgress {
-  step: number;
-  total: number;
-  message: string;
-  done?: boolean;
-}
-
 function ResearchPageContent() {
   const { toast } = useToast();
   const router = useRouter();
@@ -69,12 +62,6 @@ function ResearchPageContent() {
   const firestore = useFirestore();
   const { refreshCredits } = useCreditSummary();
   const [paramsCleared, setParamsCleared] = useState(false);
-  const [progress, setProgress] = useState<ResearchProgress | null>(null);
-  const [partialResults, setPartialResults] = useState<{
-    deepTopicResearch?: string;
-    painPointAnalysis?: string;
-    targetAudienceSuggestion?: string;
-  }>({});
 
   const [funnelSource] = useState({
     projectId: searchParams.get('sourceFunnelProjectId') || '',
@@ -114,114 +101,22 @@ function ResearchPageContent() {
 
     setLoading(true);
     setResult(null);
-    setPartialResults({});
-    setProgress(null);
     setCurrentValues(values);
-    
     try {
       const idToken = await getIdToken(user);
       const topicWithDescription = values.topicDescription 
         ? `${values.topic}\n\nAdditional Context: ${values.topicDescription}`
         : values.topic;
       
-      const response = await fetch('/api/research/stream', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          topic: topicWithDescription,
-          language: values.language,
-          targetMarket: values.targetMarket,
-        }),
+      const researchData = await researchBookTopic({
+        userId: user.uid,
+        idToken,
+        topic: topicWithDescription,
+        language: values.language,
+        targetMarket: values.targetMarket,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to start research');
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No response stream available');
-      }
-
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let currentEventType = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        
-        for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            currentEventType = line.substring(7).trim();
-            continue;
-          }
-          
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.substring(6));
-              
-              if (currentEventType === 'progress' && data.step !== undefined) {
-                setProgress({
-                  step: data.step,
-                  total: data.total,
-                  message: data.message,
-                  done: data.done,
-                });
-              }
-              
-              if (currentEventType === 'researchPart' && data.content) {
-                setPartialResults(prev => ({ 
-                  ...prev, 
-                  deepTopicResearch: prev.deepTopicResearch 
-                    ? prev.deepTopicResearch + '\n\n' + data.content 
-                    : data.content
-                }));
-              }
-              
-              if (currentEventType === 'deepResearch' && data.content) {
-                setPartialResults(prev => ({ ...prev, deepTopicResearch: data.content }));
-              }
-              
-              if (currentEventType === 'painPoints' && data.content) {
-                setPartialResults(prev => ({ ...prev, painPointAnalysis: data.content }));
-              }
-              
-              if (currentEventType === 'audiences' && data.content) {
-                setPartialResults(prev => ({ ...prev, targetAudienceSuggestion: data.content }));
-              }
-              
-              if (currentEventType === 'complete' && data.deepTopicResearch) {
-                setResult({
-                  deepTopicResearch: data.deepTopicResearch,
-                  painPointAnalysis: data.painPointAnalysis,
-                  targetAudienceSuggestion: data.targetAudienceSuggestion,
-                });
-                refreshCredits();
-              }
-              
-              if (currentEventType === 'error' && data.message) {
-                throw new Error(data.message);
-              }
-              
-              currentEventType = '';
-            } catch (parseError) {
-              if (parseError instanceof SyntaxError) {
-                continue;
-              }
-              throw parseError;
-            }
-          }
-        }
-      }
+      setResult(researchData);
+      refreshCredits();
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
@@ -232,7 +127,6 @@ function ResearchPageContent() {
       });
     } finally {
       setLoading(false);
-      setProgress(null);
     }
   }
 
@@ -497,101 +391,8 @@ Research Summary: ${result.deepTopicResearch.substring(0, 1000)}${result.deepTop
       </Card>
       
       {loading && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <span className="text-lg font-medium">
-                  {progress?.message || 'Starting research...'}
-                </span>
-              </div>
-              
-              {progress && (
-                <div className="space-y-2">
-                  <Progress value={(progress.step / progress.total) * 100} className="h-2" />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Step {progress.step} of {progress.total}</span>
-                    <span>{Math.round((progress.step / progress.total) * 100)}%</span>
-                  </div>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-4 gap-2 pt-2">
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 1 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step > 1 ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step === 1 ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
-                  )}
-                  <span>Planning</span>
-                </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step > 2 ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step === 2 ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
-                  )}
-                  <span>Research 1-4</span>
-                </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step > 3 ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step === 3 ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
-                  )}
-                  <span>Research 5-8</span>
-                </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 4 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step >= 4 && progress.done ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step === 4 && !progress.done ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
-                  )}
-                  <span>Analysis</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {loading && partialResults.deepTopicResearch && (
-        <div className="space-y-6 opacity-75">
-          {partialResults.deepTopicResearch && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  Deep Topic Research
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="prose max-w-none dark:prose-invert">
-                <div className="whitespace-pre-wrap">{partialResults.deepTopicResearch}</div>
-              </CardContent>
-            </Card>
-          )}
-          {partialResults.painPointAnalysis && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  Pain Point Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="prose prose-sm max-w-none dark:prose-invert">
-                <div className="whitespace-pre-wrap">{partialResults.painPointAnalysis}</div>
-              </CardContent>
-            </Card>
-          )}
+        <div className="flex justify-center items-center p-16">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
       )}
 

@@ -18,7 +18,6 @@ Preferred communication style: Simple, everyday language.
 - **AI Processing**: Google Genkit with Gemini 2.5 Flash for type-safe AI flows across all content generation and analysis tasks.
 - **Authentication**: Firebase Authentication with Google OAuth and role-based access control.
 - **Error Handling**: Global error boundary, event emitter, custom error types, and comprehensive AI flow error handling with exponential backoff retry logic.
-- **Streaming Research**: Multi-step SSE streaming pipeline at `/api/research/stream` that breaks research into 4 smaller API calls (Plan → Deep Research → Pain Points → Audiences) to avoid timeouts and show real-time progress to users.
 
 ### Data Storage
 - **Database**: Cloud Firestore (NoSQL) for real-time syncing, offline support, and secured by rules.

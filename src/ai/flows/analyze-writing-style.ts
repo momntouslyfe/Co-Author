@@ -46,13 +46,6 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
   **CRITICAL INSTRUCTION - READ CAREFULLY:**
   You are analyzing the WRITING STYLE and providing concrete examples from the original text to demonstrate each stylistic element. This analysis will help users understand their unique writing patterns.
   
-  **COMPLETE OUTPUT REQUIREMENT (NON-NEGOTIABLE):**
-  - You MUST produce a COMPLETE analysis with at least **800-1000 words**
-  - You MUST complete ALL sections listed below - skipping any section is a FAILURE
-  - Each section must have substantial content with 2-4 concrete examples
-  - NEVER stop mid-section or produce partial output
-  - Partial or incomplete analysis is considered a FAILURE
-  
   ✅ REQUIRED - Include specific quotes and phrases from the sample text as examples
   ✅ REQUIRED - Show concrete examples that demonstrate each stylistic characteristic
   ✅ REQUIRED - For non-English text, provide the original phrase and its translation in parentheses
@@ -66,7 +59,7 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
   - Keep paragraphs within each section concise. If a point requires a longer explanation, break it into smaller paragraphs with a blank line between them
   - Use bullet points with specific examples when demonstrating patterns
 
-  **Analyze ALL of the following stylistic dimensions (ALL SECTIONS MANDATORY):**
+  **Analyze the following stylistic dimensions:**
 
   1.  **Tone & Mood:** Describe the overall emotional quality and atmosphere. Include specific sentences or phrases from the text that exemplify this tone. Quote exact words and explain why they create this particular mood.
 
@@ -91,22 +84,6 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
   7.  **Distinctive Stylistic Elements:** Note any unique characteristics with specific examples. Quote rhetorical questions, repeated phrases, metaphors, or other distinctive techniques actually used in the text.
 
   8.  **Overall Summary:** Summarize the author's unique writing identity based on the concrete patterns observed. Reference the key stylistic elements identified above with brief examples.
-
-  ---
-  
-  **FINAL COMPLETION CHECK:**
-  Before submitting, verify you have completed:
-  - [ ] Tone & Mood (with 2-4 examples)
-  - [ ] Voice (with 2-4 examples)
-  - [ ] Sentence Structure & Rhythm (with 2-3 example sentences)
-  - [ ] Vocabulary & Diction (with concrete examples)
-  - [ ] Pacing (with specific passages)
-  - [ ] Code-Mixing Analysis (if applicable, with examples)
-  - [ ] Distinctive Stylistic Elements (with examples)
-  - [ ] Overall Summary (referencing key patterns)
-  - [ ] Total word count is at least 800-1000 words
-  
-  **You MUST complete ALL sections. Partial output is unacceptable.**
 
   Return only the detailed analysis, following all formatting rules.`,
     });
