@@ -75,7 +75,6 @@ function ResearchPageContent() {
     painPointAnalysis?: string;
     targetAudienceSuggestion?: string;
   }>({});
-  const [batchesCompleted, setBatchesCompleted] = useState<number>(0);
 
   const [funnelSource] = useState({
     projectId: searchParams.get('sourceFunnelProjectId') || '',
@@ -116,7 +115,6 @@ function ResearchPageContent() {
     setLoading(true);
     setResult(null);
     setPartialResults({});
-    setBatchesCompleted(0);
     setProgress(null);
     setCurrentValues(values);
     
@@ -178,16 +176,6 @@ function ResearchPageContent() {
                   message: data.message,
                   done: data.done,
                 });
-              }
-              
-              if (currentEventType === 'batchComplete' && data.content) {
-                setBatchesCompleted(prev => prev + 1);
-                setPartialResults(prev => ({ 
-                  ...prev, 
-                  deepTopicResearch: prev.deepTopicResearch 
-                    ? prev.deepTopicResearch + '\n\n' + data.content 
-                    : data.content
-                }));
               }
               
               if (currentEventType === 'deepResearch' && data.content) {
@@ -531,30 +519,30 @@ Research Summary: ${result.deepTopicResearch.substring(0, 1000)}${result.deepTop
                   )}
                   <span>Planning</span>
                 </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 2 && progress.step <= 4 ? 'text-primary' : progress && progress.step > 4 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step > 4 ? (
+                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {progress && progress.step > 2 ? (
                     <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step >= 2 && progress.step <= 4 ? (
+                  ) : progress && progress.step === 2 ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
                   )}
-                  <span>Research ({batchesCompleted}/3)</span>
+                  <span>Deep Research</span>
                 </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 5 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step > 5 ? (
+                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {progress && progress.step > 3 ? (
                     <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step === 5 ? (
+                  ) : progress && progress.step === 3 ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
                   )}
                   <span>Pain Points</span>
                 </div>
-                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 6 ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {progress && progress.step >= 6 && progress.done ? (
+                <div className={`flex items-center gap-2 text-sm ${progress && progress.step >= 4 ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {progress && progress.step >= 4 && progress.done ? (
                     <CheckCircle2 className="h-4 w-4" />
-                  ) : progress && progress.step === 6 && !progress.done ? (
+                  ) : progress && progress.step === 4 && !progress.done ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
