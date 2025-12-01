@@ -12,6 +12,7 @@ import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { retryWithBackoff } from '@/lib/retry-utils';
 
 const ResearchBookTopicInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -30,17 +31,27 @@ const ResearchBookTopicOutputSchema = z.object({
 });
 export type ResearchBookTopicOutput = z.infer<typeof ResearchBookTopicOutputSchema>;
 
+const RESEARCH_RETRY_CONFIG = {
+  maxRetries: 4,
+  initialDelayMs: 3000,
+  maxDelayMs: 90000,
+  backoffMultiplier: 2.5,
+};
+
 export async function researchBookTopic(input: ResearchBookTopicInput): Promise<ResearchBookTopicOutput> {
   await preflightCheckWordCredits(input.userId, 2000);
   
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
+  const context = `Research Topic: "${input.topic}"`;
   
-  try {
-    const prompt = ai.definePrompt({
-      name: 'researchBookTopicPrompt',
-      input: {schema: ResearchBookTopicInputSchema},
-      output: {schema: ResearchBookTopicOutputSchema},
-      prompt: `You are a world-class research analyst. Your task is to produce a "Comprehensive Topic Library" and a "Topic Market Analysis" that is exceptionally deep, comprehensive, and well-sourced.
+  const result = await retryWithBackoff(
+    async () => {
+      const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
+      
+      const prompt = ai.definePrompt({
+        name: 'researchBookTopicPrompt',
+        input: {schema: ResearchBookTopicInputSchema},
+        output: {schema: ResearchBookTopicOutputSchema},
+        prompt: `You are a world-class research analyst. Your task is to produce a "Comprehensive Topic Library" and a "Topic Market Analysis" that is exceptionally deep, comprehensive, and well-sourced.
 
   **Topic:** {{{topic}}}
   **Language:** {{{language}}}
@@ -49,6 +60,13 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
   ---
 
   ### Part 1: Comprehensive Topic Library
+
+  **CRITICAL - COMPLETE OUTPUT REQUIRED:**
+  - You MUST generate a COMPLETE, FULL research document
+  - NEVER stop mid-section or mid-thought
+  - NEVER generate partial content - this is considered a FAILURE
+  - Each section must be thoroughly developed with multiple paragraphs
+  - Minimum 1500-2000 words for the entire research output
 
   **CRITICAL INSTRUCTIONS:**
   1.  **Go Deep and Be Data-Driven (When Available):** Your research should be exceptionally thorough and evidence-based. For each major section, include as much of the following as you have reliable knowledge about:
@@ -77,56 +95,66 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
       - Use > blockquotes for expert quotes
       - Use tables for comparative data when appropriate
       
-  4.  **References & Sources:** At the end of this section, include a "References & Notes" heading. If you can recall specific, verifiable source URLs or well-known publications that informed your research, list them. If you cannot recall specific URLs or sources, instead provide a note explaining the general knowledge base (e.g., "Based on general industry knowledge and established research in this field" or "Information synthesized from widely recognized sources in [field]"). **Never invent or fabricate URLs, publication names, or study titles.**
+  4.  **References & Source Links (REQUIRED):** At the end of this section, you MUST include a "References & Source Links" heading with:
+      - **Authoritative Source Links:** Include 5-10 relevant, real URLs to authoritative sources like:
+        - Official organization websites (WHO, government sites, academic institutions)
+        - Reputable publications (Harvard Business Review, Forbes, industry journals)
+        - Research databases (PubMed, Google Scholar links when applicable)
+        - Well-known expert blogs or official company resources
+      - **Format each link as:** [Source Name](URL) - Brief description of what this source covers
+      - **IMPORTANT:** Only include REAL, VERIFIABLE URLs that you are confident exist. If you cannot recall a specific URL, provide the organization name and suggest the reader search for their official site.
+      - **Never fabricate URLs** - only include links you are confident are real and accessible
 
   ---
 
   ### Part 2: Topic Market Analysis
 
   **CRITICAL INSTRUCTIONS:**
-  1.  **Pain Point Analysis:** Based on your research, identify and analyze the most significant pain points, challenges, and frustrations people in the target market have regarding this topic. Format this as a well-structured Markdown document.
+  1.  **Pain Point Analysis:** Based on your research, identify and analyze the most significant pain points, challenges, and frustrations people in the target market have regarding this topic. Format this as a well-structured Markdown document with at least 5-7 distinct pain points, each thoroughly explained.
   2.  **Target Audience Suggestions:** Based on the pain points, identify **5 to 7 distinct audience groups** who would benefit from a book on this topic. For each group, do not create a persona with a name. Instead, provide a clear description of the audience group, followed by a bulleted list of their specific **Goals** and **Frustrations** related to the topic. Format this as a well-structured Markdown document with clear headings for each audience group.
 
   ---
 
-  You must provide the entire response in the specified **{{{language}}}**, organized into the three requested output fields: \`deepTopicResearch\`, \`painPointAnalysis\`, and \`targetAudienceSuggestion\`. Proceed with generating the two parts now.`,
-    });
-    
-    const {output} = await prompt(input, { model: input.model || routedModel });
-    
-    if (!output) {
-      throw new Error('The AI did not return any research data. Please try again.');
-    }
-    
-    await trackAIUsage(
-      input.userId,
-      output.deepTopicResearch + '\n' + output.painPointAnalysis + '\n' + output.targetAudienceSuggestion,
-      'researchBookTopic',
-      { topic: input.topic }
-    );
-    
-    return output;
-  } catch (error: any) {
-    console.error('Error in researchBookTopic:', error);
-    
-    if (error.message?.includes('503') || error.message?.includes('overloaded')) {
-      throw new Error(
-        'The AI service is currently overloaded. Please wait a moment and try again.'
-      );
-    }
-    
-    if (error.message?.includes('401') || error.message?.includes('Unauthorized') || error.message?.includes('API key')) {
-      throw new Error(
-        'Your API key appears to be invalid or expired. Please check your API key in Settings.'
-      );
-    }
-    
-    if (error.message?.includes('429') || error.message?.includes('quota')) {
-      throw new Error(
-        'You have exceeded your API quota. Please check your usage limits or try again later.'
-      );
-    }
-    
-    throw new Error(error.message || 'An unexpected error occurred while researching the topic. Please try again.');
-  }
+  **FINAL CHECK BEFORE RESPONDING:** Ensure ALL THREE output fields are COMPLETE and FULLY DEVELOPED:
+  - \`deepTopicResearch\`: Complete research with all sections, data, and source links
+  - \`painPointAnalysis\`: Complete pain point analysis with 5-7 pain points
+  - \`targetAudienceSuggestion\`: Complete audience suggestions with 5-7 audience groups
+
+  Partial or truncated output in any field is unacceptable.
+
+  You must provide the entire response in the specified **{{{language}}}**, organized into the three requested output fields. Proceed with generating the COMPLETE research now.`,
+      });
+      
+      const {output} = await prompt(input, { model: input.model || routedModel });
+      
+      if (!output) {
+        throw new Error('AI failed to generate research data.');
+      }
+      
+      if (!output.deepTopicResearch || output.deepTopicResearch.length < 500) {
+        throw new Error('AI failed to generate complete research. Output was too short.');
+      }
+      
+      if (!output.painPointAnalysis || output.painPointAnalysis.length < 200) {
+        throw new Error('AI failed to generate complete pain point analysis.');
+      }
+      
+      if (!output.targetAudienceSuggestion || output.targetAudienceSuggestion.length < 200) {
+        throw new Error('AI failed to generate complete audience suggestions.');
+      }
+      
+      return output;
+    },
+    RESEARCH_RETRY_CONFIG,
+    context
+  );
+  
+  await trackAIUsage(
+    input.userId,
+    result.deepTopicResearch + '\n' + result.painPointAnalysis + '\n' + result.targetAudienceSuggestion,
+    'researchBookTopic',
+    { topic: input.topic }
+  );
+  
+  return result;
 }

@@ -15,6 +15,7 @@ import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { retryWithBackoff } from '@/lib/retry-utils';
 
 const AnalyzeWritingStyleInputSchema = z.object({
     userId: z.string().describe('The user ID for API key retrieval.'),
@@ -29,19 +30,37 @@ const AnalyzeWritingStyleOutputSchema = z.object({
 });
 export type AnalyzeWritingStyleOutput = z.infer<typeof AnalyzeWritingStyleOutputSchema>;
 
+const STYLE_ANALYSIS_RETRY_CONFIG = {
+  maxRetries: 4,
+  initialDelayMs: 3000,
+  maxDelayMs: 90000,
+  backoffMultiplier: 2.5,
+};
+
 export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Promise<AnalyzeWritingStyleOutput> {
   await preflightCheckWordCredits(input.userId, 1000);
   
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('style_analysis', input.userId, input.idToken);
+  const context = 'Writing Style Analysis';
   
-  try {
-    const prompt = ai.definePrompt({
-      name: 'analyzeWritingStylePrompt',
-      input: {schema: AnalyzeWritingStyleInputSchema},
-      output: {schema: AnalyzeWritingStyleOutputSchema},
-      prompt: `You are an expert writing analyst. Your task is to first extract the text from the following file, and then perform a deep analysis of the WRITING STYLE ONLY.
+  const result = await retryWithBackoff(
+    async () => {
+      const { ai, model: routedModel } = await getGenkitInstanceForFunction('style_analysis', input.userId, input.idToken);
+      
+      const prompt = ai.definePrompt({
+        name: 'analyzeWritingStylePrompt',
+        input: {schema: AnalyzeWritingStyleInputSchema},
+        output: {schema: AnalyzeWritingStyleOutputSchema},
+        prompt: `You are an expert writing analyst. Your task is to first extract the text from the following file, and then perform a deep analysis of the WRITING STYLE ONLY.
 
   File: {{media url=fileDataUri}}
+
+  **CRITICAL - COMPLETE OUTPUT REQUIRED:**
+  - You MUST generate a COMPLETE, FULL style analysis covering ALL 8 dimensions below
+  - NEVER stop mid-section or mid-analysis
+  - NEVER generate partial content - this is considered a FAILURE
+  - Each dimension must be thoroughly analyzed with multiple examples
+  - Minimum 1200-1500 words for the entire analysis
+  - If you feel like stopping early, you MUST continue until ALL sections are complete
 
   **CRITICAL INSTRUCTION - READ CAREFULLY:**
   You are analyzing the WRITING STYLE and providing concrete examples from the original text to demonstrate each stylistic element. This analysis will help users understand their unique writing patterns.
@@ -59,7 +78,7 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
   - Keep paragraphs within each section concise. If a point requires a longer explanation, break it into smaller paragraphs with a blank line between them
   - Use bullet points with specific examples when demonstrating patterns
 
-  **Analyze the following stylistic dimensions:**
+  **Analyze ALL of the following stylistic dimensions (ALL 8 ARE REQUIRED):**
 
   1.  **Tone & Mood:** Describe the overall emotional quality and atmosphere. Include specific sentences or phrases from the text that exemplify this tone. Quote exact words and explain why they create this particular mood.
 
@@ -85,47 +104,36 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
 
   8.  **Overall Summary:** Summarize the author's unique writing identity based on the concrete patterns observed. Reference the key stylistic elements identified above with brief examples.
 
+  **FINAL CHECK BEFORE RESPONDING:** Ensure your analysis covers ALL 8 dimensions above with detailed examples from the text. Partial or truncated analysis is unacceptable.
+
   Return only the detailed analysis, following all formatting rules.`,
-    });
-    
-    const {output} = await prompt(
-      { fileDataUri: input.fileDataUri, userId: input.userId, idToken: input.idToken },
-      { model: input.model || routedModel }
-    );
-    
-    if (!output || !output.styleAnalysis) {
-      throw new Error('The AI did not return any style analysis. Please try again.');
-    }
-    
-    await trackAIUsage(
-      input.userId,
-      output.styleAnalysis,
-      'analyzeWritingStyle',
-      {}
-    );
-    
-    return output;
-  } catch (error: any) {
-    console.error('Error in analyzeWritingStyle:', error);
-    
-    if (error.message?.includes('503') || error.message?.includes('overloaded')) {
-      throw new Error(
-        'The AI service is currently overloaded. Please wait a moment and try again.'
+      });
+      
+      const {output} = await prompt(
+        { fileDataUri: input.fileDataUri, userId: input.userId, idToken: input.idToken },
+        { model: input.model || routedModel }
       );
-    }
-    
-    if (error.message?.includes('401') || error.message?.includes('Unauthorized') || error.message?.includes('API key')) {
-      throw new Error(
-        'Your API key appears to be invalid or expired. Please check your API key in Settings.'
-      );
-    }
-    
-    if (error.message?.includes('429') || error.message?.includes('quota')) {
-      throw new Error(
-        'You have exceeded your API quota. Please check your usage limits or try again later.'
-      );
-    }
-    
-    throw new Error(error.message || 'An unexpected error occurred while analyzing writing style. Please try again.');
-  }
+      
+      if (!output || !output.styleAnalysis) {
+        throw new Error('AI failed to generate style analysis.');
+      }
+      
+      if (output.styleAnalysis.length < 800) {
+        throw new Error('AI failed to generate complete style analysis. Output was too short.');
+      }
+      
+      return output;
+    },
+    STYLE_ANALYSIS_RETRY_CONFIG,
+    context
+  );
+  
+  await trackAIUsage(
+    input.userId,
+    result.styleAnalysis,
+    'analyzeWritingStyle',
+    {}
+  );
+  
+  return result;
 }
