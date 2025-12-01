@@ -82,11 +82,26 @@ function PurchaseCreditsContent() {
     );
   }
 
+  const getCreditTypeLabel = (type: AddonCreditType) => {
+    switch (type) {
+      case 'words':
+        return 'AI Words';
+      case 'books':
+        return 'Book Creation';
+      case 'offers':
+        return 'Offers Creation';
+      default:
+        return 'Credits';
+    }
+  };
+
+  const creditTypeLabel = getCreditTypeLabel(creditType);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold font-headline mb-2">
-          Purchase {creditType === 'words' ? 'AI Words Credit' : 'Book Creation Credits'}
+          Purchase {creditTypeLabel} Credits
         </h1>
         <p className="text-muted-foreground">
           Select a credit package to continue your writing journey
@@ -97,7 +112,7 @@ function PurchaseCreditsContent() {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">
-              No {creditType === 'words' ? 'AI Words Credit' : 'book creation credit'} plans are currently available.
+              No {creditTypeLabel.toLowerCase()} credit plans are currently available.
             </p>
           </CardContent>
         </Card>
@@ -114,7 +129,7 @@ function PurchaseCreditsContent() {
                     )}
                   </div>
                   <Badge variant="secondary">
-                    {plan.creditAmount.toLocaleString()} {creditType === 'words' ? 'AI Words' : 'credits'}
+                    {plan.creditAmount.toLocaleString()} {creditTypeLabel}
                   </Badge>
                 </div>
               </CardHeader>
@@ -127,7 +142,7 @@ function PurchaseCreditsContent() {
                   <div className="mt-4 space-y-2">
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary" />
-                      <span>{plan.creditAmount.toLocaleString()} {creditType === 'words' ? 'AI Words' : 'book projects'}</span>
+                      <span>{plan.creditAmount.toLocaleString()} {creditTypeLabel}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary" />
