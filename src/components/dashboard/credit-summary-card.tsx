@@ -80,7 +80,7 @@ export function CreditSummaryCard() {
               </div>
             </div>
             <Button asChild>
-              <Link href="/dashboard/credits/purchase">
+              <Link href="/dashboard/settings?tab=billing">
                 Get Started
               </Link>
             </Button>

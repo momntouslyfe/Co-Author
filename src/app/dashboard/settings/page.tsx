@@ -1,3 +1,6 @@
+'use client';
+
+import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { AIIntegrationSettings } from "@/components/settings/ai-integration-settings";
@@ -5,6 +8,9 @@ import { BillingSettings } from "@/components/settings/billing-settings";
 import { ProfileSettings } from "@/components/settings/profile-settings";
 
 export default function SettingsPage() {
+  const searchParams = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'ai';
+
   return (
     <div className="space-y-6">
       <div>
@@ -15,7 +21,7 @@ export default function SettingsPage() {
       </div>
       <Separator />
 
-      <Tabs defaultValue="ai" className="space-y-4">
+      <Tabs defaultValue={defaultTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="ai">AI Integration</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
