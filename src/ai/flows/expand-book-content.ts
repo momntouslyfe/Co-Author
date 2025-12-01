@@ -60,7 +60,20 @@ export async function expandBookContent(input: ExpandBookContentInput): Promise<
 {{/if}}
 
 **CRITICAL INSTRUCTIONS:**
-1.  **LANGUAGE & CODE-MIXING:** Match the language and style of the starting paragraph. If the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those language-mixing patterns BUT WITHOUT adding English translations in parentheses. The style profile examples show translations like "ডিজিটাল লাইফ (Digital Life)" for documentation purposes only. When writing actual content, use ONLY the original language words naturally mixed in, like: "ডিজিটাল লাইফ, স্মার্টফোন, ল্যাপটপ" - NOT "ডিজিটাল লাইফ (Digital Life)".
+1.  **LANGUAGE & CODE-MIXING (CRITICAL - FOLLOW EXACTLY):** Match the language and style of the starting paragraph. If the style profile includes code-mixing patterns, you MUST replicate those patterns EXACTLY.
+    
+    **ABSOLUTELY FORBIDDEN - NEVER DO THIS:**
+    - NEVER add English translations in parentheses after any word
+    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT write like this
+    - WRONG: "সামাজিক সম্পর্কের (social relationships)" - DO NOT write like this
+    - WRONG: "আত্মবিশ্বাস (self-confidence)" - DO NOT write like this
+    
+    **CORRECT CODE-MIXING PATTERNS (DO THIS):**
+    - Use English words naturally without any translation: "এটা একটা টক্সিক সাইকেলের মতো"
+    - Mix English words in English script naturally: "এই ছোট ছোট Violation গুলোকে"
+    - Use English phrases naturally: "ম্যানিপুলেশন প্রায়শই খুব Gradual process এ ঘটে"
+    
+    **REMEMBER:** Code-mixing means naturally blending languages, NOT providing translations.
 2.  Use the "Starting Paragraph" below as the primary context.
 3.  Follow the "User's Instruction" to guide what you write next. If no instruction is provided, your default task is to simply expand upon the ideas in the starting paragraph.
 4.  Generate AT LEAST ONE, and preferably two to three, new paragraphs.

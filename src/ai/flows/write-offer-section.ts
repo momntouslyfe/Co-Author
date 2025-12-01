@@ -100,7 +100,19 @@ Structure your content using the "{{{storytellingFramework}}}" framework to crea
 
 **CRITICAL REQUIREMENTS:**
 
-1. **LANGUAGE:** Write ALL content in {{{language}}}.
+1. **LANGUAGE & CODE-MIXING (CRITICAL - FOLLOW EXACTLY):** Write ALL content in {{{language}}}. If the style profile includes code-mixing patterns, you MUST replicate those patterns EXACTLY.
+    
+    **ABSOLUTELY FORBIDDEN - NEVER DO THIS:**
+    - NEVER add English translations in parentheses after any word
+    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT write like this
+    - WRONG: "সামাজিক সম্পর্কের (social relationships)" - DO NOT write like this
+    
+    **CORRECT CODE-MIXING PATTERNS (DO THIS):**
+    - Use English words naturally without any translation: "এটা একটা টক্সিক সাইকেলের মতো"
+    - Mix English words in English script naturally: "এই ছোট ছোট Violation গুলোকে"
+    - Use English phrases naturally: "ম্যানিপুলেশন প্রায়শই খুব Gradual process এ ঘটে"
+    
+    **REMEMBER:** Code-mixing means naturally blending languages, NOT providing translations.
 
 2. **WORD COUNT:** Write approximately {{{targetWordCount}}} words for this section.
 

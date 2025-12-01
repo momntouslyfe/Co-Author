@@ -668,7 +668,7 @@ export default function FunnelBuilderPage() {
         </div>
 
         <Dialog open={showSettings} onOpenChange={setShowSettings}>
-          <DialogContent>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Funnel Settings</DialogTitle>
               <DialogDescription>

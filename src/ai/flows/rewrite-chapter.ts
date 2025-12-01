@@ -66,7 +66,20 @@ export async function rewriteChapter(input: RewriteChapterInput): Promise<Rewrit
 
 2.  **SINGLE, COMPLETE OUTPUT:** You MUST rewrite and return the entire chapter in one single operation. Do not stop prematurely. Partial responses are a failure.
 
-3.  **LANGUAGE & CODE-MIXING:** Write primarily in **{{{language}}}**. If the style profile includes code-mixing patterns (mixing multiple languages), you MUST replicate those language-mixing patterns BUT WITHOUT adding English translations in parentheses. The style profile examples show translations like "ডিজিটাল লাইফ (Digital Life)" for documentation purposes only. When writing actual content, use ONLY the original language words naturally mixed in, like: "ডিজিটাল লাইফ, স্মার্টফোন, ল্যাপটপ" - NOT "ডিজিটাল লাইফ (Digital Life)".
+3.  **LANGUAGE & CODE-MIXING (CRITICAL - FOLLOW EXACTLY):** Write primarily in **{{{language}}}**. If the style profile includes code-mixing patterns, you MUST replicate those patterns EXACTLY.
+    
+    **ABSOLUTELY FORBIDDEN - NEVER DO THIS:**
+    - NEVER add English translations in parentheses after any word
+    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT write like this
+    - WRONG: "সামাজিক সম্পর্কের (social relationships)" - DO NOT write like this
+    - WRONG: "আত্মবিশ্বাস (self-confidence)" - DO NOT write like this
+    
+    **CORRECT CODE-MIXING PATTERNS (DO THIS):**
+    - Use English words naturally without any translation: "এটা একটা টক্সিক সাইকেলের মতো"
+    - Mix English words in English script naturally: "এই ছোট ছোট Violation গুলোকে"
+    - Use English phrases naturally: "ম্যানিপুলেশন প্রায়শই খুব Gradual process এ ঘটে"
+    
+    **REMEMBER:** Code-mixing means naturally blending languages, NOT providing translations.
 
 4.  **PRESERVE STRUCTURE:** The chapter is divided into sections with titles like \`$$Section Title$$\`. You MUST preserve these section titles and their surrounding double dollar signs exactly as they are. Rewrite the content *within* each section, but do not alter the titles or remove the \`$$\` markers.
 
