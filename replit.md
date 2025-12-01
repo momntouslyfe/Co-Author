@@ -31,6 +31,10 @@ Preferred communication style: Simple, everyday language.
 - **Payment Gateway Integration**: Uddoktapay for payment processing, verification, and webhooks.
 - **Coupon System**: Promotional and affiliate coupons with server-side validation and usage tracking.
 
+### Marketing Integrations
+- **Facebook CAPI**: Server-side conversion tracking with privacy-compliant hashing (email, phone, names, IP, user agent). Events: PageView, Purchase, CompleteRegistration, InitiateCheckout, Subscribe.
+- **Email Marketing**: Multi-provider support (SendGrid, Resend, custom SMTP) with encrypted credential storage. Automatic emails for welcome, purchase confirmation, subscription, and credits. Admin can configure provider and test from dashboard.
+
 ## External Dependencies
 
 ### AI Services
