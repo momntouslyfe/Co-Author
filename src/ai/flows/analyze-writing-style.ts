@@ -50,68 +50,66 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
         name: 'analyzeWritingStylePrompt',
         input: {schema: AnalyzeWritingStyleInputSchema},
         output: {schema: AnalyzeWritingStyleOutputSchema},
-        prompt: `You are an expert writing analyst. Your task is to first extract the text from the following file, and then perform a deep analysis of the WRITING STYLE ONLY.
+        config: {
+          maxOutputTokens: 8000,
+          temperature: 0.7,
+        },
+        prompt: `You are an expert writing analyst. Extract text from the file and analyze its WRITING STYLE.
 
-  File: {{media url=fileDataUri}}
+File: {{media url=fileDataUri}}
 
-  **CRITICAL - COMPLETE OUTPUT REQUIRED:**
-  - You MUST generate a COMPLETE, FULL style analysis covering ALL 8 dimensions below
-  - NEVER stop mid-section or mid-analysis
-  - NEVER generate partial content - this is considered a FAILURE
-  - Each dimension must be thoroughly analyzed with multiple examples
-  - Minimum 1200-1500 words for the entire analysis
-  - If you feel like stopping early, you MUST continue until ALL sections are complete
+Generate a COMPLETE style analysis (1200-1500 words minimum) covering ALL 8 sections below.
 
-  **CRITICAL INSTRUCTION - READ CAREFULLY:**
-  You are analyzing the WRITING STYLE and providing concrete examples from the original text to demonstrate each stylistic element. This analysis will help users understand their unique writing patterns.
-  
-  ✅ REQUIRED - Include specific quotes and phrases from the sample text as examples
-  ✅ REQUIRED - Show concrete examples that demonstrate each stylistic characteristic
-  ✅ REQUIRED - For non-English text, provide the original phrase and its translation in parentheses
-  ✅ REQUIRED - Explain HOW these examples demonstrate the particular stylistic element
-  
-  **FORMATTING RULES:**
-  - For each point in the listicle, provide a clear heading and detailed explanation
-  - Include 2-4 concrete examples from the original text to support each stylistic observation
-  - For non-English examples, format as: "original phrase" (translation)
-  - Ensure there is a blank line (a double newline) between each numbered list item to add space and improve readability
-  - Keep paragraphs within each section concise. If a point requires a longer explanation, break it into smaller paragraphs with a blank line between them
-  - Use bullet points with specific examples when demonstrating patterns
+---
 
-  **Analyze ALL of the following stylistic dimensions (ALL 8 ARE REQUIRED):**
+## SECTION 1: Tone & Mood (150-200 words)
+Describe the emotional quality and atmosphere. Include 2-3 specific quotes from the text that exemplify the tone. Explain why these quotes create this particular mood.
 
-  1.  **Tone & Mood:** Describe the overall emotional quality and atmosphere. Include specific sentences or phrases from the text that exemplify this tone. Quote exact words and explain why they create this particular mood.
+---
 
-  2.  **Voice:** Describe the narrator's personality and point of view. Include specific phrases that demonstrate the author's voice, particularly any distinctive language patterns (e.g., first-person pronouns, direct address, etc.). For non-English text, provide both the original and translation.
+## SECTION 2: Voice (150-200 words)
+Describe the narrator's personality and point of view. Include 2-3 phrases demonstrating the author's voice (first-person pronouns, direct address, etc.). For non-English text, provide original and translation.
 
-  3.  **Sentence Structure & Rhythm:** Examine the sentence patterns and flow. Provide 2-3 example sentences from the text that demonstrate the typical structure. Note patterns like short vs. long sentences, simple vs. complex constructions, and any rhythmic qualities.
+---
 
-  4.  **Vocabulary & Diction:** Assess the word choice patterns with concrete examples. Quote specific words, phrases, colloquialisms, or specialized terms used. For non-English text, provide translations. Categorize the vocabulary level and explain what makes it distinctive.
+## SECTION 3: Sentence Structure & Rhythm (150-200 words)
+Examine sentence patterns and flow. Provide 2-3 example sentences showing typical structure. Note: short vs. long sentences, simple vs. complex constructions, rhythmic qualities.
 
-  5.  **Pacing:** Describe how information is delivered. Reference specific passages that show the pacing style. Quote phrases that demonstrate whether the writing moves quickly or deliberately.
+---
 
-  6.  **Code-Mixing Analysis:** (Include this section ONLY if the text contains multiple languages)
-     Provide a detailed analysis with specific examples:
-     - **List concrete examples** of code-mixed phrases with translations
-     - **Explain the purpose** of each code-mixed element (e.g., "emphasizes X concept", "adds authenticity", "technical precision")
-     - **Identify patterns** in when and why code-mixing occurs
-     - **Format examples as:** "original phrase in Language A" (translation) - purpose/effect
-     Example format:
-     • **Several Gaps & Modern Conduct:** English terms like "X" or "Y" are used for [specific purpose]
-     • **Emphasis & Directness:** Certain phrases integrate English such as "specific example" - [explanation of effect]
+## SECTION 4: Vocabulary & Diction (150-200 words)
+Assess word choice with concrete examples. Quote specific words, phrases, colloquialisms, or specialized terms. Categorize vocabulary level and explain what makes it distinctive.
 
-  7.  **Distinctive Stylistic Elements:** Note any unique characteristics with specific examples. Quote rhetorical questions, repeated phrases, metaphors, or other distinctive techniques actually used in the text.
+---
 
-  8.  **Overall Summary:** Summarize the author's unique writing identity based on the concrete patterns observed. Reference the key stylistic elements identified above with brief examples.
+## SECTION 5: Pacing (100-150 words)
+Describe information delivery style. Reference specific passages showing pacing. Quote phrases demonstrating whether writing moves quickly or deliberately.
 
-  **FINAL CHECK BEFORE RESPONDING:** Ensure your analysis covers ALL 8 dimensions above with detailed examples from the text. Partial or truncated analysis is unacceptable.
+---
 
-  Return only the detailed analysis, following all formatting rules.`,
+## SECTION 6: Code-Mixing Analysis (100-150 words)
+Include ONLY if text contains multiple languages. List examples with translations and explain purpose of each code-mixed element. If single language only, write: "Not applicable - single language text."
+
+---
+
+## SECTION 7: Distinctive Stylistic Elements (150-200 words)
+Note unique characteristics with examples. Quote rhetorical questions, repeated phrases, metaphors, or other distinctive techniques from the text.
+
+---
+
+## SECTION 8: Overall Summary (100-150 words)
+Summarize the author's unique writing identity. Reference key stylistic elements identified above with brief examples.
+
+---
+
+Use Markdown: ## for section headings, **bold** for key terms, bullet points for lists, > for quoted text.
+
+Generate ALL 8 sections completely. Do not stop mid-analysis.`,
       });
       
       const {output} = await prompt(
         { fileDataUri: input.fileDataUri, userId: input.userId, idToken: input.idToken },
-        { model: input.model || routedModel, config: { maxOutputTokens: 8000 } }
+        { model: input.model || routedModel }
       );
       
       if (!output || !output.styleAnalysis) {
