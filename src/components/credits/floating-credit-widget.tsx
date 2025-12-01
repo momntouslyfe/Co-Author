@@ -39,6 +39,18 @@ export function FloatingCreditWidget() {
     e.preventDefault();
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!cardRef.current) return;
+    
+    const touch = e.touches[0];
+    const rect = cardRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top,
+    });
+    setIsDragging(true);
+  };
+
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return;
 
@@ -57,7 +69,33 @@ export function FloatingCreditWidget() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newPosition));
   };
 
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!isDragging) return;
+
+    const touch = e.touches[0];
+    const newX = touch.clientX - dragOffset.x;
+    const newY = touch.clientY - dragOffset.y;
+
+    const maxX = window.innerWidth - (cardRef.current?.offsetWidth || 0);
+    const maxY = window.innerHeight - (cardRef.current?.offsetHeight || 0);
+
+    const newPosition = {
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY)),
+    };
+    
+    setPosition(newPosition);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newPosition));
+    e.preventDefault();
+  };
+
   const handleMouseUp = () => {
+    if (isDragging) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleTouchEnd = () => {
     if (isDragging) {
       setIsDragging(false);
     }
@@ -67,9 +105,13 @@ export function FloatingCreditWidget() {
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleTouchEnd);
       return () => {
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
       };
     }
   }, [isDragging, dragOffset, position]);
@@ -109,8 +151,9 @@ export function FloatingCreditWidget() {
       }}
     >
       <Card 
-        className="p-4 shadow-lg border-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 select-none"
+        className="p-4 shadow-lg border-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 select-none touch-none"
         onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
       >
         <div className="space-y-3">
           <div className="flex items-center gap-2">
