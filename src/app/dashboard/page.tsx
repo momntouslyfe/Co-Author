@@ -150,7 +150,7 @@ export default function Dashboard() {
             </Button>
           </Card>
         ) : (
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {recentProjects.map((project) => (
               <Card key={project.id} className="flex flex-col">
                 <CardHeader className="p-0">
@@ -161,7 +161,7 @@ export default function Dashboard() {
                         alt={`Cover for ${project.title}`}
                         fill
                         className="object-cover rounded-t-lg"
-                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                     </div>
                   </Link>
@@ -171,7 +171,7 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                     {project.description || 'No description yet.'}
                   </p>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-3">
                     <Badge 
                       variant={project.status === 'Completed' ? 'default' : 'secondary'}
                       className={project.status === 'Completed' ? 'bg-primary/80' : ''}
