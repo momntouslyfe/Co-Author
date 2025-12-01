@@ -111,14 +111,14 @@ export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Prom
       
       const {output} = await prompt(
         { fileDataUri: input.fileDataUri, userId: input.userId, idToken: input.idToken },
-        { model: input.model || routedModel }
+        { model: input.model || routedModel, config: { maxOutputTokens: 8000 } }
       );
       
       if (!output || !output.styleAnalysis) {
         throw new Error('AI failed to generate style analysis.');
       }
       
-      if (output.styleAnalysis.length < 800) {
+      if (output.styleAnalysis.length < 1200) {
         throw new Error('AI failed to generate complete style analysis. Output was too short.');
       }
       
