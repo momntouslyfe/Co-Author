@@ -12,6 +12,36 @@ import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { retryWithBackoff } from '@/lib/retry-utils';
+
+const RESEARCH_RETRY_CONFIG = {
+  maxRetries: 4,
+  initialDelayMs: 3000,
+  maxDelayMs: 60000,
+  backoffMultiplier: 2,
+  retryableErrors: [
+    'timeout',
+    'ETIMEDOUT',
+    'ECONNRESET',
+    'ECONNREFUSED',
+    'rate limit',
+    'quota exceeded',
+    '429',
+    '500',
+    '502',
+    '503',
+    '504',
+    'network',
+    'fetch failed',
+    'could not establish connection',
+    'Schema validation failed',
+    'must be object',
+    'AI failed to generate',
+    'Failed to fetch',
+    'did not return',
+    'overloaded',
+  ],
+};
 
 const ResearchBookTopicInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -31,12 +61,15 @@ const ResearchBookTopicOutputSchema = z.object({
 export type ResearchBookTopicOutput = z.infer<typeof ResearchBookTopicOutputSchema>;
 
 export async function researchBookTopic(input: ResearchBookTopicInput): Promise<ResearchBookTopicOutput> {
+  const context = `Research Topic: "${input.topic}"`;
+  
   await preflightCheckWordCredits(input.userId, 2000);
   
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
-  
-  try {
-    const prompt = ai.definePrompt({
+  const result = await retryWithBackoff(
+    async () => {
+      const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
+      
+      const prompt = ai.definePrompt({
       name: 'researchBookTopicPrompt',
       input: {schema: ResearchBookTopicInputSchema},
       output: {schema: ResearchBookTopicOutputSchema},
@@ -130,43 +163,26 @@ export async function researchBookTopic(input: ResearchBookTopicInput): Promise<
   **Partial or incomplete output is a FAILURE. You MUST complete the entire research.**
 
   You must provide the entire response in the specified **{{{language}}}**, organized into the three requested output fields: \`deepTopicResearch\`, \`painPointAnalysis\`, and \`targetAudienceSuggestion\`. Proceed with generating the COMPLETE research now.`,
-    });
-    
-    const {output} = await prompt(input, { model: input.model || routedModel });
-    
-    if (!output) {
-      throw new Error('The AI did not return any research data. Please try again.');
-    }
-    
-    await trackAIUsage(
-      input.userId,
-      output.deepTopicResearch + '\n' + output.painPointAnalysis + '\n' + output.targetAudienceSuggestion,
-      'researchBookTopic',
-      { topic: input.topic }
-    );
-    
-    return output;
-  } catch (error: any) {
-    console.error('Error in researchBookTopic:', error);
-    
-    if (error.message?.includes('503') || error.message?.includes('overloaded')) {
-      throw new Error(
-        'The AI service is currently overloaded. Please wait a moment and try again.'
-      );
-    }
-    
-    if (error.message?.includes('401') || error.message?.includes('Unauthorized') || error.message?.includes('API key')) {
-      throw new Error(
-        'Your API key appears to be invalid or expired. Please check your API key in Settings.'
-      );
-    }
-    
-    if (error.message?.includes('429') || error.message?.includes('quota')) {
-      throw new Error(
-        'You have exceeded your API quota. Please check your usage limits or try again later.'
-      );
-    }
-    
-    throw new Error(error.message || 'An unexpected error occurred while researching the topic. Please try again.');
-  }
+      });
+      
+      const {output} = await prompt(input, { model: input.model || routedModel });
+      
+      if (!output) {
+        throw new Error('The AI did not return any research data. Please try again.');
+      }
+      
+      return output;
+    },
+    RESEARCH_RETRY_CONFIG,
+    context
+  );
+  
+  await trackAIUsage(
+    input.userId,
+    result.deepTopicResearch + '\n' + result.painPointAnalysis + '\n' + result.targetAudienceSuggestion,
+    'researchBookTopic',
+    { topic: input.topic }
+  );
+  
+  return result;
 }
