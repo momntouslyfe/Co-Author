@@ -247,17 +247,27 @@ export default function CoAuthorWorkspacePage() {
     try {
       if (!projectDocRef) throw new Error("Project reference not found.");
       const currentFormValues = form.getValues();
-      await updateDoc(projectDocRef, {
+      
+      const updateData: Record<string, any> = {
         outline: selectedOutline,
         language: currentFormValues.language,
         description: currentFormValues.topic,
         storytellingFramework: currentFormValues.storytellingFramework,
-        researchProfileId: currentFormValues.researchProfileId,
-        styleProfileId: currentFormValues.styleProfileId,
-        authorProfileId: currentFormValues.authorProfileId,
         currentStep: 'title',
         lastUpdated: serverTimestamp(),
-      });
+      };
+      
+      if (currentFormValues.researchProfileId) {
+        updateData.researchProfileId = currentFormValues.researchProfileId;
+      }
+      if (currentFormValues.styleProfileId) {
+        updateData.styleProfileId = currentFormValues.styleProfileId;
+      }
+      if (currentFormValues.authorProfileId) {
+        updateData.authorProfileId = currentFormValues.authorProfileId;
+      }
+      
+      await updateDoc(projectDocRef, updateData);
       toast({ title: 'Success', description: 'Master Blueprint saved successfully.' });
       setIsEditing(false);
       setResult(null);
