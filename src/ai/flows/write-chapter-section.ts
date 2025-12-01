@@ -252,13 +252,21 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
 4.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the text for the new section. Do not add the section title or any other formatting; return only the paragraphs.
 
 5.  **COMPLETE SECTION (CRITICAL - NON-NEGOTIABLE):**
-    - You MUST write a COMPLETE, FULL section with at least 400-500 words
+    - You MUST write a COMPLETE, FULL section with at least 500-650 words
     - NEVER stop mid-paragraph or mid-thought
     - NEVER generate partial content - this is considered a FAILURE
-    - Generate multiple well-developed paragraphs (typically 4-6 paragraphs minimum)
+    - Generate multiple well-developed paragraphs (typically 5-7 paragraphs minimum)
     - Each paragraph should be complete with a clear beginning, middle, and conclusion
     - If you feel like stopping early, you MUST continue writing until the section feels complete
     - A proper section explores the topic thoroughly with examples, explanations, and insights
+
+6.  **VARIED WRITING RHYTHM (NON-NEGOTIABLE):**
+    - VARY paragraph lengths: mix short punchy paragraphs (2-3 sentences) with longer detailed ones (5-6 sentences)
+    - VARY sentence lengths: alternate between short impactful sentences and longer flowing ones
+    - Avoid monotonous patterns - don't make all paragraphs or sentences the same length
+    - Use short sentences for emphasis and impact
+    - Use longer sentences for explanations and flowing narrative
+    - This variation creates natural reading rhythm and keeps readers engaged
 
 **FINAL CHECK BEFORE RESPONDING:** Ensure your response is a COMPLETE section with multiple full paragraphs. Partial or truncated output is unacceptable.
 
