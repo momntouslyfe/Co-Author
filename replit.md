@@ -54,3 +54,18 @@ Preferred communication style: Simple, everyday language.
 
 ### Image Hosting
 - **Whitelisted domains**: `placehold.co`, `images.unsplash.com`, `picsum.photos`.
+
+## Recent Changes
+
+### Landing Page (December 2025)
+- Rebuilt landing page using "The Mentor's Journey" storytelling framework
+- Sections: Hero, Pain Points, Transformation, Features (Writing Suite + Marketing Suite), Storytelling Frameworks, How It Works, Testimonials, Pricing, FAQ, CTA
+- Dynamic pricing fetched from `/api/user/subscription-plans` and `/api/user/addon-credit-plans`
+- Addon credits support 'words', 'books', and 'offers' types
+
+### User Flow
+- Plan selection → Google login popup → `/payment-overview` → Payment gateway → `/payment/success` → Dashboard
+- No free trial option - all CTAs lead to plan selection
+
+### Navigation Icons
+- Updated: BookOpen for Co-Author, Sparkles for Style Profile
