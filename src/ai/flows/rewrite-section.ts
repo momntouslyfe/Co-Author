@@ -72,16 +72,17 @@ export async function rewriteSection(input: RewriteSectionInput): Promise<Rewrit
     
     **ABSOLUTELY FORBIDDEN - NEVER DO THIS:**
     - NEVER add English translations in parentheses after any word
-    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT write like this
-    - WRONG: "সামাজিক সম্পর্কের (social relationships)" - DO NOT write like this
-    - WRONG: "আত্মবিশ্বাস (self-confidence)" - DO NOT write like this
+    - NEVER write English words in English script - always transliterate them
+    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT add translations
+    - WRONG: "এই ছোট ছোট Violation গুলোকে" - DO NOT use English script
     
     **CORRECT CODE-MIXING PATTERNS (DO THIS):**
-    - Use English words naturally without any translation: "এটা একটা টক্সিক সাইকেলের মতো"
-    - Mix English words in English script naturally: "এই ছোট ছোট Violation গুলোকে"
-    - Use English phrases naturally: "ম্যানিপুলেশন প্রায়শই খুব Gradual process এ ঘটে"
+    - Transliterate ALL English-origin words into the target language script
+    - CORRECT: "এটা একটা টক্সিক সাইকেলের মতো" (not "Toxic Cycle")
+    - CORRECT: "এই ছোট ছোট ভায়োলেশন গুলোকে" (not "Violation")
+    - CORRECT: "গ্র্যাজুয়াল প্রসেস" (not "Gradual process")
     
-    **REMEMBER:** Code-mixing means naturally blending languages, NOT providing translations.
+    **REMEMBER:** Code-mixing means naturally blending transliterated words, NOT using English script or providing translations.
 
 3.  **REWRITE, DON'T JUST EDIT (NON-NEGOTIABLE):** You are not an editor making minor changes. Your task is to **completely rewrite** the text from scratch. Do not simply copy or slightly rephrase sentences. You MUST produce a new version of the text that conveys the same core ideas but with entirely new sentence structures, vocabulary, and flow. Preserving the original meaning is key, but preserving the original text is a failure.
 

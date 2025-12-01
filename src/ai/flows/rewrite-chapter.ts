@@ -70,16 +70,17 @@ export async function rewriteChapter(input: RewriteChapterInput): Promise<Rewrit
     
     **ABSOLUTELY FORBIDDEN - NEVER DO THIS:**
     - NEVER add English translations in parentheses after any word
-    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT write like this
-    - WRONG: "সামাজিক সম্পর্কের (social relationships)" - DO NOT write like this
-    - WRONG: "আত্মবিশ্বাস (self-confidence)" - DO NOT write like this
+    - NEVER write English words in English script - always transliterate them
+    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT add translations
+    - WRONG: "এই ছোট ছোট Violation গুলোকে" - DO NOT use English script
     
     **CORRECT CODE-MIXING PATTERNS (DO THIS):**
-    - Use English words naturally without any translation: "এটা একটা টক্সিক সাইকেলের মতো"
-    - Mix English words in English script naturally: "এই ছোট ছোট Violation গুলোকে"
-    - Use English phrases naturally: "ম্যানিপুলেশন প্রায়শই খুব Gradual process এ ঘটে"
+    - Transliterate ALL English-origin words into the target language script
+    - CORRECT: "এটা একটা টক্সিক সাইকেলের মতো" (not "Toxic Cycle")
+    - CORRECT: "এই ছোট ছোট ভায়োলেশন গুলোকে" (not "Violation")
+    - CORRECT: "গ্র্যাজুয়াল প্রসেস" (not "Gradual process")
     
-    **REMEMBER:** Code-mixing means naturally blending languages, NOT providing translations.
+    **REMEMBER:** Code-mixing means naturally blending transliterated words, NOT using English script or providing translations.
 
 4.  **PRESERVE STRUCTURE:** The chapter is divided into sections with titles like \`$$Section Title$$\`. You MUST preserve these section titles and their surrounding double dollar signs exactly as they are. Rewrite the content *within* each section, but do not alter the titles or remove the \`$$\` markers.
 

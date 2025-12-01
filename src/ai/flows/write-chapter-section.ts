@@ -87,17 +87,19 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
     
     **ABSOLUTELY FORBIDDEN - NEVER DO THIS:**
     - NEVER add English translations in parentheses after any word
-    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT write like this
-    - WRONG: "সামাজিক সম্পর্কের (social relationships)" - DO NOT write like this
-    - WRONG: "আত্মবিশ্বাস (self-confidence)" - DO NOT write like this
+    - NEVER write English words in English script - always transliterate them
+    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT add translations
+    - WRONG: "এই ছোট ছোট Violation গুলোকে" - DO NOT use English script
+    - WRONG: "Gradual process" - DO NOT keep English words in English script
     
     **CORRECT CODE-MIXING PATTERNS (DO THIS):**
-    - Use English words naturally without any translation: "এটা একটা টক্সিক সাইকেলের মতো"
-    - Mix English words in English script naturally: "এই ছোট ছোট Violation গুলোকে"
-    - Use English phrases naturally: "ম্যানিপুলেশন প্রায়শই খুব Gradual process এ ঘটে"
-    - CORRECT: "ইমোশনাল কম্পাস ধীরে ধীরে Direction হারায়"
+    - Transliterate ALL English-origin words into the target language script
+    - CORRECT: "এটা একটা টক্সিক সাইকেলের মতো" (not "Toxic Cycle")
+    - CORRECT: "এই ছোট ছোট ভায়োলেশন গুলোকে" (not "Violation")
+    - CORRECT: "গ্র্যাজুয়াল প্রসেস" (not "Gradual process")
+    - CORRECT: "ইমোশনাল কম্পাস ডিরেকশন হারায়" (not "Direction")
     
-    **REMEMBER:** Code-mixing means naturally blending languages, NOT providing translations.
+    **REMEMBER:** Code-mixing means naturally blending transliterated words, NOT using English script or providing translations.
 2.  **ACTION STEP FORMAT (NON-NEGOTIABLE):** You are writing the "Action Step" section. You MUST follow this format precisely:
     1.  Start with a single, concise paragraph that summarizes the core lesson or takeaway of the entire chapter based on the provided content.
     2.  After the summary paragraph, create a bulleted or numbered list containing 5 to 7 single-sentence action items that the reader can implement. These action items must be direct, clear, and derived from the chapter's main points. Use standard Markdown for the list (e.g., '-' for bullets, '1.' for numbers). Do NOT use HTML tags.
@@ -130,14 +132,16 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
     
     **ABSOLUTELY FORBIDDEN - NEVER DO THIS:**
     - NEVER add English translations in parentheses after any word
-    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT write like this
-    - WRONG: "সামাজিক সম্পর্কের (social relationships)" - DO NOT write like this
+    - NEVER write English words in English script - always transliterate them
+    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT add translations
+    - WRONG: "এই ছোট ছোট Violation গুলোকে" - DO NOT use English script
     
     **CORRECT CODE-MIXING PATTERNS (DO THIS):**
-    - Use English words naturally without any translation: "এটা একটা টক্সিক সাইকেলের মতো"
-    - Mix English words in English script naturally: "এই ছোট ছোট Violation গুলোকে"
+    - Transliterate ALL English-origin words into the target language script
+    - CORRECT: "এটা একটা টক্সিক সাইকেলের মতো" (not "Toxic Cycle")
+    - CORRECT: "এই ছোট ছোট ভায়োলেশন গুলোকে" (not "Violation")
     
-    **REMEMBER:** Code-mixing means naturally blending languages, NOT providing translations.
+    **REMEMBER:** Code-mixing means naturally blending transliterated words, NOT using English script or providing translations.
 2.  **"COMING UP NEXT" FORMAT (NON-NEGOTIABLE):** You are writing the "Coming Up Next" section. You MUST write one or two short paragraphs that act as a summary or teaser for the *next* chapter in the outline. Keep it brief and intriguing. Do not write more than two paragraphs.
 3.  **HUMAN-LIKE PARAGRAPHING (NON-NEGOTIABLE):** Use short, readable paragraphs and ensure a double newline (a blank line) exists between them if you write more than one.
 4.  **RETURN ONLY THE CONTENT:** Your output must ONLY be the teaser paragraphs. Do not add the section title.
@@ -216,19 +220,21 @@ Write the content for the section titled: **"{{{sectionTitle}}}"**.
     
     **ABSOLUTELY FORBIDDEN - NEVER DO THIS:**
     - NEVER add English translations in parentheses after any word
-    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT write like this
-    - WRONG: "সামাজিক সম্পর্কের (social relationships)" - DO NOT write like this
-    - WRONG: "আত্মবিশ্বাস (self-confidence)" - DO NOT write like this
-    - WRONG: "ইমোশনাল (emotional)" - DO NOT write like this
+    - NEVER write English words in English script - always transliterate them
+    - WRONG: "ম্যানিপুলেশনের (manipulation)" - DO NOT add translations
+    - WRONG: "এই ছোট ছোট Violation গুলোকে" - DO NOT use English script
+    - WRONG: "Gradual process" - DO NOT keep English words in English script
+    - WRONG: "Direction" - DO NOT use English script for any word
     
     **CORRECT CODE-MIXING PATTERNS (DO THIS):**
-    - Use English words naturally without any translation: "এটা একটা টক্সিক সাইকেলের মতো"
-    - Mix English words in English script naturally: "এই ছোট ছোট Violation গুলোকে"
-    - Use English phrases naturally: "ম্যানিপুলেশন প্রায়শই খুব Gradual process এ ঘটে"
-    - CORRECT: "ইমোশনাল কম্পাস ধীরে ধীরে Direction হারায়"
-    - CORRECT: "আপনার ব্যক্তিগত জীবন, প্রফেশনাল স্পেস এমনকি সামাজিক সম্পর্কের মধ্যেও"
+    - Transliterate ALL English-origin words into the target language script
+    - CORRECT: "এটা একটা টক্সিক সাইকেলের মতো" (not "Toxic Cycle")
+    - CORRECT: "এই ছোট ছোট ভায়োলেশন গুলোকে" (not "Violation")
+    - CORRECT: "গ্র্যাজুয়াল প্রসেস" (not "Gradual process")
+    - CORRECT: "ইমোশনাল কম্পাস ডিরেকশন হারায়" (not "Direction")
+    - CORRECT: "প্রফেশনাল স্পেস" (not "Professional space")
     
-    **REMEMBER:** Code-mixing means naturally blending languages, NOT providing translations. English words should flow naturally without explanations.
+    **REMEMBER:** Code-mixing means naturally blending transliterated words, NOT using English script or providing translations.
 
 2.  **FOCUSED CONTENT:** All content must be directly related to the provided section title.
 
