@@ -1,6 +1,12 @@
 import { getFirebaseAdmin } from './firebase-admin';
 import { verifyPayment } from './uddoktapay';
 import { addCredits, activateSubscriptionPlan } from './credits';
+import { trackPurchase, trackSubscribe } from './integrations/facebook-capi';
+import { 
+  sendPurchaseConfirmationEmail, 
+  sendSubscriptionActivatedEmail, 
+  sendCreditsAddedEmail 
+} from './email/email-service';
 
 interface ProcessPaymentResult {
   success: boolean;
@@ -165,6 +171,26 @@ export async function processSuccessfulPayment(
         );
 
         console.log(`Auto-approved: Subscription plan ${paymentData.planId} activated for user ${paymentData.userId}`);
+        
+        trackSubscribe({
+          userId: paymentData.userId,
+          email: paymentData.userEmail,
+          value: authoritativeChargedAmount,
+          currency: 'BDT',
+          contentName: subscriptionPlan?.name || paymentData.planId,
+          orderId,
+        }).catch(err => console.error('Facebook tracking error:', err));
+        
+        sendSubscriptionActivatedEmail({
+          user: {
+            userId: paymentData.userId,
+            email: paymentData.userEmail,
+            displayName: paymentData.userName,
+          },
+          planName: subscriptionPlan?.name || 'Subscription Plan',
+          creditsAmount: subscriptionPlan?.wordCredits || 0,
+          creditType: 'AI Words',
+        }).catch(err => console.error('Email sending error:', err));
       } catch (error) {
         console.error('Error activating subscription:', error);
         return {
@@ -274,6 +300,26 @@ export async function processSuccessfulPayment(
           );
 
           console.log(`Auto-approved: ${creditAmount} ${creditType} credits granted to user ${paymentData.userId}`);
+          
+          trackPurchase({
+            userId: paymentData.userId,
+            email: paymentData.userEmail,
+            value: authoritativeChargedAmount,
+            currency: 'BDT',
+            contentName: addonPlan?.name || paymentData.addonId,
+            orderId,
+            numItems: 1,
+          }).catch(err => console.error('Facebook tracking error:', err));
+          
+          sendCreditsAddedEmail({
+            user: {
+              userId: paymentData.userId,
+              email: paymentData.userEmail,
+              displayName: paymentData.userName,
+            },
+            creditsAmount: creditAmount,
+            creditType: creditType === 'words' ? 'AI Words' : 'Book Creation',
+          }).catch(err => console.error('Email sending error:', err));
         }
       } catch (error) {
         console.error('Error granting credits:', error);
