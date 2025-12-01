@@ -148,6 +148,7 @@ function ResearchPageContent() {
 
       const decoder = new TextDecoder();
       let buffer = '';
+      let currentEventType = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -157,12 +158,10 @@ function ResearchPageContent() {
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
-
-        let currentEventType = '';
         
         for (const line of lines) {
           if (line.startsWith('event: ')) {
-            currentEventType = line.substring(7);
+            currentEventType = line.substring(7).trim();
             continue;
           }
           
@@ -170,7 +169,7 @@ function ResearchPageContent() {
             try {
               const data = JSON.parse(line.substring(6));
               
-              if (currentEventType === 'progress') {
+              if (currentEventType === 'progress' && data.step !== undefined) {
                 setProgress({
                   step: data.step,
                   total: data.total,
@@ -203,6 +202,8 @@ function ResearchPageContent() {
               if (currentEventType === 'error' && data.message) {
                 throw new Error(data.message);
               }
+              
+              currentEventType = '';
             } catch (parseError) {
               if (parseError instanceof SyntaxError) {
                 continue;
