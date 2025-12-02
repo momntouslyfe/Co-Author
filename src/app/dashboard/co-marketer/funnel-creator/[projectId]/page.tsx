@@ -223,12 +223,11 @@ export default function FunnelBuilderPage() {
         title: 'Ideas Generated',
         description: `Generated ${ideas.length} book ideas for Step ${step}.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating funnel ideas:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to generate book ideas. Please try again.';
       toast({
         title: 'Generation Failed',
-        description: errorMessage,
+        description: error.message || 'Failed to generate book ideas. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -307,12 +306,11 @@ export default function FunnelBuilderPage() {
         title: 'Ideas Saved',
         description: `Saved ${selectedIdeas.length} book ideas to Step ${activeStep}.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving funnel ideas:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save book ideas.';
       toast({
         title: 'Save Failed',
-        description: errorMessage,
+        description: error.message || 'Failed to save book ideas.',
         variant: 'destructive',
       });
     } finally {
