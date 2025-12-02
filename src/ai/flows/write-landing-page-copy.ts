@@ -3,6 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const OfferContextSchema = z.object({
   title: z.string().describe('The offer title.'),
@@ -54,12 +55,13 @@ export type WriteLandingPageCopyOutput = z.infer<typeof WriteLandingPageCopyOutp
 export async function writeLandingPageCopy(
   input: WriteLandingPageCopyInput
 ): Promise<WriteLandingPageCopyOutput> {
-  const estimatedWords = Math.max(input.targetWordCount, 500);
-  await preflightCheckWordCredits(input.userId, estimatedWords);
+  return withAIErrorHandling(async () => {
+    const estimatedWords = Math.max(input.targetWordCount, 500);
+    await preflightCheckWordCredits(input.userId, estimatedWords);
 
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('chapter', input.userId, input.idToken);
+    const { ai, model: routedModel } = await getGenkitInstanceForFunction('chapter', input.userId, input.idToken);
 
-  try {
+    try {
     const prompt = ai.definePrompt({
       name: 'writeLandingPageCopy',
       input: { schema: WriteLandingPageCopyInputSchema },
@@ -325,5 +327,6 @@ Write the complete landing page copy now.`,
     }
 
     throw new Error(error.message || 'An unexpected error occurred while writing landing page copy. Please try again.');
-  }
+    }
+  }, 'landing page copy writing');
 }

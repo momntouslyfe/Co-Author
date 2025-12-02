@@ -4,6 +4,7 @@ import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const ExpandOfferSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -28,13 +29,14 @@ export type ExpandOfferSectionOutput = z.infer<typeof ExpandOfferSectionOutputSc
 export async function expandOfferSection(
   input: ExpandOfferSectionInput
 ): Promise<ExpandOfferSectionOutput> {
-  const context = `Expanding module: "${input.moduleTitle}"`;
-  const originalWordCount = input.originalContent.split(/\s+/).filter(w => w.length > 0).length;
-  const additionalWords = Math.max(0, input.targetWordCount - originalWordCount);
+  return withAIErrorHandling(async () => {
+    const context = `Expanding module: "${input.moduleTitle}"`;
+    const originalWordCount = input.originalContent.split(/\s+/).filter(w => w.length > 0).length;
+    const additionalWords = Math.max(0, input.targetWordCount - originalWordCount);
 
-  await preflightCheckWordCredits(input.userId, additionalWords);
+    await preflightCheckWordCredits(input.userId, additionalWords);
 
-  const result = await retryWithBackoff(
+    const result = await retryWithBackoff(
     async () => {
       const { ai, model: routedModel } = await getGenkitInstanceForFunction('expand', input.userId, input.idToken);
 
@@ -113,15 +115,16 @@ Provide the expanded content now.`,
     context
   );
 
-  await trackAIUsage(
-    input.userId,
-    result.expandedContent,
-    'expandOfferSection',
-    {
-      moduleTitle: input.moduleTitle,
-      targetWordCount: input.targetWordCount,
-    }
-  );
+    await trackAIUsage(
+      input.userId,
+      result.expandedContent,
+      'expandOfferSection',
+      {
+        moduleTitle: input.moduleTitle,
+        targetWordCount: input.targetWordCount,
+      }
+    );
 
-  return result;
+    return result;
+  }, 'offer section expansion');
 }

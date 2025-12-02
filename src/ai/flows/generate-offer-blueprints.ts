@@ -3,6 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 import { OFFER_CATEGORY_STRUCTURE, OFFER_CATEGORY_LABELS, OFFER_CATEGORY_DESCRIPTIONS } from '@/lib/definitions';
 import type { OfferCategory } from '@/lib/definitions';
 
@@ -124,21 +125,22 @@ Structure: 3 Parts, 4 Modules per Part (~500 words each)
 export async function generateOfferBlueprints(
   input: GenerateOfferBlueprintsInput
 ): Promise<GenerateOfferBlueprintsOutput> {
-  await preflightCheckWordCredits(input.userId, 1500);
+  return withAIErrorHandling(async () => {
+    await preflightCheckWordCredits(input.userId, 1500);
 
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('blueprint', input.userId, input.idToken);
+    const { ai, model: routedModel } = await getGenkitInstanceForFunction('blueprint', input.userId, input.idToken);
 
-  const category = input.offerCategory as Exclude<OfferCategory, 'all'>;
-  const categoryPrompt = CATEGORY_BLUEPRINT_PROMPTS[category];
-  const categoryLabel = OFFER_CATEGORY_LABELS[category];
-  const categoryDescription = OFFER_CATEGORY_DESCRIPTIONS[category];
-  const structure = OFFER_CATEGORY_STRUCTURE[category];
+    const category = input.offerCategory as Exclude<OfferCategory, 'all'>;
+    const categoryPrompt = CATEGORY_BLUEPRINT_PROMPTS[category];
+    const categoryLabel = OFFER_CATEGORY_LABELS[category];
+    const categoryDescription = OFFER_CATEGORY_DESCRIPTIONS[category];
+    const structure = OFFER_CATEGORY_STRUCTURE[category];
 
-  if (!categoryPrompt || !structure) {
-    throw new Error(`Invalid offer category: ${input.offerCategory}`);
-  }
+    if (!categoryPrompt || !structure) {
+      throw new Error(`Invalid offer category: ${input.offerCategory}`);
+    }
 
-  try {
+    try {
     const prompt = ai.definePrompt({
       name: 'generateOfferBlueprintsPrompt',
       input: { schema: GenerateOfferBlueprintsInputSchema },
@@ -346,5 +348,6 @@ Generate the three blueprints now. IMPORTANT: The parts field must be a valid JS
     }
 
     throw new Error(error.message || 'An unexpected error occurred while generating blueprints.');
-  }
+    }
+  }, 'offer blueprint generation');
 }

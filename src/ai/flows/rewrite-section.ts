@@ -12,6 +12,7 @@ import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const RewriteSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -33,11 +34,12 @@ const RewriteSectionOutputSchema = z.object({
 export type RewriteSectionOutput = z.infer<typeof RewriteSectionOutputSchema>;
 
 export async function rewriteSection(input: RewriteSectionInput): Promise<RewriteSectionOutput> {
-  await preflightCheckWordCredits(input.userId, 400);
-  
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('rewrite', input.userId, input.idToken);
-  
-  const rewriteSectionPrompt = ai.definePrompt({
+  return withAIErrorHandling(async () => {
+    await preflightCheckWordCredits(input.userId, 400);
+    
+    const { ai, model: routedModel } = await getGenkitInstanceForFunction('rewrite', input.userId, input.idToken);
+    
+    const rewriteSectionPrompt = ai.definePrompt({
     name: 'rewriteSectionPrompt',
     input: { schema: RewriteSectionInputSchema },
     output: { schema: RewriteSectionOutputSchema },
@@ -118,12 +120,13 @@ export async function rewriteSection(input: RewriteSectionInput): Promise<Rewrit
     throw new Error("AI failed to rewrite the section.");
   }
   
-  await trackAIUsage(
-    input.userId,
-    output.rewrittenSection,
-    'rewriteSection',
-    {}
-  );
-  
-  return output;
+    await trackAIUsage(
+      input.userId,
+      output.rewrittenSection,
+      'rewriteSection',
+      {}
+    );
+    
+    return output;
+  }, 'section rewriting');
 }

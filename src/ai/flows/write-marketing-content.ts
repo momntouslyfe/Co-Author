@@ -3,6 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const WriteMarketingContentInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -35,12 +36,13 @@ export type WriteMarketingContentOutput = z.infer<typeof WriteMarketingContentOu
 export async function writeMarketingContent(
   input: WriteMarketingContentInput
 ): Promise<WriteMarketingContentOutput> {
-  const estimatedWords = Math.max(input.targetWordCount, 500);
-  await preflightCheckWordCredits(input.userId, estimatedWords);
+  return withAIErrorHandling(async () => {
+    const estimatedWords = Math.max(input.targetWordCount, 500);
+    await preflightCheckWordCredits(input.userId, estimatedWords);
 
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('chapter', input.userId, input.idToken);
+    const { ai, model: routedModel } = await getGenkitInstanceForFunction('chapter', input.userId, input.idToken);
 
-  try {
+    try {
     const prompt = ai.definePrompt({
       name: 'writeMarketingContent',
       input: { schema: WriteMarketingContentInputSchema },
@@ -182,5 +184,6 @@ Write the complete content now. Do not include the title in the output - start d
     }
 
     throw new Error(error.message || 'An unexpected error occurred while writing content. Please try again.');
-  }
+    }
+  }, 'marketing content writing');
 }

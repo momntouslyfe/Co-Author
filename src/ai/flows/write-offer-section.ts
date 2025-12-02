@@ -4,6 +4,7 @@ import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
 import type { OfferCategory } from '@/lib/definitions';
 
@@ -38,14 +39,15 @@ export type WriteOfferSectionOutput = z.infer<typeof WriteOfferSectionOutputSche
 export async function writeOfferSection(
   input: WriteOfferSectionInput
 ): Promise<WriteOfferSectionOutput> {
-  const context = `Module: "${input.moduleTitle}" in Part: "${input.partTitle}"`;
+  return withAIErrorHandling(async () => {
+    const context = `Module: "${input.moduleTitle}" in Part: "${input.partTitle}"`;
 
-  await preflightCheckWordCredits(input.userId, input.targetWordCount);
+    await preflightCheckWordCredits(input.userId, input.targetWordCount);
 
-  const category = input.offerCategory as Exclude<OfferCategory, 'all'>;
-  const categoryLabel = OFFER_CATEGORY_LABELS[category] || input.offerCategory;
+    const category = input.offerCategory as Exclude<OfferCategory, 'all'>;
+    const categoryLabel = OFFER_CATEGORY_LABELS[category] || input.offerCategory;
 
-  const result = await retryWithBackoff(
+    const result = await retryWithBackoff(
     async () => {
       const { ai, model: routedModel } = await getGenkitInstanceForFunction('chapter', input.userId, input.idToken);
 
@@ -171,12 +173,13 @@ Write the section content now.`,
     'writeOfferSection',
     {
       offerTitle: input.offerTitle,
-      partTitle: input.partTitle,
-      moduleTitle: input.moduleTitle,
-    }
-  );
+        partTitle: input.partTitle,
+        moduleTitle: input.moduleTitle,
+      }
+    );
 
-  return result;
+    return result;
+  }, 'offer section writing');
 }
 
 function getCategoryWritingGuidance(category: Exclude<OfferCategory, 'all'>): string {

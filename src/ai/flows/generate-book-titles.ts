@@ -12,6 +12,7 @@ import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const GenerateBookTitlesInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -43,11 +44,12 @@ export type GenerateBookTitlesOutput = z.infer<
 export async function generateBookTitles(
   input: GenerateBookTitlesInput
 ): Promise<GenerateBookTitlesOutput> {
-  await preflightCheckWordCredits(input.userId, 300);
-  
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('title', input.userId, input.idToken);
-  
-  try {
+  return withAIErrorHandling(async () => {
+    await preflightCheckWordCredits(input.userId, 300);
+    
+    const { ai, model: routedModel } = await getGenkitInstanceForFunction('title', input.userId, input.idToken);
+    
+    try {
     const prompt = ai.definePrompt({
       name: 'generateBookTitlesPrompt',
       input: {schema: GenerateBookTitlesInputSchema},
@@ -260,5 +262,6 @@ For each title, identify which formula you used.`,
     }
     
     throw new Error(error.message || 'An unexpected error occurred while generating titles. Please try again.');
-  }
+    }
+  }, 'book title generation');
 }

@@ -16,6 +16,7 @@ import {z} from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
 import { retryWithBackoff } from '@/lib/retry-utils';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const AnalyzeWritingStyleInputSchema = z.object({
     userId: z.string().describe('The user ID for API key retrieval.'),
@@ -38,11 +39,12 @@ const STYLE_ANALYSIS_RETRY_CONFIG = {
 };
 
 export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Promise<AnalyzeWritingStyleOutput> {
-  await preflightCheckWordCredits(input.userId, 1000);
-  
-  const context = 'Writing Style Analysis';
-  
-  const result = await retryWithBackoff(
+  return withAIErrorHandling(async () => {
+    await preflightCheckWordCredits(input.userId, 1000);
+    
+    const context = 'Writing Style Analysis';
+    
+    const result = await retryWithBackoff(
     async () => {
       const { ai, model: routedModel } = await getGenkitInstanceForFunction('style_analysis', input.userId, input.idToken);
       
@@ -142,12 +144,13 @@ Complete ALL 7 sections with specific examples from the text.`,
     context
   );
   
-  await trackAIUsage(
-    input.userId,
-    result.styleAnalysis,
-    'analyzeWritingStyle',
-    {}
-  );
-  
-  return result;
+    await trackAIUsage(
+      input.userId,
+      result.styleAnalysis,
+      'analyzeWritingStyle',
+      {}
+    );
+    
+    return result;
+  }, 'writing style analysis');
 }

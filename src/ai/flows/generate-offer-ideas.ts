@@ -3,6 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const GenerateOfferIdeasInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -63,10 +64,11 @@ const ALL_CATEGORIES = Object.keys(CATEGORY_PROMPTS);
 export async function generateOfferIdeas(
   input: GenerateOfferIdeasInput
 ): Promise<GenerateOfferIdeasOutput[]> {
-  const estimatedWords = input.category === 'all' ? 2000 : 500;
-  await preflightCheckWordCredits(input.userId, estimatedWords);
+  return withAIErrorHandling(async () => {
+    const estimatedWords = input.category === 'all' ? 2000 : 500;
+    await preflightCheckWordCredits(input.userId, estimatedWords);
 
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('blueprint', input.userId, input.idToken);
+    const { ai, model: routedModel } = await getGenkitInstanceForFunction('blueprint', input.userId, input.idToken);
 
   const categoriesToGenerate = input.category === 'all' ? ALL_CATEGORIES : [input.category];
   const ideasPerCategory = input.category === 'all' ? 3 : 5;
@@ -150,9 +152,10 @@ Return the ideas in the specified format with the category set to "${category}".
     }
   }
 
-  if (results.length === 0) {
-    throw new Error('Failed to generate any offer ideas. Please try again.');
-  }
+    if (results.length === 0) {
+      throw new Error('Failed to generate any offer ideas. Please try again.');
+    }
 
-  return results;
+    return results;
+  }, 'offer ideas generation');
 }

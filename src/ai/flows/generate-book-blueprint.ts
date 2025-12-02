@@ -13,6 +13,7 @@ import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const GenerateBookBlueprintInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -41,10 +42,11 @@ export type GenerateBookBlueprintOutput = z.infer<
 export async function generateBookBlueprint(
   input: GenerateBookBlueprintInput
 ): Promise<GenerateBookBlueprintOutput> {
-  await preflightCheckWordCredits(input.userId, 1500);
-  
-  // Log what the AI flow actually receives
-  console.log('AI Flow - Blueprint Generation Input:', {
+  return withAIErrorHandling(async () => {
+    await preflightCheckWordCredits(input.userId, 1500);
+    
+    // Log what the AI flow actually receives
+    console.log('AI Flow - Blueprint Generation Input:', {
     topic: input.topic,
     topicPreview: input.topic?.substring(0, 100),
     language: input.language,
@@ -217,4 +219,5 @@ Return ONLY the three formatted, concise outlines, following all rules precisely
     // Re-throw with original message if we don't have a specific handler
     throw new Error(error.message || 'An unexpected error occurred while generating blueprints. Please try again.');
   }
+  }, 'book blueprint generation');
 }

@@ -3,6 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const GenerateContentIdeasInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -34,11 +35,12 @@ export type GenerateContentIdeasOutput = z.infer<typeof GenerateContentIdeasOutp
 export async function generateContentIdeas(
   input: GenerateContentIdeasInput
 ): Promise<GenerateContentIdeasOutput> {
-  await preflightCheckWordCredits(input.userId, 500);
+  return withAIErrorHandling(async () => {
+    await preflightCheckWordCredits(input.userId, 500);
 
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('blueprint', input.userId, input.idToken);
+    const { ai, model: routedModel } = await getGenkitInstanceForFunction('blueprint', input.userId, input.idToken);
 
-  try {
+    try {
     const prompt = ai.definePrompt({
       name: 'generateContentIdeas',
       input: { schema: GenerateContentIdeasInputSchema },
@@ -128,5 +130,6 @@ Return the ideas in the specified format with the category set to "{{{category}}
     }
 
     throw new Error(error.message || 'An unexpected error occurred while generating content ideas. Please try again.');
-  }
+    }
+  }, 'content ideas generation');
 }

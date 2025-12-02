@@ -13,6 +13,7 @@ import {z} from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
 import { retryWithBackoff } from '@/lib/retry-utils';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const ResearchBookTopicInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -39,13 +40,14 @@ const RESEARCH_RETRY_CONFIG = {
 };
 
 export async function researchBookTopic(input: ResearchBookTopicInput): Promise<ResearchBookTopicOutput> {
-  await preflightCheckWordCredits(input.userId, 2000);
-  
-  const context = `Research Topic: "${input.topic}"`;
-  
-  const result = await retryWithBackoff(
-    async () => {
-      const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
+  return withAIErrorHandling(async () => {
+    await preflightCheckWordCredits(input.userId, 2000);
+    
+    const context = `Research Topic: "${input.topic}"`;
+    
+    const result = await retryWithBackoff(
+      async () => {
+        const { ai, model: routedModel } = await getGenkitInstanceForFunction('research', input.userId, input.idToken);
       
       const prompt = ai.definePrompt({
         name: 'researchBookTopicPrompt',
@@ -159,12 +161,13 @@ Generate all three outputs in {{{language}}}. Focus most content on deepTopicRes
     context
   );
   
-  await trackAIUsage(
-    input.userId,
-    result.deepTopicResearch + '\n' + result.painPointAnalysis + '\n' + result.targetAudienceSuggestion,
-    'researchBookTopic',
-    { topic: input.topic }
-  );
-  
-  return result;
+    await trackAIUsage(
+      input.userId,
+      result.deepTopicResearch + '\n' + result.painPointAnalysis + '\n' + result.targetAudienceSuggestion,
+      'researchBookTopic',
+      { topic: input.topic }
+    );
+    
+    return result;
+  }, 'topic research');
 }

@@ -4,6 +4,7 @@ import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const RewriteOfferSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -29,12 +30,13 @@ export type RewriteOfferSectionOutput = z.infer<typeof RewriteOfferSectionOutput
 export async function rewriteOfferSection(
   input: RewriteOfferSectionInput
 ): Promise<RewriteOfferSectionOutput> {
-  const context = `Rewriting module: "${input.moduleTitle}"`;
-  const originalWordCount = input.originalContent.split(/\s+/).filter(w => w.length > 0).length;
+  return withAIErrorHandling(async () => {
+    const context = `Rewriting module: "${input.moduleTitle}"`;
+    const originalWordCount = input.originalContent.split(/\s+/).filter(w => w.length > 0).length;
 
-  await preflightCheckWordCredits(input.userId, originalWordCount);
+    await preflightCheckWordCredits(input.userId, originalWordCount);
 
-  const result = await retryWithBackoff(
+    const result = await retryWithBackoff(
     async () => {
       const { ai, model: routedModel } = await getGenkitInstanceForFunction('rewrite', input.userId, input.idToken);
 
@@ -116,14 +118,15 @@ Provide the rewritten content now.`,
     context
   );
 
-  await trackAIUsage(
-    input.userId,
-    result.rewrittenContent,
-    'rewriteOfferSection',
-    {
-      moduleTitle: input.moduleTitle,
-    }
-  );
+    await trackAIUsage(
+      input.userId,
+      result.rewrittenContent,
+      'rewriteOfferSection',
+      {
+        moduleTitle: input.moduleTitle,
+      }
+    );
 
-  return result;
+    return result;
+  }, 'offer section rewriting');
 }

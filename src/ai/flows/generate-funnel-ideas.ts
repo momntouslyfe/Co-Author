@@ -3,6 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
+import { withAIErrorHandling } from '@/lib/ai-error-handler';
 
 const GenerateFunnelIdeasInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -49,13 +50,14 @@ const STEP_DESCRIPTIONS: Record<number, string> = {
 export async function generateFunnelIdeas(
   input: GenerateFunnelIdeasInput
 ): Promise<GenerateFunnelIdeasOutput> {
-  await preflightCheckWordCredits(input.userId, 800);
+  return withAIErrorHandling(async () => {
+    await preflightCheckWordCredits(input.userId, 800);
 
-  const { ai, model: routedModel } = await getGenkitInstanceForFunction('blueprint', input.userId, input.idToken);
+    const { ai, model: routedModel } = await getGenkitInstanceForFunction('blueprint', input.userId, input.idToken);
 
-  const stepDescription = STEP_DESCRIPTIONS[input.funnelStep] || STEP_DESCRIPTIONS[1];
+    const stepDescription = STEP_DESCRIPTIONS[input.funnelStep] || STEP_DESCRIPTIONS[1];
 
-  try {
+    try {
     const prompt = ai.definePrompt({
       name: `generateFunnelIdeas_step${input.funnelStep}`,
       input: { schema: GenerateFunnelIdeasInputSchema },
@@ -158,5 +160,6 @@ Return the ideas in the specified format.`,
     }
 
     throw new Error(error.message || 'An unexpected error occurred while generating funnel ideas. Please try again.');
-  }
+    }
+  }, 'funnel ideas generation');
 }
