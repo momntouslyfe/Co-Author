@@ -101,6 +101,14 @@ service cloud.firestore {
       }
 
       /**
+       * @description A user can manage their own project funnels (funnel ideas per project).
+       * @path /users/{userId}/projectFunnels/{projectId}
+       */
+      match /projectFunnels/{projectId} {
+        allow get, list, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      /**
        * @description A user can manage their own landing page copies.
        * @path /users/{userId}/landingPageCopies/{copyId}
        */
