@@ -205,7 +205,16 @@ export default function FunnelBuilderPage() {
         authorProfile: authorContent,
       });
 
-      const ideas: GeneratedIdea[] = result.ideas.map(idea => ({
+      if (!result.success) {
+        toast({
+          title: 'Generation Failed',
+          description: result.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const ideas: GeneratedIdea[] = result.data.ideas.map(idea => ({
         id: `step${step}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         title: idea.title,
         subtitle: idea.subtitle,
@@ -216,7 +225,7 @@ export default function FunnelBuilderPage() {
       }));
 
       setGeneratedIdeas(ideas);
-      setStepContext(result.stepContext);
+      setStepContext(result.data.stepContext);
       refreshCredits();
 
       toast({

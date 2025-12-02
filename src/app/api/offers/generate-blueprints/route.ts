@@ -56,13 +56,19 @@ export async function POST(request: Request) {
       storytellingFramework: storytellingFramework || undefined,
     });
 
+    if (!result.success) {
+      const status = result.code === 'NO_ACTIVE_SUBSCRIPTION' ? 402 : 
+                     result.code === 'INSUFFICIENT_CREDITS' ? 402 : 500;
+      return NextResponse.json({ error: result.error }, { status });
+    }
+
     const category = offerCategory as Exclude<OfferCategory, 'all'>;
     const structure = OFFER_CATEGORY_STRUCTURE[category];
     if (!structure) {
       return NextResponse.json({ error: 'Invalid offer category' }, { status: 400 });
     }
 
-    const transformedBlueprints: OfferBlueprint[] = result.blueprints.map((bp, index) => {
+    const transformedBlueprints: OfferBlueprint[] = result.data.blueprints.map((bp, index) => {
       const parts: OfferBlueprintPart[] = bp.parts.map((part, partIndex) => {
         const modules: OfferBlueprintModule[] = part.modules.map((moduleTitle) => ({
           title: moduleTitle,

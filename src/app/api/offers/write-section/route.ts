@@ -58,7 +58,13 @@ export async function POST(request: Request) {
       customInstructions: customInstructions || undefined,
     });
 
-    return NextResponse.json(result);
+    if (!result.success) {
+      const status = result.code === 'NO_ACTIVE_SUBSCRIPTION' ? 402 : 
+                     result.code === 'INSUFFICIENT_CREDITS' ? 402 : 500;
+      return NextResponse.json({ error: result.error }, { status });
+    }
+
+    return NextResponse.json(result.data);
   } catch (error: any) {
     console.error('Error writing offer section:', error);
     return NextResponse.json(

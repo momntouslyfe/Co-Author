@@ -3,7 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { withAIErrorHandling } from '@/lib/ai-error-handler';
+import { withAIErrorHandling, type AIResult } from '@/lib/ai-error-handler';
 
 const OfferContextSchema = z.object({
   title: z.string().describe('The offer title.'),
@@ -54,7 +54,7 @@ export type WriteLandingPageCopyOutput = z.infer<typeof WriteLandingPageCopyOutp
 
 export async function writeLandingPageCopy(
   input: WriteLandingPageCopyInput
-): Promise<WriteLandingPageCopyOutput> {
+): Promise<AIResult<WriteLandingPageCopyOutput>> {
   return withAIErrorHandling(async () => {
     const estimatedWords = Math.max(input.targetWordCount, 500);
     await preflightCheckWordCredits(input.userId, estimatedWords);

@@ -3,7 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { withAIErrorHandling } from '@/lib/ai-error-handler';
+import { withAIErrorHandling, type AIResult } from '@/lib/ai-error-handler';
 import { OFFER_CATEGORY_STRUCTURE, OFFER_CATEGORY_LABELS, OFFER_CATEGORY_DESCRIPTIONS } from '@/lib/definitions';
 import type { OfferCategory } from '@/lib/definitions';
 
@@ -124,7 +124,7 @@ Structure: 3 Parts, 4 Modules per Part (~500 words each)
 
 export async function generateOfferBlueprints(
   input: GenerateOfferBlueprintsInput
-): Promise<GenerateOfferBlueprintsOutput> {
+): Promise<AIResult<GenerateOfferBlueprintsOutput>> {
   return withAIErrorHandling(async () => {
     await preflightCheckWordCredits(input.userId, 1500);
 

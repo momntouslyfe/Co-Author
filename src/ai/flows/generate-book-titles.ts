@@ -12,7 +12,7 @@ import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { withAIErrorHandling } from '@/lib/ai-error-handler';
+import { withAIErrorHandling, type AIResult } from '@/lib/ai-error-handler';
 
 const GenerateBookTitlesInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -43,7 +43,7 @@ export type GenerateBookTitlesOutput = z.infer<
 
 export async function generateBookTitles(
   input: GenerateBookTitlesInput
-): Promise<GenerateBookTitlesOutput> {
+): Promise<AIResult<GenerateBookTitlesOutput>> {
   return withAIErrorHandling(async () => {
     await preflightCheckWordCredits(input.userId, 300);
     

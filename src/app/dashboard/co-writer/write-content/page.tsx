@@ -252,17 +252,31 @@ function WriteContentPageContent() {
         authorProfile: authorContext,
       });
 
-      if (!result || !result.content) {
-        throw new Error('Failed to generate content. Please refresh the page and try again.');
+      if (!result.success) {
+        toast({
+          title: 'Generation Failed',
+          description: result.error,
+          variant: 'destructive',
+        });
+        return;
       }
 
-      setGeneratedContent(result.content);
+      if (!result.data || !result.data.content) {
+        toast({
+          title: 'Generation Failed',
+          description: 'Failed to generate content. Please refresh the page and try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setGeneratedContent(result.data.content);
       setShowSettings(false);
       refreshCredits();
 
       toast({
         title: 'Content Generated',
-        description: `Generated ${result.wordCount} words of marketing content.`,
+        description: `Generated ${result.data.wordCount} words of marketing content.`,
       });
     } catch (error: any) {
       console.error('Error generating content:', error);
@@ -302,16 +316,30 @@ function WriteContentPageContent() {
         customInstructions: instruction || undefined,
       });
 
-      if (!result || !result.content) {
-        throw new Error('Failed to rewrite content. Please refresh the page and try again.');
+      if (!result.success) {
+        toast({
+          title: 'Rewrite Failed',
+          description: result.error,
+          variant: 'destructive',
+        });
+        return;
       }
 
-      setGeneratedContent(result.content);
+      if (!result.data || !result.data.content) {
+        toast({
+          title: 'Rewrite Failed',
+          description: 'Failed to rewrite content. Please refresh the page and try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setGeneratedContent(result.data.content);
       refreshCredits();
 
       toast({
         title: 'Content Rewritten',
-        description: `Rewritten content: ${result.wordCount} words.`,
+        description: `Rewritten content: ${result.data.wordCount} words.`,
       });
     } catch (error: any) {
       console.error('Error rewriting content:', error);

@@ -148,9 +148,18 @@ function GenerateContentIdeasContent() {
         storytellingFramework: frameworkContext || selectedProject.storytellingFramework,
       });
 
-      const ideas: GeneratedIdea[] = result.ideas.map((idea, idx) => ({
+      if (!result.success) {
+        toast({
+          title: 'Generation Failed',
+          description: result.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const ideas: GeneratedIdea[] = result.data.ideas.map((idea, idx) => ({
         id: `idea-${Date.now()}-${idx}`,
-        category: result.category,
+        category: result.data.category,
         title: idea.title,
         description: idea.description,
         selected: false,

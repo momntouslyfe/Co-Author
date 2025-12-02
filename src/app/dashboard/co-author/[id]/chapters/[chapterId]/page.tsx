@@ -207,6 +207,11 @@ const ChapterEditor = ({
                 storytellingFramework: frameworkWithConcept,
             });
 
+            if (!result.success) {
+                toast({ title: "AI Extend Failed", description: result.error, variant: "destructive" });
+                return;
+            }
+
             onContentChange(prevContent => {
                 // Split by the delimiter, but keep the delimiter in the array.
                 const sections = prevContent.split(/(\$\$[^$]+\$\$)/g);
@@ -217,7 +222,7 @@ const ChapterEditor = ({
                 if (titleIndex !== -1 && titleIndex + 1 < sections.length) {
                     const contentPartIndex = titleIndex + 1;
                     const sectionParagraphs = (sections[contentPartIndex] || '').trim().split('\n\n').filter(p => p.trim() !== '');
-                    sectionParagraphs.splice(paragraphIndex + 1, 0, result.expandedContent);
+                    sectionParagraphs.splice(paragraphIndex + 1, 0, result.data.expandedContent);
                     sections[contentPartIndex] = `\n\n${sectionParagraphs.join('\n\n')}\n\n`;
                     return sections.join('');
                 }
@@ -277,7 +282,12 @@ const ChapterEditor = ({
                 storytellingFramework: frameworkWithConcept,
             });
     
-            if (result && result.sectionContent) {
+            if (!result.success) {
+                toast({ title: "AI Write Failed", variant: "destructive", description: result.error });
+                return;
+            }
+
+            if (result.data && result.data.sectionContent) {
                 onContentChange(prevContent => {
                     const sections = prevContent.split(/(\$\$[^$]+\$\$)/g);
                     const titleToFind = `$$${sectionTitle}$$`;
@@ -288,7 +298,7 @@ const ChapterEditor = ({
                         if (contentIndex >= sections.length || sections[contentIndex].startsWith('$$')) {
                             sections.splice(contentIndex, 0, ''); 
                         }
-                        sections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
+                        sections[contentIndex] = `\n\n${result.data.sectionContent.trim()}\n\n`;
                         return sections.join('');
                     }
                     return prevContent;
@@ -296,7 +306,7 @@ const ChapterEditor = ({
                 refreshCredits();
                 toast({ title: "Section Written", description: `Successfully generated "${sectionTitle}"` });
             } else {
-                throw new Error("AI returned no content");
+                toast({ title: "AI Write Failed", variant: "destructive", description: "AI returned no content" });
             }
     
         } catch (error) {
@@ -347,7 +357,12 @@ const ChapterEditor = ({
                 instruction,
             });
     
-            if (result && result.rewrittenSection) {
+            if (!result.success) {
+                toast({ title: "AI Rewrite Failed", variant: "destructive", description: result.error });
+                return;
+            }
+
+            if (result.data && result.data.rewrittenSection) {
                  onContentChange(prevContent => {
                     const currentSections = prevContent.split(/(\$\$[^$]+\$\$)/g);
                     const currentTitleToFind = findTitleForSection(currentSections, sectionIndex);
@@ -358,7 +373,7 @@ const ChapterEditor = ({
                          if (titleIndex + 1 >= currentSections.length || currentSections[titleIndex + 1].startsWith('$$')) {
                             currentSections.splice(titleIndex + 1, 0, ''); 
                         }
-                        currentSections[titleIndex + 1] = `\n\n${result.rewrittenSection.trim()}\n\n`;
+                        currentSections[titleIndex + 1] = `\n\n${result.data.rewrittenSection.trim()}\n\n`;
                         return currentSections.join('');
                     }
                     return prevContent;
@@ -366,7 +381,7 @@ const ChapterEditor = ({
                 refreshCredits();
                 toast({ title: "Section Rewritten", description: "The AI has rewritten the section." });
             } else {
-                throw new Error("AI returned empty content during section rewrite.");
+                toast({ title: "AI Rewrite Failed", variant: "destructive", description: "AI returned empty content during section rewrite." });
             }
     
         } catch (error) {
@@ -418,7 +433,7 @@ const ChapterEditor = ({
               storytellingFramework: frameworkWithConcept,
             });
     
-            if (result && result.sectionContent) {
+            if (result.success && result.data && result.data.sectionContent) {
                 onContentChange(prevContent => {
                     const sections = prevContent.split(/(\$\$[^$]+\$\$)/g);
                     const titleToFind = `$$${sectionTitle}$$`;
@@ -429,7 +444,7 @@ const ChapterEditor = ({
                          if (contentIndex >= sections.length || sections[contentIndex].startsWith('$$')) {
                             sections.splice(contentIndex, 0, ''); 
                         }
-                        sections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
+                        sections[contentIndex] = `\n\n${result.data.sectionContent.trim()}\n\n`;
                         return sections.join('');
                     }
                     return prevContent;
@@ -437,7 +452,8 @@ const ChapterEditor = ({
                 refreshCredits();
                 successfulSections.push(sectionTitle);
             } else {
-              failedSections.push({ index, title: sectionTitle, error: new Error("AI returned no content") });
+              const errorMsg = result.success ? "AI returned no content" : result.error;
+              failedSections.push({ index, title: sectionTitle, error: new Error(errorMsg) });
               toast({ title: "Section Pending", description: `Section "${sectionTitle}" will be retried...`, variant: "default" });
             }
           } catch (sectionError) {
@@ -485,7 +501,7 @@ const ChapterEditor = ({
                   storytellingFramework: frameworkWithConcept,
                 });
         
-                if (result && result.sectionContent) {
+                if (result.success && result.data && result.data.sectionContent) {
                     onContentChange(prevContent => {
                         const sections = prevContent.split(/(\$\$[^$]+\$\$)/g);
                         const titleToFind = `$$${failedSection.title}$$`;
@@ -496,7 +512,7 @@ const ChapterEditor = ({
                              if (contentIndex >= sections.length || sections[contentIndex].startsWith('$$')) {
                                 sections.splice(contentIndex, 0, ''); 
                             }
-                            sections[contentIndex] = `\n\n${result.sectionContent.trim()}\n\n`;
+                            sections[contentIndex] = `\n\n${result.data.sectionContent.trim()}\n\n`;
                             return sections.join('');
                         }
                         return prevContent;

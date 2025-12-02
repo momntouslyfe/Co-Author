@@ -206,31 +206,29 @@ export default function CoAuthorWorkspacePage() {
       authorPreview: authorProfileContent ? authorProfileContent.substring(0, 300) + '...' : 'None',
     });
 
-    try {
-      const idToken = await getIdToken(user);
-      const blueprint = await generateBookBlueprint({
-        userId: user.uid,
-        idToken,
-        topic: values.topic,
-        language: values.language,
-        storytellingFramework: values.storytellingFramework,
-        researchProfile: researchProfileContent,
-        styleProfile: styleProfileContent,
-        authorProfile: authorProfileContent,
-      });
-      setResult(blueprint);
+    const idToken = await getIdToken(user);
+    const result = await generateBookBlueprint({
+      userId: user.uid,
+      idToken,
+      topic: values.topic,
+      language: values.language,
+      storytellingFramework: values.storytellingFramework,
+      researchProfile: researchProfileContent,
+      styleProfile: styleProfileContent,
+      authorProfile: authorProfileContent,
+    });
+    
+    if (result.success) {
+      setResult(result.data);
       refreshCredits();
-    } catch (error) {
-      console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+    } else {
       toast({
         title: 'Error Generating Blueprint',
-        description: errorMessage,
+        description: result.error,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
 
   const handleSelectOutline = (outline: string) => {

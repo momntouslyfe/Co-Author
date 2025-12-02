@@ -4,7 +4,7 @@ import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { withAIErrorHandling } from '@/lib/ai-error-handler';
+import { withAIErrorHandling, type AIResult } from '@/lib/ai-error-handler';
 
 const RewriteOfferSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -29,7 +29,7 @@ export type RewriteOfferSectionOutput = z.infer<typeof RewriteOfferSectionOutput
 
 export async function rewriteOfferSection(
   input: RewriteOfferSectionInput
-): Promise<RewriteOfferSectionOutput> {
+): Promise<AIResult<RewriteOfferSectionOutput>> {
   return withAIErrorHandling(async () => {
     const context = `Rewriting module: "${input.moduleTitle}"`;
     const originalWordCount = input.originalContent.split(/\s+/).filter(w => w.length > 0).length;

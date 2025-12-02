@@ -16,7 +16,7 @@ import {z} from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
 import { retryWithBackoff } from '@/lib/retry-utils';
-import { withAIErrorHandling } from '@/lib/ai-error-handler';
+import { withAIErrorHandling, type AIResult } from '@/lib/ai-error-handler';
 
 const AnalyzeWritingStyleInputSchema = z.object({
     userId: z.string().describe('The user ID for API key retrieval.'),
@@ -38,7 +38,7 @@ const STYLE_ANALYSIS_RETRY_CONFIG = {
   backoffMultiplier: 2.5,
 };
 
-export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Promise<AnalyzeWritingStyleOutput> {
+export async function analyzeWritingStyle(input: AnalyzeWritingStyleInput): Promise<AIResult<AnalyzeWritingStyleOutput>> {
   return withAIErrorHandling(async () => {
     await preflightCheckWordCredits(input.userId, 1000);
     

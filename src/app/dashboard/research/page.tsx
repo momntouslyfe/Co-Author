@@ -102,32 +102,30 @@ function ResearchPageContent() {
     setLoading(true);
     setResult(null);
     setCurrentValues(values);
-    try {
-      const idToken = await getIdToken(user);
-      const topicWithDescription = values.topicDescription 
-        ? `${values.topic}\n\nAdditional Context: ${values.topicDescription}`
-        : values.topic;
-      
-      const researchData = await researchBookTopic({
-        userId: user.uid,
-        idToken,
-        topic: topicWithDescription,
-        language: values.language,
-        targetMarket: values.targetMarket,
-      });
-      setResult(researchData);
+    const idToken = await getIdToken(user);
+    const topicWithDescription = values.topicDescription 
+      ? `${values.topic}\n\nAdditional Context: ${values.topicDescription}`
+      : values.topic;
+    
+    const result = await researchBookTopic({
+      userId: user.uid,
+      idToken,
+      topic: topicWithDescription,
+      language: values.language,
+      targetMarket: values.targetMarket,
+    });
+    
+    if (result.success) {
+      setResult(result.data);
       refreshCredits();
-    } catch (error) {
-      console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+    } else {
       toast({
         title: 'Error during research',
-        description: errorMessage,
+        description: result.error,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
 
   async function saveResearchProfile(): Promise<string | null> {

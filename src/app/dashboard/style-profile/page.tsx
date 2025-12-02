@@ -142,30 +142,28 @@ export default function StyleProfilePage() {
     setAnalysisResult(null);
     setCurrentProfileName(values.profileName);
 
-    try {
-      const idToken = await getIdToken(user);
-      const result = await analyzeWritingStyle({ 
-        userId: user.uid,
-        idToken,
-        fileDataUri: values.fileDataUri 
-      });
-      setAnalysisResult(result.styleAnalysis);
+    const idToken = await getIdToken(user);
+    const result = await analyzeWritingStyle({ 
+      userId: user.uid,
+      idToken,
+      fileDataUri: values.fileDataUri 
+    });
+    
+    if (result.success) {
+      setAnalysisResult(result.data.styleAnalysis);
       refreshCredits();
       toast({
         title: 'Analysis Complete',
         description: 'Your writing style has been analyzed.',
       });
-    } catch (error) {
-      console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while analyzing your style. Please try again.';
+    } else {
       toast({
         title: 'Analysis Failed',
-        description: errorMessage,
+        description: result.error,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
 
   async function handleSaveStyle() {

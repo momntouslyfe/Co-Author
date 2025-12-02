@@ -15,7 +15,7 @@ import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { withAIErrorHandling } from '@/lib/ai-error-handler';
+import { withAIErrorHandling, type AIResult } from '@/lib/ai-error-handler';
 
 const ExpandBookContentInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -37,7 +37,7 @@ const ExpandBookContentOutputSchema = z.object({
 });
 export type ExpandBookContentOutput = z.infer<typeof ExpandBookContentOutputSchema>;
 
-export async function expandBookContent(input: ExpandBookContentInput): Promise<ExpandBookContentOutput> {
+export async function expandBookContent(input: ExpandBookContentInput): Promise<AIResult<ExpandBookContentOutput>> {
   return withAIErrorHandling(async () => {
     await preflightCheckWordCredits(input.userId, 300);
     

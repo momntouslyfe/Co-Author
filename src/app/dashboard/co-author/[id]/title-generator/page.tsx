@@ -121,33 +121,31 @@ export default function TitleGeneratorPage() {
     setLoading(true);
     setTitles([]);
     setSelectedTitleIndex(-1);
-    try {
-      const idToken = await getIdToken(user);
-      const result = await generateBookTitles({
-        userId: user.uid,
-        idToken,
-        outline: project.outline,
-        language: project.language,
-        researchProfile: researchPrompt,
-        styleProfile: selectedStyle?.styleAnalysis,
-        storytellingFramework: project.storytellingFramework,
-      });
-      setTitles(result.titles);
+    const idToken = await getIdToken(user);
+    const result = await generateBookTitles({
+      userId: user.uid,
+      idToken,
+      outline: project.outline,
+      language: project.language,
+      researchProfile: researchPrompt,
+      styleProfile: selectedStyle?.styleAnalysis,
+      storytellingFramework: project.storytellingFramework,
+    });
+    
+    if (result.success) {
+      setTitles(result.data.titles);
       refreshCredits();
-      if (result.titles.length > 0) {
+      if (result.data.titles.length > 0) {
         setSelectedTitleIndex(0);
       }
-    } catch (error) {
-      console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+    } else {
       toast({
         title: 'Error Generating Titles',
-        description: errorMessage,
+        description: result.error,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const handleSaveTitle = async () => {

@@ -13,7 +13,7 @@ import {z} from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
 import { retryWithBackoff } from '@/lib/retry-utils';
-import { withAIErrorHandling } from '@/lib/ai-error-handler';
+import { withAIErrorHandling, type AIResult } from '@/lib/ai-error-handler';
 
 const ResearchBookTopicInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -39,7 +39,7 @@ const RESEARCH_RETRY_CONFIG = {
   backoffMultiplier: 2.5,
 };
 
-export async function researchBookTopic(input: ResearchBookTopicInput): Promise<ResearchBookTopicOutput> {
+export async function researchBookTopic(input: ResearchBookTopicInput): Promise<AIResult<ResearchBookTopicOutput>> {
   return withAIErrorHandling(async () => {
     await preflightCheckWordCredits(input.userId, 2000);
     

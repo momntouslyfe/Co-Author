@@ -138,7 +138,7 @@ export default function GenerateOffersPage() {
         ? `Author: ${authorProfile.penName}\nBio: ${authorProfile.bio}\nCredentials: ${authorProfile.credentials || 'N/A'}`
         : undefined;
 
-      const results = await generateOfferIdeas({
+      const apiResult = await generateOfferIdeas({
         userId: user.uid,
         idToken,
         bookTitle: selectedProject.title,
@@ -151,8 +151,17 @@ export default function GenerateOffersPage() {
         authorProfile: authorContent,
       });
 
+      if (!apiResult.success) {
+        toast({
+          title: 'Generation Failed',
+          description: apiResult.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const newIdeas: GeneratedIdea[] = [];
-      for (const result of results) {
+      for (const result of apiResult.data) {
         for (const idea of result.ideas) {
           newIdeas.push({
             id: `${result.category}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

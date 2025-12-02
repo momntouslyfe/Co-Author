@@ -4,7 +4,7 @@ import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { retryWithBackoff, AI_GENERATION_RETRY_CONFIG } from '@/lib/retry-utils';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { withAIErrorHandling } from '@/lib/ai-error-handler';
+import { withAIErrorHandling, type AIResult } from '@/lib/ai-error-handler';
 import { OFFER_CATEGORY_LABELS } from '@/lib/definitions';
 import type { OfferCategory } from '@/lib/definitions';
 
@@ -38,7 +38,7 @@ export type WriteOfferSectionOutput = z.infer<typeof WriteOfferSectionOutputSche
 
 export async function writeOfferSection(
   input: WriteOfferSectionInput
-): Promise<WriteOfferSectionOutput> {
+): Promise<AIResult<WriteOfferSectionOutput>> {
   return withAIErrorHandling(async () => {
     const context = `Module: "${input.moduleTitle}" in Part: "${input.partTitle}"`;
 

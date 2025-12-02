@@ -3,7 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { withAIErrorHandling } from '@/lib/ai-error-handler';
+import { withAIErrorHandling, type AIResult } from '@/lib/ai-error-handler';
 
 const WriteMarketingContentInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -35,7 +35,7 @@ export type WriteMarketingContentOutput = z.infer<typeof WriteMarketingContentOu
 
 export async function writeMarketingContent(
   input: WriteMarketingContentInput
-): Promise<WriteMarketingContentOutput> {
+): Promise<AIResult<WriteMarketingContentOutput>> {
   return withAIErrorHandling(async () => {
     const estimatedWords = Math.max(input.targetWordCount, 500);
     await preflightCheckWordCredits(input.userId, estimatedWords);

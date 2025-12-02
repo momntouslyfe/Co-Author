@@ -347,16 +347,30 @@ export default function LandingPageCopyPage() {
         customInstructions: instruction || undefined,
       });
 
-      if (!result || !result.content) {
-        throw new Error('Failed to rewrite content. Please refresh the page and try again.');
+      if (!result.success) {
+        toast({
+          title: 'Rewrite Failed',
+          description: result.error,
+          variant: 'destructive',
+        });
+        return;
       }
 
-      setGeneratedContent(result.content);
+      if (!result.data || !result.data.content) {
+        toast({
+          title: 'Rewrite Failed',
+          description: 'Failed to rewrite content. Please refresh the page and try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setGeneratedContent(result.data.content);
       refreshCredits();
 
       toast({
         title: 'Content Rewritten',
-        description: `Rewritten content: ${result.wordCount} words.`,
+        description: `Rewritten content: ${result.data.wordCount} words.`,
       });
     } catch (error: any) {
       console.error('Error rewriting content:', error);

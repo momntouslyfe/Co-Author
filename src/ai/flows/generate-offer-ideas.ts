@@ -3,7 +3,7 @@
 import { z } from 'genkit';
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { withAIErrorHandling } from '@/lib/ai-error-handler';
+import { withAIErrorHandling, type AIResult } from '@/lib/ai-error-handler';
 
 const GenerateOfferIdeasInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -63,7 +63,7 @@ const ALL_CATEGORIES = Object.keys(CATEGORY_PROMPTS);
 
 export async function generateOfferIdeas(
   input: GenerateOfferIdeasInput
-): Promise<GenerateOfferIdeasOutput[]> {
+): Promise<AIResult<GenerateOfferIdeasOutput[]>> {
   return withAIErrorHandling(async () => {
     const estimatedWords = input.category === 'all' ? 2000 : 500;
     await preflightCheckWordCredits(input.userId, estimatedWords);

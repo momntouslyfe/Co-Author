@@ -12,7 +12,7 @@ import {z} from 'genkit';
 
 import { getGenkitInstanceForFunction } from '@/lib/genkit-admin';
 import { trackAIUsage, preflightCheckWordCredits } from '@/lib/credit-tracker';
-import { withAIErrorHandling } from '@/lib/ai-error-handler';
+import { withAIErrorHandling, type AIResult } from '@/lib/ai-error-handler';
 
 const RewriteSectionInputSchema = z.object({
   userId: z.string().describe('The user ID for API key retrieval.'),
@@ -33,7 +33,7 @@ const RewriteSectionOutputSchema = z.object({
 });
 export type RewriteSectionOutput = z.infer<typeof RewriteSectionOutputSchema>;
 
-export async function rewriteSection(input: RewriteSectionInput): Promise<RewriteSectionOutput> {
+export async function rewriteSection(input: RewriteSectionInput): Promise<AIResult<RewriteSectionOutput>> {
   return withAIErrorHandling(async () => {
     await preflightCheckWordCredits(input.userId, 400);
     
