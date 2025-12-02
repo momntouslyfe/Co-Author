@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthUser, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, deleteDoc, doc } from 'firebase/firestore';
 import type { Project, AuthorProfile } from '@/lib/definitions';
 import {
   Card,
@@ -92,49 +92,29 @@ export default function CoAuthorPage() {
         try {
             const token = await user.getIdToken();
             
-            const checkResponse = await fetch('/api/user/check-book-credit', {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            
-            if (!checkResponse.ok) {
-                const error = await checkResponse.json();
-                toast({
-                    title: "Insufficient Credits",
-                    description: error.error || "You don't have enough book creation credits.",
-                    variant: "destructive",
-                });
-                setIsCreating(false);
-                return;
-            }
-            
-            const projectData: any = {
-                userId: user.uid,
-                title: newProjectName,
-                status: 'Draft',
-                createdAt: serverTimestamp(),
-                lastUpdated: serverTimestamp(),
-                imageUrl: `https://picsum.photos/seed/${Math.random()}/600/800`,
-                imageHint: 'book cover'
-            };
-
-            if (selectedAuthorProfileId && selectedAuthorProfileId !== 'none') {
-                projectData.authorProfileId = selectedAuthorProfileId;
-            }
-            
-            const projectCollection = collection(firestore, 'users', user.uid, 'projects');
-            const newProjectDoc = await addDoc(projectCollection, projectData);
-            
-            await fetch('/api/user/track-book-creation', {
+            const response = await fetch('/api/user/create-book-project', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    projectId: newProjectDoc.id,
-                    projectTitle: newProjectName,
+                    title: newProjectName.trim(),
+                    authorProfileId: selectedAuthorProfileId || undefined,
                 }),
             });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                toast({
+                    title: response.status === 403 ? "Insufficient Credits" : "Error",
+                    description: data.error || "Could not create the project. Please try again.",
+                    variant: "destructive",
+                });
+                setIsCreating(false);
+                return;
+            }
             
             await refreshCredits();
             
@@ -145,7 +125,7 @@ export default function CoAuthorPage() {
             setOpen(false);
             setNewProjectName('');
             setSelectedAuthorProfileId('');
-            router.push(`/dashboard/co-author/${newProjectDoc.id}`);
+            router.push(`/dashboard/co-author/${data.projectId}`);
         } catch (error) {
             console.error("Error creating project:", error);
             toast({
